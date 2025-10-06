@@ -4,13 +4,14 @@ import Stripe from "stripe";
 import { storage } from "./storage";
 import { insertBookingSchema } from "@shared/schema";
 import { z } from "zod";
+import { sendBookingConfirmation } from "./email";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-09-30.clover",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -48,7 +49,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pricePerMachine = 150; // Full day price
       }
       
-      const totalCents = Math.round(pricePerMachine * validatedData.machines * 100);
+      const machineCount = validatedData.machines ?? 1;
+      const totalCents = Math.round(pricePerMachine * machineCount * 100);
       
       const booking = await storage.createBooking({
         ...validatedData,
@@ -59,7 +61,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
       const swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
       
-      await storage.updateBooking(booking.id, { swiklyUrl });
+      const updatedBooking = await storage.updateBooking(booking.id, { swiklyUrl });
+
+      // Send confirmation email asynchronously (don't wait for it)
+      if (updatedBooking) {
+        sendBookingConfirmation(updatedBooking).catch(err => 
+          console.error('Failed to send confirmation email:', err)
+        );
+      }
 
       res.json({
         success: true,
