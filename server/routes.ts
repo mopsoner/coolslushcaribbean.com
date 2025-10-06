@@ -154,13 +154,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create payment intent for Stripe
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
-      const { amount, bookingId } = req.body;
+      const { bookingId } = req.body;
       
+      if (!bookingId) {
+        return res.status(400).json({ error: "Booking ID required" });
+      }
+
+      // Get booking to verify amount server-side
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      // Use server-calculated total, never trust client
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
+        amount: booking.totalCents,
         currency: "eur",
         metadata: {
-          bookingId: bookingId || "",
+          bookingId: bookingId,
         },
       });
       

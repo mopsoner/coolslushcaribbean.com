@@ -135,12 +135,30 @@ Preferred communication style: Simple, everyday language.
 
 **Current Implementation**
 - No authentication system implemented
-- Admin routes (`/admin/bookings`) are publicly accessible
+- Admin routes (`/admin/bookings`, `/admin/pricing`, `/admin/syrups`) are publicly accessible
 - Session management infrastructure present but not actively used (connect-pg-simple installed)
+
+**CRITICAL SECURITY WARNINGS - Must Fix Before Production:**
+1. **Admin Routes Unprotected** ⚠️ CRITICAL
+   - `/api/bookings` (GET, PATCH) - Anyone can view/modify all bookings
+   - `/api/admin/*` - All admin endpoints are public
+   - **Action Required**: Implement authentication (basic auth, Replit Auth, or session-based)
+
+2. **Swikly Webhook Unverified** ⚠️ IMPORTANT
+   - `/api/swikly-callback` accepts any request without signature verification
+   - **Recommendation**: Validate Swikly signature or request origin
+
+3. **Security Hardening Implemented** ✅
+   - Stripe payment amount validation (server-side calculation, client input ignored)
+   - Drizzle ORM protects against SQL injection
+   - React sanitizes XSS by default
+   - Zod validates all user inputs
 
 **Future Considerations**
 - Admin authentication should be implemented before production deployment
 - Session-based auth infrastructure already available via dependencies
+- Consider rate limiting on payment and booking routes
+- Add error monitoring and logging
 
 ### External Dependencies
 

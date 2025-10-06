@@ -91,7 +91,6 @@ export default function Checkout() {
     if (booking) {
       // Create PaymentIntent as soon as the booking loads
       apiRequest("POST", "/api/create-payment-intent", { 
-        amount: booking.totalCents / 100,
         bookingId: booking.id 
       })
         .then((res) => res.json())
