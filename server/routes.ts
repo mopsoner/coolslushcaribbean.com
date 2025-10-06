@@ -58,7 +58,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Generate Swikly URL (placeholder - would integrate with real Swikly API)
-      const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
+      const baseUrl = `${protocol}://${host}`;
       const swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
       
       const updatedBooking = await storage.updateBooking(booking.id, { swiklyUrl });
