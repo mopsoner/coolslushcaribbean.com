@@ -100,9 +100,10 @@ Preferred communication style: Simple, everyday language.
 - "Week-end": 250€ per machine
 - "Événement": 350€ per machine
 
-**Testing Configuration**
-- **TEMPORARY**: Swikly deposit set to 1€ (100 cents) for testing purposes
-- **TODO**: Restore to 500€ before production deployment
+**Production Configuration**
+- Swikly deposit: 500€ (50,000 cents)
+- Swikly environment: Automatically uses production mode when NODE_ENV=production
+- Email: Falls back to Ethereal test account in development, uses SMTP in production
 
 ### Syrup Selection & Customization System
 
@@ -155,8 +156,7 @@ Preferred communication style: Simple, everyday language.
   - API integration for creating deposit requests (€500 default)
   - Sandbox and production environment support
   - Environment: `SWIKLY_API_KEY`, `SWIKLY_API_SECRET`, `SWIKLY_ENVIRONMENT`
-  - **TEMPORARY**: Currently forced to use sandbox mode even in production for testing (see `server/swikly.ts` line 193)
-  - **TODO**: Switch to production Swikly credentials before final deployment
+  - Automatically switches to production mode when NODE_ENV=production
 
 **Email Service**
 - **Nodemailer**: Email delivery for booking confirmations

@@ -81,7 +81,7 @@ class SwiklyAPI {
           phoneNumber: booking.customerPhone || undefined,
         },
         deposit: {
-          amount: 100,
+          amount: 50000,
           description: `Caution - Location machine à granité Cool'Slush`,
           startDate: depositStartDate.toISOString().split('T')[0],
           endDate: depositEndDate.toISOString().split('T')[0],
@@ -178,10 +178,7 @@ export function getSwiklyClient(): SwiklyAPI {
       throw new Error('Swikly API credentials not configured. Please set SWIKLY_API_KEY and SWIKLY_ACCOUNT_ID.');
     }
 
-    // TEMPORARY: Force sandbox mode for testing in production
-    // TODO: Remove this and use real production credentials before going live
-    const forceSandbox = true;
-    const isProduction = !forceSandbox && (process.env.NODE_ENV === 'production' || process.env.SWIKLY_ENV === 'production');
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.SWIKLY_ENV === 'production';
 
     swiklyClient = new SwiklyAPI({
       apiToken,
