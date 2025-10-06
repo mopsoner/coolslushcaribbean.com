@@ -53,12 +53,12 @@ export default function BookingForm() {
     onSuccess: (data) => {
       toast({
         title: "Réservation confirmée !",
-        description: "Redirection vers Swikly pour la caution...",
+        description: "Vérifiez votre email pour la caution Swikly...",
       });
       
-      // Redirect to Swikly URL
-      if (data.swiklyUrl) {
-        window.location.href = data.swiklyUrl;
+      // Redirect to confirmation page instead of directly to Swikly
+      if (data.bookingId) {
+        window.location.href = `/booking-confirmation?booking=${data.bookingId}`;
       }
     },
     onError: (error: any) => {
