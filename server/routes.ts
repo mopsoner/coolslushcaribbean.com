@@ -41,16 +41,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertBookingSchema.parse(req.body);
       
-      // Calculate total price based on number of machines and duration
-      const duration = validatedData.endHour - validatedData.startHour;
-      let pricePerMachine = 90; // Base price for day rental
+      // TEMPORARY FOR TESTING: Price set to 0€
+      // TODO: Remove this and uncomment the real pricing logic below
+      const totalCents = 0;
       
-      if (duration >= 8) {
-        pricePerMachine = 150; // Full day price
-      }
-      
-      const machineCount = validatedData.machines ?? 1;
-      const totalCents = Math.round(pricePerMachine * machineCount * 100);
+      // REAL PRICING (commented for testing):
+      // const duration = validatedData.endHour - validatedData.startHour;
+      // let pricePerMachine = 90; // Base price for day rental
+      // if (duration >= 8) {
+      //   pricePerMachine = 150; // Full day price
+      // }
+      // const machineCount = validatedData.machines ?? 1;
+      // const totalCents = Math.round(pricePerMachine * machineCount * 100);
       
       const booking = await storage.createBooking({
         ...validatedData,
