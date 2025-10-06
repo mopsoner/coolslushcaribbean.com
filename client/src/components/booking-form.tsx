@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Clock, User, Phone, Mail, Snowflake, Lock, Shield, CheckCircle } from "lucide-react";
+import { Calendar, Clock, User, Phone, Mail, MapPin, Snowflake, Lock, Shield, CheckCircle } from "lucide-react";
 
 const bookingSchema = z.object({
   offer: z.string().min(1, "Veuillez sélectionner une offre"),
@@ -23,6 +23,7 @@ const bookingSchema = z.object({
   customerName: z.string().min(2, "Nom requis (min. 2 caractères)"),
   customerPhone: z.string().min(6, "Téléphone requis"),
   customerEmail: z.string().email("Email valide requis"),
+  customerAddress: z.string().min(5, "Adresse requise (min. 5 caractères)"),
   machines: z.number().min(1).max(10),
   terms: z.boolean().refine(val => val, "Vous devez accepter les conditions"),
 }).refine((data) => {
@@ -60,6 +61,7 @@ export default function BookingForm() {
       customerName: "",
       customerPhone: "",
       customerEmail: "",
+      customerAddress: "",
       machines: 1,
       terms: false,
     },
@@ -385,6 +387,28 @@ export default function BookingForm() {
                         placeholder="Ex: jean.dupont@email.com"
                         className="booking-form-input"
                         data-testid="input-customer-email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="customerAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center text-sm font-semibold text-foreground">
+                      <MapPin className="w-4 h-4 text-primary mr-2" />
+                      Adresse
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: 123 Rue de la Plage, Pointe-à-Pitre"
+                        className="booking-form-input"
+                        data-testid="input-customer-address"
                         {...field}
                       />
                     </FormControl>
