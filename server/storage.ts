@@ -83,7 +83,7 @@ export class DbStorage implements IStorage {
     return await db
       .select()
       .from(bookings)
-      .where(and(gte(bookings.date, startOfDay), lte(bookings.date, endOfDay)));
+      .where(and(gte(bookings.startDate, startOfDay), lte(bookings.startDate, endOfDay)));
   }
 }
 

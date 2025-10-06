@@ -60,15 +60,14 @@ class SwiklyAPI {
       const firstName = nameParts[0] || 'Client';
       const lastName = nameParts.slice(1).join(' ') || 'Cool\'Slush';
 
-      const eventDate = new Date(booking.date);
-      const depositStartDate = new Date(eventDate);
-      depositStartDate.setDate(depositStartDate.getDate() - 1);
-      const depositEndDate = new Date(eventDate);
-      depositEndDate.setDate(depositEndDate.getDate() + 2);
+      // Use real booking dates: deposit starts with the rental, ends 1 day after
+      const depositStartDate = new Date(booking.startDate);
+      const depositEndDate = new Date(booking.endDate);
+      depositEndDate.setDate(depositEndDate.getDate() + 1); // Add 1 day buffer after rental ends
 
       const requestBody: SwiklyDepositRequest = {
         customId: booking.id,
-        description: `Location machine à granité Cool'Slush - ${booking.date}`,
+        description: `Location machine à granité Cool'Slush - ${booking.offer}`,
         language: 'fr',
         firstName: firstName,
         lastName: lastName,
