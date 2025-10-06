@@ -65,9 +65,10 @@ Preferred communication style: Simple, everyday language.
 
 **Data Models**
 - **Machines**: Track slushy machine inventory with status (AVAILABLE, UNAVAILABLE, MAINTENANCE)
-- **Bookings**: Store customer reservations with date, time slots, customer info, payment status, and external references (Stripe, Swikly)
+- **Bookings**: Store customer reservations with date, time slots, customer info, payment status, external references (Stripe, Swikly), syrup selections, and cup size preference
 - **Offers**: Define rental offers (1 Journée, Week-end, Événement) with default prices
 - **Price Configurations**: Store pricing rules per offer, with optional machine-specific overrides
+- **Syrups**: Catalog of available syrup flavors with individual pricing and active status
 
 **Validation Strategy**
 - Shared Zod schemas between client and server for consistent validation
@@ -102,6 +103,32 @@ Preferred communication style: Simple, everyday language.
 **Testing Configuration**
 - **TEMPORARY**: Swikly deposit set to 1€ (100 cents) for testing purposes
 - **TODO**: Restore to 500€ before production deployment
+
+### Syrup Selection & Customization System
+
+**Architecture** (Added October 6, 2025)
+- Database-driven syrup catalog with admin management
+- Customer syrup selection with quantity control in booking form
+- Cup size selection (petit/moyen/grand) for booking customization
+
+**Admin Interface**
+- Back-office syrup management at `/admin/syrups`
+- CRUD operations for syrups (create, edit, toggle active/inactive, delete)
+- Individual pricing per syrup (can be free or priced)
+- Automatic cache invalidation via React Query
+
+**Booking Integration**
+1. Admin configures available syrups with names and optional prices in database
+2. Customer booking form fetches active syrups via GET `/api/syrups`
+3. Customers select syrup quantities (0-10 per syrup) using +/- controls
+4. Customers choose cup size: petit (250ml), moyen (350ml), or grand (500ml)
+5. Selected syrups stored as JSON array `{ syrupId: string, quantity: number }[]` in booking
+6. Cup size stored as text enum in booking record
+
+**Data Structure**
+- Syrups table: id, name, amountCents, active status
+- Booking fields: selectedSyrups (JSON), cupSize (enum: petit/moyen/grand)
+- Default cup size: "moyen"
 
 ### Authentication and Authorization
 
