@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -30,6 +30,15 @@ export const priceConfigurations = pgTable("price_configurations", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const syrups = pgTable("syrups", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  amountCents: integer("amount_cents").notNull().default(0), // Prix du sirop
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const bookings = pgTable("bookings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   offer: text("offer").notNull(), // "1 Journée", "Week-end", "Événement"
@@ -42,6 +51,8 @@ export const bookings = pgTable("bookings", {
   customerEmail: text("customer_email").notNull(),
   customerAddress: text("customer_address"),
   machines: integer("machines").notNull().default(1),
+  selectedSyrups: json("selected_syrups").default([]), // Array of { syrupId: string, quantity: number }
+  cupSize: text("cup_size").default("moyen"), // "petit", "moyen", "grand"
   totalCents: integer("total_cents").notNull().default(0),
   status: text("status").notNull().default("PENDING"), // PENDING, CONFIRMED, CANCELLED
   swiklyUrl: text("swikly_url"),
@@ -56,11 +67,18 @@ export const insertMachineSchema = createInsertSchema(machines).omit({
   updatedAt: true,
 });
 
+const syrupSelectionSchema = z.object({
+  syrupId: z.string(),
+  quantity: z.number().int().min(1).max(10),
+});
+
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
   machines: true, // Omit to redefine with strict validation
+  selectedSyrups: true,
+  cupSize: true,
 }).extend({
   startDate: z.union([
     z.date(), 
@@ -84,6 +102,8 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   ]),
   customerAddress: z.string().min(5, "Adresse requise (min. 5 caractères)"),
   machines: z.number().int().min(1, "Au moins 1 machine requise").max(10, "Maximum 10 machines"),
+  selectedSyrups: z.array(syrupSelectionSchema).optional().default([]),
+  cupSize: z.enum(["petit", "moyen", "grand"]).default("moyen"),
 }).refine((data) => {
   // Pour les offres multi-jours, s'assurer que endDate >= startDate
   const start = data.startDate instanceof Date ? data.startDate : new Date(data.startDate);
@@ -106,6 +126,12 @@ export const insertPriceConfigurationSchema = createInsertSchema(priceConfigurat
   updatedAt: true,
 });
 
+export const insertSyrupSchema = createInsertSchema(syrups).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertMachine = z.infer<typeof insertMachineSchema>;
 export type Machine = typeof machines.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
@@ -114,3 +140,6 @@ export type InsertOffer = z.infer<typeof insertOfferSchema>;
 export type Offer = typeof offers.$inferSelect;
 export type InsertPriceConfiguration = z.infer<typeof insertPriceConfigurationSchema>;
 export type PriceConfiguration = typeof priceConfigurations.$inferSelect;
+export type InsertSyrup = z.infer<typeof insertSyrupSchema>;
+export type Syrup = typeof syrups.$inferSelect;
+export type SyrupSelection = z.infer<typeof syrupSelectionSchema>;
