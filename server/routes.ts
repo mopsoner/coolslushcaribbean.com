@@ -71,8 +71,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const swiklyClient = getSwiklyClient();
         const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
         
-        if (swiklyResult.acceptUrl) {
-          swiklyUrl = swiklyResult.acceptUrl;
+        if (swiklyResult.request?.link) {
+          swiklyUrl = swiklyResult.request.link;
           console.log('✅ Swikly deposit URL created:', swiklyUrl);
           console.log('✅ Swikly callback URL configured:', `${baseUrl}/api/swikly-callback`);
         } else {
