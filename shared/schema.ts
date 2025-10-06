@@ -11,6 +11,25 @@ export const machines = pgTable("machines", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const offers = pgTable("offers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const priceConfigurations = pgTable("price_configurations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  offerId: varchar("offer_id").notNull().references(() => offers.id, { onDelete: 'cascade' }),
+  machineId: varchar("machine_id").references(() => machines.id, { onDelete: 'cascade' }), // null = default price for all machines
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").notNull().default("EUR"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const bookings = pgTable("bookings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   offer: text("offer").notNull(), // "1 Journée", "Week-end", "Événement"
@@ -75,7 +94,23 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   path: ["endDate"],
 });
 
+export const insertOfferSchema = createInsertSchema(offers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPriceConfigurationSchema = createInsertSchema(priceConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertMachine = z.infer<typeof insertMachineSchema>;
 export type Machine = typeof machines.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
+export type InsertOffer = z.infer<typeof insertOfferSchema>;
+export type Offer = typeof offers.$inferSelect;
+export type InsertPriceConfiguration = z.infer<typeof insertPriceConfigurationSchema>;
+export type PriceConfiguration = typeof priceConfigurations.$inferSelect;
