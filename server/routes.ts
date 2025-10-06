@@ -231,6 +231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customerName: "Test Client",
           customerPhone: "0690123456",
           customerEmail: req.query.email as string || "test@example.com",
+          customerAddress: "123 Rue de Test, Pointe-à-Pitre",
           machines: 2,
           totalCents: 30000,
           status: "PENDING",

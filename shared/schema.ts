@@ -21,6 +21,7 @@ export const bookings = pgTable("bookings", {
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone").notNull(),
   customerEmail: text("customer_email").notNull(),
+  customerAddress: text("customer_address"),
   machines: integer("machines").notNull().default(1),
   totalCents: integer("total_cents").notNull().default(0),
   status: text("status").notNull().default("PENDING"), // PENDING, CONFIRMED, CANCELLED
@@ -62,6 +63,7 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
       return date;
     })
   ]),
+  customerAddress: z.string().min(5, "Adresse requise (min. 5 caractères)"),
   machines: z.number().int().min(1, "Au moins 1 machine requise").max(10, "Maximum 10 machines"),
 }).refine((data) => {
   // Pour les offres multi-jours, s'assurer que endDate >= startDate
