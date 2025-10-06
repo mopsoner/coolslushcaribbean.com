@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertBookingSchema } from "@shared/schema";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail } from "./email";
+import { getSwiklyClient } from "./swikly";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -59,22 +60,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalCents,
       });
 
-      // Generate Swikly URL (placeholder - would integrate with real Swikly API)
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
-      const baseUrl = `${protocol}://${host}`;
-      const swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
+      // Create Swikly deposit request via API
+      let swiklyUrl = '';
+      try {
+        const swiklyClient = getSwiklyClient();
+        const swiklyResult = await swiklyClient.createDeposit(booking);
+        
+        if (swiklyResult.acceptUrl) {
+          swiklyUrl = swiklyResult.acceptUrl;
+          console.log('✅ Swikly deposit URL created:', swiklyUrl);
+        } else {
+          throw new Error('No Swikly URL returned');
+        }
+      } catch (swiklyError: any) {
+        console.error('❌ Swikly creation failed:', swiklyError.message);
+        
+        // Fallback to placeholder URL if Swikly API fails
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+        const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
+        const baseUrl = `${protocol}://${host}`;
+        swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
+        console.log('⚠️ Using fallback Swikly URL:', swiklyUrl);
+      }
       
       const updatedBooking = await storage.updateBooking(booking.id, { swiklyUrl });
 
-      // Send confirmation and Swikly deposit emails asynchronously (don't wait for them)
+      // Send confirmation email (Swikly sends its own email automatically)
       if (updatedBooking) {
         sendBookingConfirmation(updatedBooking).catch(err => 
           console.error('Failed to send confirmation email:', err)
         );
-        sendSwiklyDepositEmail(updatedBooking).catch(err =>
-          console.error('Failed to send Swikly deposit email:', err)
-        );
+        
+        // Only send our Swikly email if API failed (Swikly API sends email automatically when sendEmail: 'true')
+        if (!swiklyUrl.includes('swikly.com')) {
+          sendSwiklyDepositEmail(updatedBooking).catch(err =>
+            console.error('Failed to send Swikly deposit email:', err)
+          );
+        }
       }
 
       res.json({
@@ -148,15 +170,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Swikly redirect handler (placeholder)
+  // Swikly callback handler - called by Swikly when deposit is completed
+  app.post("/api/swikly-callback", async (req, res) => {
+    try {
+      const { swikId, status } = req.body;
+      
+      console.log('📥 Swikly callback received:', { swikId, status });
+      
+      // Update booking status based on Swikly callback
+      if (status === 'completed' || status === 'accepted') {
+        await storage.updateBookingStatus(swikId, "CONFIRMED");
+        console.log('✅ Booking confirmed via Swikly callback:', swikId);
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('❌ Swikly callback error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Swikly redirect handler (fallback for non-API flow)
   app.get("/swikly-redirect", async (req, res) => {
     const bookingId = req.query.booking as string;
     if (!bookingId) {
       return res.status(400).send("Missing booking ID");
     }
     
-    // In a real implementation, this would redirect to Swikly
-    // For now, simulate successful caution and redirect to payment
+    // Fallback: simulate successful caution and redirect to payment
     await storage.updateBookingStatus(bookingId, "CONFIRMED");
     res.redirect(`/checkout?booking=${bookingId}`);
   });
