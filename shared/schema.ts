@@ -41,8 +41,34 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  startDate: z.union([z.date(), z.string().transform((val) => new Date(val))]),
-  endDate: z.union([z.date(), z.string().transform((val) => new Date(val))]),
+  startDate: z.union([
+    z.date(), 
+    z.string().min(1, "Date de début requise").transform((val) => {
+      const date = new Date(val);
+      if (isNaN(date.getTime())) {
+        throw new Error("Date de début invalide");
+      }
+      return date;
+    })
+  ]),
+  endDate: z.union([
+    z.date(), 
+    z.string().min(1, "Date de fin requise").transform((val) => {
+      const date = new Date(val);
+      if (isNaN(date.getTime())) {
+        throw new Error("Date de fin invalide");
+      }
+      return date;
+    })
+  ]),
+}).refine((data) => {
+  // Pour les offres multi-jours, s'assurer que endDate >= startDate
+  const start = data.startDate instanceof Date ? data.startDate : new Date(data.startDate);
+  const end = data.endDate instanceof Date ? data.endDate : new Date(data.endDate);
+  return end >= start;
+}, {
+  message: "La date de fin doit être après ou égale à la date de début",
+  path: ["endDate"],
 });
 
 export type InsertMachine = z.infer<typeof insertMachineSchema>;
