@@ -20,17 +20,27 @@ async function getTransporter() {
     });
   } else {
     // For development/testing, create ethereal email account
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
-    console.log('📧 Using Ethereal test email account for development');
+    try {
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+      console.log('📧 Using Ethereal test email account for development');
+    } catch (error: any) {
+      console.error('❌ Failed to create Ethereal test account:', error.message);
+      console.log('⚠️ Email functionality disabled. Configure SMTP settings to enable emails.');
+      // Return a dummy transporter that does nothing
+      transporter = nodemailer.createTransport({
+        streamTransport: true,
+        newline: 'unix',
+      });
+    }
   }
 
   return transporter;

@@ -114,8 +114,14 @@ class SwiklyAPI {
         console.error('❌ Swikly error:', data.message || 'Unknown error');
         throw new Error(data.message || 'Failed to create Swikly deposit');
       }
-    } catch (error) {
-      console.error('❌ Swikly API error:', error);
+    } catch (error: any) {
+      // Better error logging for network issues
+      if (error.cause?.code === 'ENOTFOUND' || error.message?.includes('getaddrinfo')) {
+        console.error('❌ Swikly DNS resolution error - cannot reach Swikly API:', this.baseUrl);
+        console.error('   Check your internet connection or Swikly API status');
+      } else {
+        console.error('❌ Swikly API error:', error);
+      }
       throw error;
     }
   }
