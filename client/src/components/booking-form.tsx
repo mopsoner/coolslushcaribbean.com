@@ -12,8 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Clock, User, Phone, Mail, MapPin, Snowflake, Lock, Shield, CheckCircle } from "lucide-react";
-import type { Offer } from "@shared/schema";
+import { Calendar, Clock, User, Phone, Mail, MapPin, Snowflake, Lock, Shield, CheckCircle, Droplet, Coffee } from "lucide-react";
+import type { Offer, Syrup } from "@shared/schema";
+
+const syrupSelectionSchema = z.object({
+  syrupId: z.string(),
+  quantity: z.number().int().min(1).max(10),
+});
 
 const bookingSchema = z.object({
   offer: z.string().min(1, "Veuillez sélectionner une offre"),
@@ -26,6 +31,8 @@ const bookingSchema = z.object({
   customerEmail: z.string().email("Email valide requis"),
   customerAddress: z.string().min(5, "Adresse requise (min. 5 caractères)"),
   machines: z.number().min(1).max(10),
+  selectedSyrups: z.array(syrupSelectionSchema).optional().default([]),
+  cupSize: z.enum(["petit", "moyen", "grand"]).default("moyen"),
   terms: z.boolean().refine(val => val, "Vous devez accepter les conditions"),
 }).refine((data) => {
   // Pour les offres multi-jours, endDate est obligatoire
@@ -45,10 +52,15 @@ type OfferWithPrice = Offer & { amountCents: number };
 export default function BookingForm() {
   const [machines, setMachines] = useState(1);
   const [selectedOffer, setSelectedOffer] = useState("");
+  const [syrupSelections, setSyrupSelections] = useState<{ syrupId: string; quantity: number }[]>([]);
   const { toast } = useToast();
 
   const { data: offers, isLoading: offersLoading } = useQuery<OfferWithPrice[]>({
     queryKey: ['/api/offers'],
+  });
+
+  const { data: syrups } = useQuery<Syrup[]>({
+    queryKey: ['/api/syrups'],
   });
   
   const form = useForm<BookingFormData>({
@@ -64,6 +76,8 @@ export default function BookingForm() {
       customerEmail: "",
       customerAddress: "",
       machines: 1,
+      selectedSyrups: [],
+      cupSize: "moyen",
       terms: false,
     },
   });
@@ -328,6 +342,118 @@ export default function BookingForm() {
                   <span className="text-muted-foreground text-sm">machine(s)</span>
                 </div>
               </div>
+
+              {/* Cup Size */}
+              <FormField
+                control={form.control}
+                name="cupSize"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center text-sm font-semibold text-foreground">
+                      <Coffee className="w-4 h-4 text-primary mr-2" />
+                      Taille des gobelets
+                    </FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="booking-form-input" data-testid="select-cup-size">
+                          <SelectValue placeholder="Sélectionner la taille" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="petit" data-testid="option-cup-petit">Petit (250ml)</SelectItem>
+                        <SelectItem value="moyen" data-testid="option-cup-moyen">Moyen (350ml)</SelectItem>
+                        <SelectItem value="grand" data-testid="option-cup-grand">Grand (500ml)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Syrups Selection */}
+              {syrups && syrups.length > 0 && (
+                <div>
+                  <Label className="flex items-center text-sm font-semibold text-foreground mb-3">
+                    <Droplet className="w-4 h-4 text-primary mr-2" />
+                    Sirops (optionnel)
+                  </Label>
+                  <div className="space-y-2">
+                    {syrups.map((syrup) => {
+                      const selection = syrupSelections.find(s => s.syrupId === syrup.id);
+                      const quantity = selection?.quantity || 0;
+                      
+                      return (
+                        <div key={syrup.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium">{syrup.name}</p>
+                            {syrup.amountCents > 0 && (
+                              <p className="text-xs text-muted-foreground">
+                                {(syrup.amountCents / 100).toFixed(2)} € / unité
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (quantity > 0) {
+                                  const newQuantity = quantity - 1;
+                                  if (newQuantity === 0) {
+                                    const newSelections = syrupSelections.filter(s => s.syrupId !== syrup.id);
+                                    setSyrupSelections(newSelections);
+                                    form.setValue("selectedSyrups", newSelections);
+                                  } else {
+                                    const newSelections = syrupSelections.map(s => 
+                                      s.syrupId === syrup.id ? { ...s, quantity: newQuantity } : s
+                                    );
+                                    setSyrupSelections(newSelections);
+                                    form.setValue("selectedSyrups", newSelections);
+                                  }
+                                }
+                              }}
+                              disabled={quantity === 0}
+                              data-testid={`button-decrease-syrup-${syrup.id}`}
+                            >
+                              -
+                            </Button>
+                            <span className="w-8 text-center font-medium" data-testid={`quantity-syrup-${syrup.id}`}>
+                              {quantity}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newQuantity = quantity + 1;
+                                const existingIndex = syrupSelections.findIndex(s => s.syrupId === syrup.id);
+                                let newSelections;
+                                if (existingIndex >= 0) {
+                                  newSelections = syrupSelections.map(s => 
+                                    s.syrupId === syrup.id ? { ...s, quantity: newQuantity } : s
+                                  );
+                                } else {
+                                  newSelections = [...syrupSelections, { syrupId: syrup.id, quantity: newQuantity }];
+                                }
+                                setSyrupSelections(newSelections);
+                                form.setValue("selectedSyrups", newSelections);
+                              }}
+                              disabled={quantity >= 10}
+                              data-testid={`button-increase-syrup-${syrup.id}`}
+                            >
+                              +
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Divider */}
               <div className="border-t border-border my-8"></div>
