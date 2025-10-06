@@ -13,7 +13,9 @@ export const machines = pgTable("machines", {
 
 export const bookings = pgTable("bookings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  date: timestamp("date").notNull(),
+  offer: text("offer").notNull(), // "1 Journée", "Week-end", "Événement"
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
   startHour: integer("start_hour").notNull(), // 0-23
   endHour: integer("end_hour").notNull(), // 1-24
   customerName: text("customer_name").notNull(),
@@ -39,7 +41,8 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  date: z.union([z.date(), z.string().transform((val) => new Date(val))]),
+  startDate: z.union([z.date(), z.string().transform((val) => new Date(val))]),
+  endDate: z.union([z.date(), z.string().transform((val) => new Date(val))]),
 });
 
 export type InsertMachine = z.infer<typeof insertMachineSchema>;
