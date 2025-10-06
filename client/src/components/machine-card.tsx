@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Snowflake, Zap, Droplets, ThermometerSnowflake } from "lucide-react";
 import { Machine } from "@shared/schema";
 import { Link } from "wouter";
 
@@ -32,43 +32,77 @@ export default function MachineCard({ machine }: MachineCardProps) {
   const isAvailable = machine.status === "AVAILABLE";
 
   return (
-    <Card className={`rounded-3xl overflow-hidden hover:shadow-xl transition-shadow ${!isAvailable ? 'opacity-75' : ''}`}>
-      <img 
-        src="https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400" 
-        alt="Machine à granité EZBASICS" 
-        className={`w-full h-48 object-cover ${!isAvailable ? 'grayscale' : ''}`}
-        data-testid={`img-machine-${machine.id}`}
-      />
-      
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-foreground" data-testid={`text-machine-name-${machine.id}`}>
-            {machine.name}
-          </h3>
-          <Badge className={status.className} data-testid={`badge-status-${machine.id}`}>
+    <Card className={`rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105 ${!isAvailable ? 'opacity-75' : ''}`}>
+      <div className="relative">
+        <img 
+          src="https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400" 
+          alt="Machine à granité EZBASICS professionnelle double cuve" 
+          className={`w-full h-56 object-cover ${!isAvailable ? 'grayscale' : ''}`}
+          data-testid={`img-machine-${machine.id}`}
+        />
+        <div className="absolute top-4 right-4">
+          <Badge className={`${status.className} shadow-lg`} data-testid={`badge-status-${machine.id}`}>
             {status.label}
           </Badge>
         </div>
+        {isAvailable && (
+          <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-primary">
+            🍹 Prête à l'emploi
+          </div>
+        )}
+      </div>
+      
+      <CardContent className="p-6">
+        <div className="mb-4">
+          <h3 className="text-xl font-bold text-foreground mb-2" data-testid={`text-machine-name-${machine.id}`}>
+            {machine.name}
+          </h3>
+          <p className="text-sm text-muted-foreground">Machine professionnelle EZBASICS</p>
+        </div>
         
-        <div className="space-y-3 text-sm text-muted-foreground mb-6">
-          <div className="flex items-center gap-2" data-testid={`feature-capacity-${machine.id}`}>
-            <CheckCircle className="w-4 h-4" />
-            <span>Double cuve 12L chacune</span>
+        <div className="bg-muted/50 rounded-2xl p-4 mb-6">
+          <h4 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
+            <Snowflake className="w-4 h-4 text-primary" />
+            Caractéristiques techniques
+          </h4>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2" data-testid={`feature-capacity-${machine.id}`}>
+              <Droplets className="w-4 h-4 text-primary" />
+              <span><strong>2 cuves</strong> de 12L chacune (24L total)</span>
+            </div>
+            <div className="flex items-center gap-2" data-testid={`feature-cooling-${machine.id}`}>
+              <ThermometerSnowflake className="w-4 h-4 text-primary" />
+              <span>Température réglable <strong>-3°C à -6°C</strong></span>
+            </div>
+            <div className="flex items-center gap-2" data-testid={`feature-power-${machine.id}`}>
+              <Zap className="w-4 h-4 text-primary" />
+              <span>Compresseur <strong>haute performance</strong></span>
+            </div>
+            <div className="flex items-center gap-2" data-testid={`feature-clean-${machine.id}`}>
+              <CheckCircle className="w-4 h-4 text-success" />
+              <span>Nettoyage facile et rapide</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2" data-testid={`feature-cooling-${machine.id}`}>
-            <CheckCircle className="w-4 h-4" />
-            <span>Réfrigération rapide</span>
-          </div>
-          <div className="flex items-center gap-2" data-testid={`feature-clean-${machine.id}`}>
-            <CheckCircle className="w-4 h-4" />
-            <span>Facile à nettoyer</span>
+        </div>
+
+        <div className="mb-6">
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p className="flex items-center gap-2">
+              ✅ Livraison et installation incluses
+            </p>
+            <p className="flex items-center gap-2">
+              📖 Manuel d'utilisation fourni
+            </p>
+            <p className="flex items-center gap-2">
+              🎯 Support technique 7j/7
+            </p>
           </div>
         </div>
         
         {isAvailable ? (
           <Link href="/booking">
             <Button 
-              className="w-full rounded-2xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
+              className="w-full rounded-2xl bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:opacity-90 transition-all shadow-lg hover:shadow-xl"
               data-testid={`button-book-machine-${machine.id}`}
             >
               Réserver cette machine
@@ -77,10 +111,10 @@ export default function MachineCard({ machine }: MachineCardProps) {
         ) : (
           <Button 
             disabled 
-            className="w-full rounded-2xl cursor-not-allowed"
+            className="w-full rounded-2xl cursor-not-allowed bg-muted"
             data-testid={`button-unavailable-${machine.id}`}
           >
-            Non disponible
+            {machine.status === 'MAINTENANCE' ? 'En maintenance' : 'Déjà réservée'}
           </Button>
         )}
       </CardContent>
