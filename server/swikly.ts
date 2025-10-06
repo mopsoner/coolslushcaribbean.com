@@ -1,33 +1,42 @@
 import type { Booking } from "@shared/schema";
 
 interface SwiklyConfig {
-  apiKey: string;
-  apiSecret: string;
+  apiToken: string;
+  accountId: string;
   environment: 'production' | 'sandbox';
 }
 
 interface SwiklyDepositRequest {
-  clientFirstName: string;
-  clientLastName: string;
-  clientEmail: string;
-  clientPhoneNumber?: string;
-  clientLanguage: 'FR' | 'EN' | 'NL' | 'DE';
-  swikAmount: string;
-  swikDescription: string;
-  swikEndDay: string;
-  swikEndMonth: string;
-  swikEndYear: string;
-  swikId: string;
-  sendEmail: 'true' | 'false';
-  swikType: 'security deposit' | 'reservation';
+  customId: string;
+  description: string;
+  language: string;
   callbackUrl?: string;
+  endUser: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    language: string;
+    phoneNumber?: string;
+  };
+  deposit: {
+    amount: number;
+    description: string;
+    startDate: string;
+    endDate: string;
+  };
 }
 
 interface SwiklyResponse {
-  status: 'ok' | 'error';
-  acceptUrl?: string;
+  request?: {
+    id: string;
+    link: string;
+    deposit?: {
+      amount: number;
+      status: string;
+    };
+  };
   message?: string;
-  swik?: any;
+  code?: string;
 }
 
 class SwiklyAPI {
@@ -37,55 +46,62 @@ class SwiklyAPI {
   constructor(config: SwiklyConfig) {
     this.config = config;
     this.baseUrl = config.environment === 'production' 
-      ? 'https://api.swikly.com'
-      : 'https://api-sandbox.swikly.com';
+      ? 'https://api.v2.swikly.com/v1'
+      : 'https://api.sandbox.swikly.com/v1';
   }
 
   async createDeposit(booking: Booking, callbackBaseUrl?: string): Promise<SwiklyResponse> {
     try {
-      // Split customer name into first and last name
       const nameParts = booking.customerName.split(' ');
       const firstName = nameParts[0] || 'Client';
       const lastName = nameParts.slice(1).join(' ') || 'Cool\'Slush';
 
-      // Calculate deposit end date (48h after event)
       const eventDate = new Date(booking.date);
+      const depositStartDate = new Date(eventDate);
+      depositStartDate.setDate(depositStartDate.getDate() - 1);
       const depositEndDate = new Date(eventDate);
-      depositEndDate.setDate(depositEndDate.getDate() + 2); // +2 days after event
+      depositEndDate.setDate(depositEndDate.getDate() + 2);
 
-      // Create FormData for multipart/form-data request (required by Swikly API)
-      const formData = new FormData();
-      formData.append('first_name', firstName);
-      formData.append('last_name', lastName);
-      formData.append('client_email', booking.customerEmail);
-      formData.append('phone_number', booking.customerPhone || '');
-      formData.append('swik_lang', 'FR');
-      formData.append('swik_amount', '500'); // 500€ deposit
-      formData.append('swik_description', `Caution - Location machine à granité Cool'Slush`);
-      formData.append('swik_end_day', depositEndDate.getDate().toString());
-      formData.append('swik_end_month', (depositEndDate.getMonth() + 1).toString());
-      formData.append('swik_end_year', depositEndDate.getFullYear().toString());
-      formData.append('id', booking.id); // Custom business ID
-      formData.append('email', 'true'); // Swikly sends email automatically
-      formData.append('swik_type', 'deposit'); // Type: deposit, reservation, or payment
-      
+      const requestBody: SwiklyDepositRequest = {
+        customId: booking.id,
+        description: `Location machine à granité Cool'Slush - ${booking.date}`,
+        language: 'fr',
+        endUser: {
+          email: booking.customerEmail,
+          firstName: firstName,
+          lastName: lastName,
+          language: 'fr',
+          phoneNumber: booking.customerPhone || undefined,
+        },
+        deposit: {
+          amount: 50000,
+          description: `Caution - Location machine à granité Cool'Slush`,
+          startDate: depositStartDate.toISOString().split('T')[0],
+          endDate: depositEndDate.toISOString().split('T')[0],
+        },
+      };
+
       if (callbackBaseUrl) {
-        formData.append('callback_url', `${callbackBaseUrl}/api/swikly-callback`);
+        requestBody.callbackUrl = `${callbackBaseUrl}/api/swikly-callback`;
       }
 
-      const response = await fetch(`${this.baseUrl}/v1_0/newSwik`, {
-        method: 'POST',
-        headers: {
-          'api_key': this.config.apiKey,
-          'api_secret': this.config.apiSecret,
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        `${this.baseUrl}/accounts/${this.config.accountId}/requests`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.config.apiToken}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       const data: SwiklyResponse = await response.json();
 
-      if (data.status === 'ok' && data.acceptUrl) {
-        console.log('✅ Swikly deposit created:', data.acceptUrl);
+      if (data.request?.link) {
+        console.log('✅ Swikly deposit created:', data.request.link);
         return data;
       } else {
         console.error('❌ Swikly error:', data.message || 'Unknown error');
@@ -97,17 +113,18 @@ class SwiklyAPI {
     }
   }
 
-  async getDepositStatus(swikId: string): Promise<SwiklyResponse> {
+  async getDepositStatus(requestId: string): Promise<SwiklyResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/swik/get`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': this.config.apiKey,
-          'X-API-SECRET': this.config.apiSecret,
-        },
-        body: JSON.stringify({ swikId }),
-      });
+      const response = await fetch(
+        `${this.baseUrl}/accounts/${this.config.accountId}/requests/${requestId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${this.config.apiToken}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
 
       const data: SwiklyResponse = await response.json();
       return data;
@@ -117,22 +134,24 @@ class SwiklyAPI {
     }
   }
 
-  async releaseDeposit(swikId: string): Promise<SwiklyResponse> {
+  async releaseDeposit(requestId: string): Promise<SwiklyResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/swik/release`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': this.config.apiKey,
-          'X-API-SECRET': this.config.apiSecret,
-        },
-        body: JSON.stringify({ swikId }),
-      });
+      const response = await fetch(
+        `${this.baseUrl}/accounts/${this.config.accountId}/requests/${requestId}/release`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.config.apiToken}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const data: SwiklyResponse = await response.json();
       
-      if (data.status === 'ok') {
-        console.log('✅ Swikly deposit released for:', swikId);
+      if (data.request) {
+        console.log('✅ Swikly deposit released for:', requestId);
       }
       
       return data;
@@ -143,21 +162,20 @@ class SwiklyAPI {
   }
 }
 
-// Initialize Swikly API client
 let swiklyClient: SwiklyAPI | null = null;
 
 export function getSwiklyClient(): SwiklyAPI {
   if (!swiklyClient) {
-    const apiKey = process.env.SWIKLY_API_KEY;
-    const apiSecret = process.env.SWIKLY_API_SECRET;
+    const apiToken = process.env.SWIKLY_API_KEY;
+    const accountId = process.env.SWIKLY_ACCOUNT_ID;
 
-    if (!apiKey || !apiSecret) {
-      throw new Error('Swikly API credentials not configured. Please set SWIKLY_API_KEY and SWIKLY_API_SECRET.');
+    if (!apiToken || !accountId) {
+      throw new Error('Swikly API credentials not configured. Please set SWIKLY_API_KEY and SWIKLY_ACCOUNT_ID.');
     }
 
     swiklyClient = new SwiklyAPI({
-      apiKey,
-      apiSecret,
+      apiToken,
+      accountId,
       environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
     });
   }
