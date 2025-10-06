@@ -108,19 +108,15 @@ class SwiklyAPI {
       const data: SwiklyResponse = await response.json();
 
       if (data.request?.link) {
-        console.log('✅ Swikly deposit created:', data.request.link);
         return data;
       } else {
-        console.error('❌ Swikly error:', data.message || 'Unknown error');
         throw new Error(data.message || 'Failed to create Swikly deposit');
       }
     } catch (error: any) {
-      // Better error logging for network issues
       if (error.cause?.code === 'ENOTFOUND' || error.message?.includes('getaddrinfo')) {
-        console.error('❌ Swikly DNS resolution error - cannot reach Swikly API:', this.baseUrl);
-        console.error('   Check your internet connection or Swikly API status');
+        console.error('Swikly DNS resolution error - cannot reach Swikly API:', this.baseUrl);
       } else {
-        console.error('❌ Swikly API error:', error);
+        console.error('Swikly API error:', error);
       }
       throw error;
     }
@@ -142,7 +138,7 @@ class SwiklyAPI {
       const data: SwiklyResponse = await response.json();
       return data;
     } catch (error) {
-      console.error('❌ Swikly get status error:', error);
+      console.error('Swikly get status error:', error);
       throw error;
     }
   }
@@ -162,14 +158,9 @@ class SwiklyAPI {
       );
 
       const data: SwiklyResponse = await response.json();
-      
-      if (data.request) {
-        console.log('✅ Swikly deposit released for:', requestId);
-      }
-      
       return data;
     } catch (error) {
-      console.error('❌ Swikly release error:', error);
+      console.error('Swikly release error:', error);
       throw error;
     }
   }
@@ -183,11 +174,7 @@ export function getSwiklyClient(): SwiklyAPI {
     const accountId = process.env.SWIKLY_ACCOUNT_ID;
 
     if (!apiToken || !accountId) {
-      console.error('❌ Missing Swikly credentials:', {
-        hasApiKey: !!apiToken,
-        hasAccountId: !!accountId,
-        nodeEnv: process.env.NODE_ENV
-      });
+      console.error('Missing Swikly credentials');
       throw new Error('Swikly API credentials not configured. Please set SWIKLY_API_KEY and SWIKLY_ACCOUNT_ID.');
     }
 
@@ -195,12 +182,6 @@ export function getSwiklyClient(): SwiklyAPI {
     // TODO: Remove this and use real production credentials before going live
     const forceSandbox = true;
     const isProduction = !forceSandbox && (process.env.NODE_ENV === 'production' || process.env.SWIKLY_ENV === 'production');
-    
-    console.log('🔧 Initializing Swikly client:', {
-      accountId: accountId.substring(0, 8) + '...',
-      environment: isProduction ? 'production' : 'sandbox',
-      forcedSandbox: forceSandbox
-    });
 
     swiklyClient = new SwiklyAPI({
       apiToken,

@@ -71,47 +71,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let swiklySuccess = false;
       
       try {
-        console.log('🔄 Creating Swikly deposit...', { 
-          bookingId: booking.id, 
-          baseUrl,
-          env: process.env.NODE_ENV
-        });
-        
         const swiklyClient = getSwiklyClient();
         const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
         
         if (swiklyResult.request?.link) {
           swiklyUrl = swiklyResult.request.link;
           swiklySuccess = true;
-          console.log('✅ Swikly deposit URL created:', swiklyUrl);
-          console.log('✅ Swikly callback URL configured:', `${baseUrl}/api/swikly-callback`);
         } else {
           throw new Error('No Swikly URL returned');
         }
       } catch (swiklyError: any) {
-        console.error('❌ Swikly creation failed:', swiklyError.message);
-        console.error('❌ Swikly error stack:', swiklyError.stack);
-        
-        // Fallback to placeholder URL if Swikly API fails
+        console.error('Swikly creation failed:', swiklyError.message);
         swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
-        console.log('⚠️ Using fallback Swikly URL:', swiklyUrl);
       }
       
       const updatedBooking = await storage.updateBooking(booking.id, { swiklyUrl });
 
       // Send confirmation email (Swikly sends its own email automatically)
       if (updatedBooking) {
-        sendBookingConfirmation(updatedBooking).catch(err => 
-          console.error('Failed to send confirmation email:', err)
-        );
+        sendBookingConfirmation(updatedBooking).catch(() => {});
         
         // Only send our Swikly email if API failed (Swikly sends email automatically)
         // Check for swikly.com or swik.link domains
         const isRealSwiklyUrl = swiklyUrl.includes('swikly.com') || swiklyUrl.includes('swik.link');
         if (!isRealSwiklyUrl) {
-          sendSwiklyDepositEmail(updatedBooking).catch(err =>
-            console.error('Failed to send Swikly deposit email:', err)
-          );
+          sendSwiklyDepositEmail(updatedBooking).catch(() => {});
         }
       }
 
@@ -191,17 +175,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { swikId, status } = req.body;
       
-      console.log('📥 Swikly callback received:', { swikId, status });
-      
       // Update booking status based on Swikly callback
       if (status === 'completed' || status === 'accepted') {
         await storage.updateBookingStatus(swikId, "CONFIRMED");
-        console.log('✅ Booking confirmed via Swikly callback:', swikId);
       }
       
       res.json({ success: true });
     } catch (error: any) {
-      console.error('❌ Swikly callback error:', error);
+      console.error('Swikly callback error:', error);
       res.status(500).json({ error: error.message });
     }
   });

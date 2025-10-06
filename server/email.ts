@@ -31,10 +31,8 @@ async function getTransporter() {
           pass: testAccount.pass,
         },
       });
-      console.log('📧 Using Ethereal test email account for development');
     } catch (error: any) {
-      console.error('❌ Failed to create Ethereal test account:', error.message);
-      console.log('⚠️ Email functionality disabled. Configure SMTP settings to enable emails.');
+      console.error('Failed to create Ethereal test account:', error.message);
       // Return a dummy transporter that does nothing
       transporter = nodemailer.createTransport({
         streamTransport: true,
@@ -205,15 +203,8 @@ Cool'Slush Guadeloupe - Guadeloupe, Antilles Françaises
       `,
     });
 
-    // Log preview URL for development (Ethereal)
-    if (process.env.NODE_ENV === 'development' && !process.env.SMTP_HOST) {
-      console.log('📧 Preview email: %s', nodemailer.getTestMessageUrl(info));
-    }
-
-    console.log('✅ Email sent to %s', booking.customerEmail);
   } catch (error) {
-    console.error('❌ Error sending email:', error);
-    // Don't throw - we don't want to fail the booking if email fails
+    console.error('Error sending email:', error);
   }
 }
 
@@ -284,9 +275,8 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
       `,
     });
 
-    console.log('✅ Reminder email sent to %s', booking.customerEmail);
   } catch (error) {
-    console.error('❌ Error sending reminder email:', error);
+    console.error('Error sending reminder email:', error);
   }
 }
 
@@ -440,9 +430,8 @@ Cool'Slush Guadeloupe - Guadeloupe, Antilles Françaises
       `,
     });
 
-    console.log('✅ Swikly deposit email sent to %s', booking.customerEmail);
   } catch (error) {
-    console.error('❌ Error sending Swikly email:', error);
+    console.error('Error sending Swikly email:', error);
   }
 }
 
@@ -503,8 +492,7 @@ export async function sendFollowUpEmail(booking: Booking): Promise<void> {
       `,
     });
 
-    console.log('✅ Follow-up email sent to %s', booking.customerEmail);
   } catch (error) {
-    console.error('❌ Error sending follow-up email:', error);
+    console.error('Error sending follow-up email:', error);
   }
 }
