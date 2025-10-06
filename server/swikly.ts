@@ -81,7 +81,7 @@ class SwiklyAPI {
         },
       };
 
-      if (callbackBaseUrl) {
+      if (callbackBaseUrl && !callbackBaseUrl.includes('localhost')) {
         requestBody.callbackUrl = `${callbackBaseUrl}/api/swikly-callback`;
       }
 
