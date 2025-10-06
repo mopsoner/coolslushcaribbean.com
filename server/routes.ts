@@ -67,12 +67,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create Swikly deposit request via API
       let swiklyUrl = '';
+      let swiklySuccess = false;
+      
       try {
+        console.log('🔄 Creating Swikly deposit...', { 
+          bookingId: booking.id, 
+          baseUrl,
+          env: process.env.NODE_ENV
+        });
+        
         const swiklyClient = getSwiklyClient();
         const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
         
         if (swiklyResult.request?.link) {
           swiklyUrl = swiklyResult.request.link;
+          swiklySuccess = true;
           console.log('✅ Swikly deposit URL created:', swiklyUrl);
           console.log('✅ Swikly callback URL configured:', `${baseUrl}/api/swikly-callback`);
         } else {
@@ -80,6 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (swiklyError: any) {
         console.error('❌ Swikly creation failed:', swiklyError.message);
+        console.error('❌ Swikly error stack:', swiklyError.stack);
         
         // Fallback to placeholder URL if Swikly API fails
         swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
@@ -94,8 +104,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('Failed to send confirmation email:', err)
         );
         
-        // Only send our Swikly email if API failed (Swikly API sends email automatically when sendEmail: 'true')
-        if (!swiklyUrl.includes('swikly.com')) {
+        // Only send our Swikly email if API failed (Swikly sends email automatically)
+        // Check for swikly.com or swik.link domains
+        const isRealSwiklyUrl = swiklyUrl.includes('swikly.com') || swiklyUrl.includes('swik.link');
+        if (!isRealSwiklyUrl) {
           sendSwiklyDepositEmail(updatedBooking).catch(err =>
             console.error('Failed to send Swikly deposit email:', err)
           );
