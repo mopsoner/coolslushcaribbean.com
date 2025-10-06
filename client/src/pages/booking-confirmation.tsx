@@ -60,12 +60,20 @@ export default function BookingConfirmation() {
     );
   }
 
-  const bookingDate = new Date(booking.date).toLocaleDateString('fr-FR', {
+  const startDate = new Date(booking.startDate);
+  const endDate = new Date(booking.endDate);
+  
+  const bookingDate = startDate.toLocaleDateString('fr-FR', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
+  
+  const isMultipleDays = startDate.toDateString() !== endDate.toDateString();
+  const dateDisplay = isMultipleDays 
+    ? `${startDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - ${endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+    : bookingDate;
 
   const handleContinueToSwikly = () => {
     if (booking.swiklyUrl) {
@@ -196,8 +204,12 @@ export default function BookingConfirmation() {
             <CardContent className="p-6">
               <div className="bg-white dark:bg-muted/30 rounded-xl p-6 space-y-3 border border-border">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date</span>
-                  <span className="font-semibold text-foreground">{bookingDate}</span>
+                  <span className="text-muted-foreground">Offre</span>
+                  <span className="font-semibold text-foreground">{booking.offer}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isMultipleDays ? 'Période' : 'Date'}</span>
+                  <span className="font-semibold text-foreground">{dateDisplay}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Horaires</span>

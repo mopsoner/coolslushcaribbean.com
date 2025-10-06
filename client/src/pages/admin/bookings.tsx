@@ -152,8 +152,13 @@ export default function AdminBookings() {
                             </div>
                           </TableCell>
                           <TableCell className="px-6 py-4">
-                            <div className="font-medium text-foreground" data-testid={`text-booking-date-${booking.id}`}>
-                              {new Date(booking.date).toLocaleDateString('fr-FR')}
+                            <div className="font-medium text-foreground" data-testid={`text-booking-offer-${booking.id}`}>
+                              {booking.offer}
+                            </div>
+                            <div className="text-sm text-muted-foreground" data-testid={`text-booking-date-${booking.id}`}>
+                              {new Date(booking.startDate).toDateString() !== new Date(booking.endDate).toDateString() 
+                                ? `${new Date(booking.startDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - ${new Date(booking.endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
+                                : new Date(booking.startDate).toLocaleDateString('fr-FR')}
                             </div>
                             <div className="text-sm text-muted-foreground" data-testid={`text-booking-time-${booking.id}`}>
                               {booking.startHour.toString().padStart(2, '0')}:00 - {booking.endHour.toString().padStart(2, '0')}:00

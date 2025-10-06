@@ -146,10 +146,18 @@ export default function Checkout() {
                     <span className="text-muted-foreground">Réservation</span>
                     <span className="font-semibold text-foreground">#{booking.id.slice(-8)}</span>
                   </div>
+                  <div className="flex justify-between" data-testid="booking-detail-offer">
+                    <span className="text-muted-foreground">Offre</span>
+                    <span className="font-semibold text-foreground">{booking.offer}</span>
+                  </div>
                   <div className="flex justify-between" data-testid="booking-detail-date">
-                    <span className="text-muted-foreground">Date</span>
+                    <span className="text-muted-foreground">
+                      {new Date(booking.startDate).toDateString() !== new Date(booking.endDate).toDateString() ? 'Période' : 'Date'}
+                    </span>
                     <span className="font-semibold text-foreground">
-                      {new Date(booking.date).toLocaleDateString('fr-FR')}
+                      {new Date(booking.startDate).toDateString() !== new Date(booking.endDate).toDateString() 
+                        ? `${new Date(booking.startDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - ${new Date(booking.endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                        : new Date(booking.startDate).toLocaleDateString('fr-FR')}
                     </span>
                   </div>
                   <div className="flex justify-between" data-testid="booking-detail-time">
