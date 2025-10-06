@@ -66,10 +66,42 @@ Preferred communication style: Simple, everyday language.
 **Data Models**
 - **Machines**: Track slushy machine inventory with status (AVAILABLE, UNAVAILABLE, MAINTENANCE)
 - **Bookings**: Store customer reservations with date, time slots, customer info, payment status, and external references (Stripe, Swikly)
+- **Offers**: Define rental offers (1 Journée, Week-end, Événement) with default prices
+- **Price Configurations**: Store pricing rules per offer, with optional machine-specific overrides
 
 **Validation Strategy**
 - Shared Zod schemas between client and server for consistent validation
 - Schema inference for TypeScript types ensures type safety across the stack
+
+### Dynamic Pricing System
+
+**Architecture** (Added October 6, 2025)
+- Database-driven pricing with admin-managed offer configurations
+- Support for default offer pricing and optional machine-specific overrides
+- Real-time price calculation on frontend and backend
+
+**Admin Interface**
+- Back-office pricing management at `/admin/pricing`
+- CRUD operations for offers and price configurations
+- Edit/delete/create pricing rules through intuitive UI
+- Automatic cache invalidation via React Query
+
+**Pricing Flow**
+1. Admin defines offers (1 Journée, Week-end, Événement) with default prices in database
+2. Optional: Admin sets machine-specific price overrides
+3. Customer booking form fetches offers via GET `/api/offers`
+4. Frontend calculates and displays total: `price × machineCount`
+5. Backend validates and recalculates on booking creation using `storage.getOfferByName()` and `storage.getEffectivePrice()`
+6. Final totalCents stored in booking record for payment processing
+
+**Default Offers** (Seeded)
+- "1 Journée": 150€ per machine
+- "Week-end": 250€ per machine
+- "Événement": 350€ per machine
+
+**Testing Configuration**
+- **TEMPORARY**: Swikly deposit set to 1€ (100 cents) for testing purposes
+- **TODO**: Restore to 500€ before production deployment
 
 ### Authentication and Authorization
 
