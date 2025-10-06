@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { insertBookingSchema } from "@shared/schema";
+import { insertBookingSchema, insertOfferSchema, insertPriceConfigurationSchema } from "@shared/schema";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
@@ -215,6 +215,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Fallback: simulate successful caution and redirect to payment
     await storage.updateBookingStatus(bookingId, "CONFIRMED");
     res.redirect(`/checkout?booking=${bookingId}`);
+  });
+
+  // ============= OFFERS ROUTES (PUBLIC) =============
+  
+  // Get all active offers with prices
+  app.get("/api/offers", async (req, res) => {
+    try {
+      const offers = await storage.getActiveOffers();
+      const offersWithPrices = await Promise.all(
+        offers.map(async (offer) => {
+          const price = await storage.getEffectivePrice(offer.id);
+          return {
+            ...offer,
+            amountCents: price?.amountCents || 0,
+          };
+        })
+      );
+      res.json(offersWithPrices);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============= ADMIN OFFERS ROUTES =============
+  
+  // Get all offers (admin)
+  app.get("/api/admin/offers", async (req, res) => {
+    try {
+      const offers = await storage.getAllOffers();
+      res.json(offers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create an offer (admin)
+  app.post("/api/admin/offers", async (req, res) => {
+    try {
+      const validatedData = insertOfferSchema.parse(req.body);
+      const offer = await storage.createOffer(validatedData);
+      res.json(offer);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  // Update an offer (admin)
+  app.patch("/api/admin/offers/:id", async (req, res) => {
+    try {
+      const offer = await storage.updateOffer(req.params.id, req.body);
+      if (!offer) {
+        return res.status(404).json({ error: "Offre non trouvée" });
+      }
+      res.json(offer);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============= ADMIN PRICE CONFIGURATION ROUTES =============
+  
+  // Get all price configurations (admin)
+  app.get("/api/admin/price-configs", async (req, res) => {
+    try {
+      const configs = await storage.getAllPriceConfigurations();
+      res.json(configs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get price configurations by offer (admin)
+  app.get("/api/admin/price-configs/offer/:offerId", async (req, res) => {
+    try {
+      const configs = await storage.getPriceConfigurationsByOffer(req.params.offerId);
+      res.json(configs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create a price configuration (admin)
+  app.post("/api/admin/price-configs", async (req, res) => {
+    try {
+      const validatedData = insertPriceConfigurationSchema.parse(req.body);
+      const config = await storage.createPriceConfiguration(validatedData);
+      res.json(config);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  // Update a price configuration (admin)
+  app.patch("/api/admin/price-configs/:id", async (req, res) => {
+    try {
+      const config = await storage.updatePriceConfiguration(req.params.id, req.body);
+      if (!config) {
+        return res.status(404).json({ error: "Configuration de prix non trouvée" });
+      }
+      res.json(config);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete a price configuration (admin)
+  app.delete("/api/admin/price-configs/:id", async (req, res) => {
+    try {
+      await storage.deletePriceConfiguration(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
   });
 
   // Test email route (development only)
