@@ -211,7 +211,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const testBooking = {
           id: "test-booking-123",
-          date: new Date(),
+          offer: "Week-end",
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days later
           startHour: 10,
           endHour: 18,
           customerName: "Test Client",

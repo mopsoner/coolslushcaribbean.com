@@ -15,7 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, Phone, Mail, Snowflake, Lock, Shield, CheckCircle } from "lucide-react";
 
 const bookingSchema = z.object({
-  date: z.string().min(1, "Date requise"),
+  offer: z.string().min(1, "Veuillez sélectionner une offre"),
+  startDate: z.string().min(1, "Date de début requise"),
+  endDate: z.string().optional(),
   startHour: z.number().min(0).max(23),
   endHour: z.number().min(1).max(24),
   customerName: z.string().min(2, "Nom requis (min. 2 caractères)"),
@@ -27,14 +29,23 @@ const bookingSchema = z.object({
 
 type BookingFormData = z.infer<typeof bookingSchema>;
 
+const offers = [
+  { value: "1 Journée", label: "1 Journée - 90€/machine", price: 9000 },
+  { value: "Week-end", label: "Week-end - 160€/machine", price: 16000 },
+  { value: "Événement", label: "Événement - Sur devis", price: 0 },
+];
+
 export default function BookingForm() {
   const [machines, setMachines] = useState(1);
+  const [selectedOffer, setSelectedOffer] = useState("");
   const { toast } = useToast();
   
   const form = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
-      date: "",
+      offer: "",
+      startDate: "",
+      endDate: "",
       startHour: 10,
       endHour: 18,
       customerName: "",
@@ -72,7 +83,13 @@ export default function BookingForm() {
 
   const onSubmit = (data: BookingFormData) => {
     const { terms, ...bookingData } = data;
-    bookingMutation.mutate({ ...bookingData, machines });
+    // Pour "1 Journée", endDate = startDate
+    const endDate = data.offer === "1 Journée" ? data.startDate : (data.endDate || data.startDate);
+    bookingMutation.mutate({ 
+      ...bookingData, 
+      endDate,
+      machines 
+    });
   };
 
   const incrementMachines = () => {
@@ -108,28 +125,89 @@ export default function BookingForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               
-              {/* Date Selection */}
+              {/* Offer Selection */}
               <FormField
                 control={form.control}
-                name="date"
+                name="offer"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center text-sm font-semibold text-foreground">
-                      <Calendar className="w-4 h-4 text-primary mr-2" />
-                      Date de location
+                      <Snowflake className="w-4 h-4 text-primary mr-2" />
+                      Type d'offre
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        className="booking-form-input"
-                        data-testid="input-date"
-                        {...field}
-                      />
-                    </FormControl>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedOffer(value);
+                      }} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="booking-form-input" data-testid="select-offer">
+                          <SelectValue placeholder="Choisissez votre offre" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {offers.map((offer) => (
+                          <SelectItem key={offer.value} value={offer.value}>
+                            {offer.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* Date Selection - Conditional based on offer */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center text-sm font-semibold text-foreground">
+                        <Calendar className="w-4 h-4 text-primary mr-2" />
+                        {selectedOffer === "1 Journée" ? "Date de location" : "Date de début"}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          className="booking-form-input"
+                          data-testid="input-start-date"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {selectedOffer && selectedOffer !== "1 Journée" && (
+                  <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center text-sm font-semibold text-foreground">
+                          <Calendar className="w-4 h-4 text-primary mr-2" />
+                          Date de fin
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            className="booking-form-input"
+                            data-testid="input-end-date"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
 
               {/* Time Range */}
               <div className="grid md:grid-cols-2 gap-4">

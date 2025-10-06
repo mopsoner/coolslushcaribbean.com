@@ -41,7 +41,7 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
     const transporter = await getTransporter();
     const fromEmail = process.env.EMAIL_FROM || 'Cool\'Slush Guadeloupe <noreply@coolslush.gp>';
 
-    const bookingDate = new Date(booking.date).toLocaleDateString('fr-FR', {
+    const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -212,7 +212,7 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
     const transporter = await getTransporter();
     const fromEmail = process.env.EMAIL_FROM || 'Cool\'Slush Guadeloupe <noreply@coolslush.gp>';
 
-    const bookingDate = new Date(booking.date).toLocaleDateString('fr-FR', {
+    const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -285,7 +285,7 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
     const transporter = await getTransporter();
     const fromEmail = process.env.EMAIL_FROM || 'Cool\'Slush Guadeloupe <noreply@coolslush.gp>';
 
-    const bookingDate = new Date(booking.date).toLocaleDateString('fr-FR', {
+    const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
