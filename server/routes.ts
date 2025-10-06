@@ -60,15 +60,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalCents,
       });
 
+      // Detect the base URL for callbacks
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
+      const baseUrl = `${protocol}://${host}`;
+      
       // Create Swikly deposit request via API
       let swiklyUrl = '';
       try {
         const swiklyClient = getSwiklyClient();
-        const swiklyResult = await swiklyClient.createDeposit(booking);
+        const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
         
         if (swiklyResult.acceptUrl) {
           swiklyUrl = swiklyResult.acceptUrl;
           console.log('✅ Swikly deposit URL created:', swiklyUrl);
+          console.log('✅ Swikly callback URL configured:', `${baseUrl}/api/swikly-callback`);
         } else {
           throw new Error('No Swikly URL returned');
         }
@@ -76,9 +82,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('❌ Swikly creation failed:', swiklyError.message);
         
         // Fallback to placeholder URL if Swikly API fails
-        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-        const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
-        const baseUrl = `${protocol}://${host}`;
         swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
         console.log('⚠️ Using fallback Swikly URL:', swiklyUrl);
       }

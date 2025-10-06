@@ -41,7 +41,7 @@ class SwiklyAPI {
       : 'https://apisandbox.swikly.com';
   }
 
-  async createDeposit(booking: Booking): Promise<SwiklyResponse> {
+  async createDeposit(booking: Booking, callbackBaseUrl?: string): Promise<SwiklyResponse> {
     try {
       // Split customer name into first and last name
       const nameParts = booking.customerName.split(' ');
@@ -67,7 +67,7 @@ class SwiklyAPI {
         swikId: booking.id,
         sendEmail: 'true', // Swikly will send email to customer
         swikType: 'security deposit',
-        callbackUrl: `${process.env.BASE_URL || 'https://your-domain.replit.app'}/api/swikly-callback`,
+        callbackUrl: callbackBaseUrl ? `${callbackBaseUrl}/api/swikly-callback` : undefined,
       };
 
       const response = await fetch(`${this.baseUrl}/api/v1/swik/create`, {
