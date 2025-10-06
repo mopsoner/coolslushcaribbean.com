@@ -40,6 +40,7 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  machines: true, // Omit to redefine with strict validation
 }).extend({
   startDate: z.union([
     z.date(), 
