@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { storage } from "./storage";
 import { insertBookingSchema } from "@shared/schema";
 import { z } from "zod";
-import { sendBookingConfirmation } from "./email";
+import { sendBookingConfirmation, sendSwiklyDepositEmail } from "./email";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -67,10 +67,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedBooking = await storage.updateBooking(booking.id, { swiklyUrl });
 
-      // Send confirmation email asynchronously (don't wait for it)
+      // Send confirmation and Swikly deposit emails asynchronously (don't wait for them)
       if (updatedBooking) {
         sendBookingConfirmation(updatedBooking).catch(err => 
           console.error('Failed to send confirmation email:', err)
+        );
+        sendSwiklyDepositEmail(updatedBooking).catch(err =>
+          console.error('Failed to send Swikly deposit email:', err)
         );
       }
 

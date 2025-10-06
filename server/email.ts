@@ -280,6 +280,162 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
   }
 }
 
+export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
+  try {
+    const transporter = await getTransporter();
+    const fromEmail = process.env.EMAIL_FROM || 'Cool\'Slush Guadeloupe <noreply@coolslush.gp>';
+
+    const bookingDate = new Date(booking.date).toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    // Swikly URL should be set when booking is created
+    const swiklyLink = booking.swiklyUrl || '#';
+
+    await transporter.sendMail({
+      from: fromEmail,
+      to: booking.customerEmail,
+      subject: `🔒 Sécurisez votre réservation - Caution Swikly`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; }
+            .info-box { background: #F3F4F6; border-left: 4px solid #8B5CF6; padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .button { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); color: white; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+            .footer { text-align: center; padding: 20px; color: #64748b; font-size: 0.9em; }
+            .highlight { background: #FEF3C7; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #F59E0B; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔒 Sécurisez votre réservation</h1>
+              <p style="margin-top: 10px; font-size: 1.1em;">Caution Swikly - 500€</p>
+            </div>
+            
+            <div class="content">
+              <p>Bonjour ${booking.customerName},</p>
+              
+              <p>Votre réservation <strong>#${booking.id.slice(-8)}</strong> pour le ${bookingDate} est presque finalisée !</p>
+              
+              <p><strong>Une dernière étape :</strong> sécurisez votre location avec une empreinte bancaire Swikly de 500€.</p>
+
+              <div class="highlight">
+                <p style="margin: 0; font-weight: bold;">⚠️ Important : Aucun débit ne sera effectué</p>
+                <p style="margin: 5px 0 0 0; font-size: 0.95em;">Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement.</p>
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${swiklyLink}" class="button">
+                  🔐 Compléter ma caution Swikly
+                </a>
+              </div>
+
+              <div class="info-box">
+                <h3 style="margin-top: 0; color: #6366F1;">Comment fonctionne Swikly ?</h3>
+                <ol style="margin: 10px 0; padding-left: 20px;">
+                  <li style="margin-bottom: 10px;">Cliquez sur le bouton ci-dessus</li>
+                  <li style="margin-bottom: 10px;">Entrez vos coordonnées bancaires de manière sécurisée</li>
+                  <li style="margin-bottom: 10px;">Une empreinte de 500€ est créée (aucun débit)</li>
+                  <li style="margin-bottom: 10px;">L'empreinte est libérée 48h après votre événement</li>
+                </ol>
+              </div>
+
+              <div style="background: #E0F2FE; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0;"><strong>✅ Avantages Swikly :</strong></p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                  <li>100% sécurisé et conforme RGPD</li>
+                  <li>Aucun impact sur votre plafond de carte</li>
+                  <li>Libération automatique de la caution</li>
+                  <li>Processus rapide (2 minutes)</li>
+                </ul>
+              </div>
+
+              <p><strong>📋 Récapitulatif de votre réservation :</strong></p>
+              <ul style="list-style: none; padding: 0;">
+                <li>📅 Date : ${bookingDate}</li>
+                <li>🕐 Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00</li>
+                <li>❄️ Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''}</li>
+                <li>💰 Total : ${(booking.totalCents / 100).toFixed(2)}€</li>
+              </ul>
+              
+              <p style="margin-top: 25px;"><strong>Besoin d'aide ?</strong></p>
+              <p>Notre équipe est disponible :</p>
+              <ul>
+                <li>📞 Téléphone : <a href="tel:+590690123456" style="color: #0EA5E9;">0690 12 34 56</a></li>
+                <li>📧 Email : <a href="mailto:contact@coolslush.gp" style="color: #0EA5E9;">contact@coolslush.gp</a></li>
+              </ul>
+              
+              <p style="margin-top: 30px;">À très bientôt,<br><strong>L'équipe Cool'Slush</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>Cool'Slush Guadeloupe - Location de machines à granité professionnelles</p>
+              <p style="font-size: 0.8em; color: #94a3b8; margin-top: 10px;">
+                Vous recevez cet email car vous avez effectué une réservation sur coolslush.gp
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Cool'Slush Guadeloupe - Sécurisez votre réservation
+
+Bonjour ${booking.customerName},
+
+Votre réservation #${booking.id.slice(-8)} pour le ${bookingDate} est presque finalisée !
+
+Une dernière étape : sécurisez votre location avec une empreinte bancaire Swikly de 500€.
+
+⚠️ IMPORTANT : Aucun débit ne sera effectué
+Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement.
+
+COMPLÉTER MA CAUTION SWIKLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Cliquez sur ce lien : ${swiklyLink}
+
+COMMENT FONCTIONNE SWIKLY ?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Cliquez sur le lien ci-dessus
+2. Entrez vos coordonnées bancaires de manière sécurisée
+3. Une empreinte de 500€ est créée (aucun débit)
+4. L'empreinte est libérée 48h après votre événement
+
+RÉCAPITULATIF DE VOTRE RÉSERVATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Date : ${bookingDate}
+Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00
+Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''}
+Total : ${(booking.totalCents / 100).toFixed(2)}€
+
+BESOIN D'AIDE ?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Téléphone : 0690 12 34 56
+Email : contact@coolslush.gp
+
+À très bientôt,
+L'équipe Cool'Slush
+
+Cool'Slush Guadeloupe - Guadeloupe, Antilles Françaises
+      `,
+    });
+
+    console.log('✅ Swikly deposit email sent to %s', booking.customerEmail);
+  } catch (error) {
+    console.error('❌ Error sending Swikly email:', error);
+  }
+}
+
 export async function sendFollowUpEmail(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();

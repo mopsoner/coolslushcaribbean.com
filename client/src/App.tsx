@@ -9,6 +9,9 @@ import SwiklyRedirect from "@/pages/swikly-redirect";
 import Checkout from "@/pages/checkout";
 import Success from "@/pages/success";
 import AdminBookings from "@/pages/admin/bookings";
+import Terms from "@/pages/legal/terms";
+import Privacy from "@/pages/legal/privacy";
+import Mentions from "@/pages/legal/mentions";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +23,9 @@ function Router() {
       <Route path="/checkout" component={Checkout} />
       <Route path="/success" component={Success} />
       <Route path="/admin/bookings" component={AdminBookings} />
+      <Route path="/legal/terms" component={Terms} />
+      <Route path="/legal/privacy" component={Privacy} />
+      <Route path="/legal/mentions" component={Mentions} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -331,10 +331,10 @@ export default function Home() {
             <div data-testid="footer-legal">
               <h3 className="text-white font-semibold mb-4">Légal</h3>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-primary transition-colors">Conditions générales</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Politique de confidentialité</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Mentions légales</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">CGV</a></li>
+                <li><Link href="/legal/terms" className="hover:text-primary transition-colors">Conditions générales</Link></li>
+                <li><Link href="/legal/privacy" className="hover:text-primary transition-colors">Politique de confidentialité</Link></li>
+                <li><Link href="/legal/mentions" className="hover:text-primary transition-colors">Mentions légales</Link></li>
+                <li><Link href="/legal/terms" className="hover:text-primary transition-colors">CGV</Link></li>
               </ul>
             </div>
 
