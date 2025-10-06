@@ -1,5 +1,6 @@
-import { type Machine, type InsertMachine, type Booking, type InsertBooking } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { type Machine, type InsertMachine, type Booking, type InsertBooking, machines, bookings } from "@shared/schema";
+import { db } from "../db";
+import { eq, gte, lte, and } from "drizzle-orm";
 
 export interface IStorage {
   // Machine methods
@@ -18,108 +19,55 @@ export interface IStorage {
   getBookingsByDate(date: Date): Promise<Booking[]>;
 }
 
-export class MemStorage implements IStorage {
-  private machines: Map<string, Machine>;
-  private bookings: Map<string, Booking>;
-
-  constructor() {
-    this.machines = new Map();
-    this.bookings = new Map();
-    
-    // Initialize with some demo machines
-    this.initializeMachines();
-  }
-
-  private initializeMachines() {
-    const machine1: Machine = {
-      id: "machine-1",
-      name: "EZBASICS Slushy Machine #1",
-      status: "AVAILABLE",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    const machine2: Machine = {
-      id: "machine-2", 
-      name: "EZBASICS Slushy Machine #2",
-      status: "UNAVAILABLE",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    const machine3: Machine = {
-      id: "machine-3",
-      name: "EZBASICS Slushy Machine #3", 
-      status: "MAINTENANCE",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.machines.set(machine1.id, machine1);
-    this.machines.set(machine2.id, machine2);
-    this.machines.set(machine3.id, machine3);
-  }
-
+export class DbStorage implements IStorage {
   async getMachine(id: string): Promise<Machine | undefined> {
-    return this.machines.get(id);
+    const result = await db.select().from(machines).where(eq(machines.id, id)).limit(1);
+    return result[0];
   }
 
   async getAllMachines(): Promise<Machine[]> {
-    return Array.from(this.machines.values());
+    return await db.select().from(machines);
   }
 
   async getAvailableMachines(): Promise<Machine[]> {
-    return Array.from(this.machines.values()).filter(m => m.status === "AVAILABLE");
+    return await db.select().from(machines).where(eq(machines.status, "AVAILABLE"));
   }
 
   async createMachine(insertMachine: InsertMachine): Promise<Machine> {
-    const id = randomUUID();
-    const machine: Machine = {
-      ...insertMachine,
-      id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.machines.set(id, machine);
-    return machine;
+    const result = await db.insert(machines).values(insertMachine).returning();
+    return result[0];
   }
 
   async updateMachineStatus(id: string, status: string): Promise<Machine | undefined> {
-    const machine = this.machines.get(id);
-    if (!machine) return undefined;
-    
-    const updated = { ...machine, status, updatedAt: new Date() };
-    this.machines.set(id, updated);
-    return updated;
+    const result = await db
+      .update(machines)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(machines.id, id))
+      .returning();
+    return result[0];
   }
 
   async getBooking(id: string): Promise<Booking | undefined> {
-    return this.bookings.get(id);
+    const result = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    return result[0];
   }
 
   async getAllBookings(): Promise<Booking[]> {
-    return Array.from(this.bookings.values());
+    return await db.select().from(bookings);
   }
 
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {
-    const id = randomUUID();
-    const booking: Booking = {
-      ...insertBooking,
-      id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.bookings.set(id, booking);
-    return booking;
+    const result = await db.insert(bookings).values(insertBooking).returning();
+    return result[0];
   }
 
   async updateBooking(id: string, updates: Partial<Booking>): Promise<Booking | undefined> {
-    const booking = this.bookings.get(id);
-    if (!booking) return undefined;
-    
-    const updated = { ...booking, ...updates, updatedAt: new Date() };
-    this.bookings.set(id, updated);
-    return updated;
+    const result = await db
+      .update(bookings)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(bookings.id, id))
+      .returning();
+    return result[0];
   }
 
   async updateBookingStatus(id: string, status: string): Promise<Booking | undefined> {
@@ -132,11 +80,11 @@ export class MemStorage implements IStorage {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    return Array.from(this.bookings.values()).filter(booking => {
-      const bookingDate = new Date(booking.date);
-      return bookingDate >= startOfDay && bookingDate <= endOfDay;
-    });
+    return await db
+      .select()
+      .from(bookings)
+      .where(and(gte(bookings.date, startOfDay), lte(bookings.date, endOfDay)));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DbStorage();
