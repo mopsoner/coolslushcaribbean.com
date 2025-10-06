@@ -185,12 +185,15 @@ export function getSwiklyClient(): SwiklyAPI {
       throw new Error('Swikly API credentials not configured. Please set SWIKLY_API_KEY and SWIKLY_ACCOUNT_ID.');
     }
 
-    // Determine environment: use production if explicitly set or if NODE_ENV is production
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.SWIKLY_ENV === 'production';
+    // TEMPORARY: Force sandbox mode for testing in production
+    // TODO: Remove this and use real production credentials before going live
+    const forceSandbox = true;
+    const isProduction = !forceSandbox && (process.env.NODE_ENV === 'production' || process.env.SWIKLY_ENV === 'production');
     
     console.log('🔧 Initializing Swikly client:', {
       accountId: accountId.substring(0, 8) + '...',
-      environment: isProduction ? 'production' : 'sandbox'
+      environment: isProduction ? 'production' : 'sandbox',
+      forcedSandbox: forceSandbox
     });
 
     swiklyClient = new SwiklyAPI({

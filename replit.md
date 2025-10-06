@@ -96,6 +96,8 @@ Preferred communication style: Simple, everyday language.
   - API integration for creating deposit requests (€500 default)
   - Sandbox and production environment support
   - Environment: `SWIKLY_API_KEY`, `SWIKLY_API_SECRET`, `SWIKLY_ENVIRONMENT`
+  - **TEMPORARY**: Currently forced to use sandbox mode even in production for testing (see `server/swikly.ts` line 193)
+  - **TODO**: Switch to production Swikly credentials before final deployment
 
 **Email Service**
 - **Nodemailer**: Email delivery for booking confirmations
