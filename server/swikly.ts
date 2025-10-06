@@ -10,6 +10,10 @@ interface SwiklyDepositRequest {
   customId: string;
   description: string;
   language: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
   callbackUrl?: string;
   endUser: {
     email: string;
@@ -66,6 +70,10 @@ class SwiklyAPI {
         customId: booking.id,
         description: `Location machine à granité Cool'Slush - ${booking.date}`,
         language: 'fr',
+        firstName: firstName,
+        lastName: lastName,
+        email: booking.customerEmail,
+        phoneNumber: booking.customerPhone || undefined,
         endUser: {
           email: booking.customerEmail,
           firstName: firstName,
