@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, Phone, Mail, MapPin, Snowflake, Lock, Shield, CheckCircle } from "lucide-react";
+import type { Offer } from "@shared/schema";
 
 const bookingSchema = z.object({
   offer: z.string().min(1, "Veuillez sélectionner une offre"),
@@ -39,16 +40,16 @@ const bookingSchema = z.object({
 
 type BookingFormData = z.infer<typeof bookingSchema>;
 
-const offers = [
-  { value: "1 Journée", label: "1 Journée - 90€/machine", price: 9000 },
-  { value: "Week-end", label: "Week-end - 160€/machine", price: 16000 },
-  { value: "Événement", label: "Événement - Sur devis", price: 0 },
-];
+type OfferWithPrice = Offer & { amountCents: number };
 
 export default function BookingForm() {
   const [machines, setMachines] = useState(1);
   const [selectedOffer, setSelectedOffer] = useState("");
   const { toast } = useToast();
+
+  const { data: offers, isLoading: offersLoading } = useQuery<OfferWithPrice[]>({
+    queryKey: ['/api/offers'],
+  });
   
   const form = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
@@ -119,6 +120,15 @@ export default function BookingForm() {
     }
   };
 
+  const calculateTotalPrice = () => {
+    if (!selectedOffer || !offers) return 0;
+    const offer = offers.find(o => o.name === selectedOffer);
+    if (!offer) return 0;
+    return (offer.amountCents * machines) / 100;
+  };
+
+  const totalPrice = calculateTotalPrice();
+
   return (
     <div className="max-w-4xl mx-auto">
       <Card className="shadow-2xl border-0 overflow-hidden">
@@ -159,9 +169,9 @@ export default function BookingForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {offers.map((offer) => (
-                          <SelectItem key={offer.value} value={offer.value}>
-                            {offer.label}
+                        {offers?.map((offer) => (
+                          <SelectItem key={offer.id} value={offer.name} data-testid={`option-offer-${offer.id}`}>
+                            {offer.name} - {offer.amountCents > 0 ? `${(offer.amountCents / 100).toFixed(0)}€/machine` : 'Sur devis'}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -417,6 +427,24 @@ export default function BookingForm() {
                 )}
               />
 
+              {/* Price Summary */}
+              {selectedOffer && totalPrice > 0 && (
+                <div className="bg-primary/10 rounded-xl p-6 border border-primary/20" data-testid="price-summary">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Prix estimé</p>
+                      <p className="text-xs text-muted-foreground mt-1">{machines} machine(s) × {(totalPrice / machines).toFixed(0)}€</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-bold text-primary" data-testid="total-price">
+                        {totalPrice.toFixed(2)} €
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">TTC</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Terms & Conditions */}
               <FormField
                 control={form.control}
@@ -432,7 +460,7 @@ export default function BookingForm() {
                         />
                       </FormControl>
                       <div className="text-sm text-muted-foreground flex-1">
-                        J'accepte les <a href="/legal/terms" className="text-primary hover:underline">conditions générales</a> et comprends qu'une caution de 500€ sera bloquée via Swikly (aucun débit effectué).
+                        J'accepte les <a href="/legal/terms" className="text-primary hover:underline">conditions générales</a> et comprends qu'une caution de 1€ sera bloquée via Swikly (aucun débit effectué).
                       </div>
                     </div>
                     <FormMessage />
