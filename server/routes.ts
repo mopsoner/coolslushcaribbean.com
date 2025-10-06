@@ -161,6 +161,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.redirect(`/checkout?booking=${bookingId}`);
   });
 
+  // Test email route (development only)
+  if (process.env.NODE_ENV === 'development') {
+    app.get("/api/test-email", async (req, res) => {
+      try {
+        const testBooking = {
+          id: "test-booking-123",
+          date: new Date(),
+          startHour: 10,
+          endHour: 18,
+          customerName: "Test Client",
+          customerPhone: "0690123456",
+          customerEmail: req.query.email as string || "test@example.com",
+          machines: 2,
+          totalCents: 30000,
+          status: "PENDING",
+          swiklyUrl: `http://localhost:5000/swikly-redirect?booking=test-123`,
+          stripePaymentId: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        await sendBookingConfirmation(testBooking);
+        await sendSwiklyDepositEmail(testBooking);
+        
+        res.json({ 
+          success: true, 
+          message: "Test emails sent! Check console for Ethereal preview URLs",
+          email: testBooking.customerEmail
+        });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }

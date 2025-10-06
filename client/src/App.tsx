@@ -12,6 +12,7 @@ import AdminBookings from "@/pages/admin/bookings";
 import Terms from "@/pages/legal/terms";
 import Privacy from "@/pages/legal/privacy";
 import Mentions from "@/pages/legal/mentions";
+import TestEmail from "@/pages/test-email";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/legal/terms" component={Terms} />
       <Route path="/legal/privacy" component={Privacy} />
       <Route path="/legal/mentions" component={Mentions} />
+      <Route path="/test-email" component={TestEmail} />
       <Route component={NotFound} />
     </Switch>
   );
