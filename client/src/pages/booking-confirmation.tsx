@@ -69,7 +69,13 @@ export default function BookingConfirmation() {
 
   const handleContinueToSwikly = () => {
     if (booking.swiklyUrl) {
-      window.location.href = booking.swiklyUrl;
+      // If it's a Swikly URL, navigate to it
+      if (booking.swiklyUrl.includes('swikly.com') || booking.swiklyUrl.includes('app.swikly')) {
+        window.location.href = booking.swiklyUrl;
+      } else {
+        // Otherwise, it's a fallback URL - navigate to checkout directly
+        setLocation(`/checkout?booking=${booking.id}`);
+      }
     }
   };
 
