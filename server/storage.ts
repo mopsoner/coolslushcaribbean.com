@@ -1,4 +1,4 @@
-import { type Machine, type InsertMachine, type Booking, type InsertBooking, type Offer, type InsertOffer, type PriceConfiguration, type InsertPriceConfiguration, machines, bookings, offers, priceConfigurations } from "@shared/schema";
+import { type Machine, type InsertMachine, type Booking, type InsertBooking, type Offer, type InsertOffer, type PriceConfiguration, type InsertPriceConfiguration, type Syrup, type InsertSyrup, machines, bookings, offers, priceConfigurations, syrups } from "@shared/schema";
 import { db } from "../db";
 import { eq, gte, lte, and, isNull } from "drizzle-orm";
 
@@ -34,6 +34,14 @@ export interface IStorage {
   updatePriceConfiguration(id: string, updates: Partial<PriceConfiguration>): Promise<PriceConfiguration | undefined>;
   deletePriceConfiguration(id: string): Promise<void>;
   getEffectivePrice(offerId: string, machineId?: string): Promise<{ amountCents: number } | null>;
+
+  // Syrup methods
+  getSyrup(id: string): Promise<Syrup | undefined>;
+  getAllSyrups(): Promise<Syrup[]>;
+  getActiveSyrups(): Promise<Syrup[]>;
+  createSyrup(syrup: InsertSyrup): Promise<Syrup>;
+  updateSyrup(id: string, updates: Partial<Syrup>): Promise<Syrup | undefined>;
+  deleteSyrup(id: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -192,6 +200,37 @@ export class DbStorage implements IStorage {
     }
 
     return null;
+  }
+
+  async getSyrup(id: string): Promise<Syrup | undefined> {
+    const result = await db.select().from(syrups).where(eq(syrups.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getAllSyrups(): Promise<Syrup[]> {
+    return await db.select().from(syrups);
+  }
+
+  async getActiveSyrups(): Promise<Syrup[]> {
+    return await db.select().from(syrups).where(eq(syrups.active, true));
+  }
+
+  async createSyrup(insertSyrup: InsertSyrup): Promise<Syrup> {
+    const result = await db.insert(syrups).values(insertSyrup).returning();
+    return result[0];
+  }
+
+  async updateSyrup(id: string, updates: Partial<Syrup>): Promise<Syrup | undefined> {
+    const result = await db
+      .update(syrups)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(syrups.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSyrup(id: string): Promise<void> {
+    await db.delete(syrups).where(eq(syrups.id, id));
   }
 }
 
