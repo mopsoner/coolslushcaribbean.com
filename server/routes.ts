@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { insertBookingSchema, insertOfferSchema, insertPriceConfigurationSchema } from "@shared/schema";
+import { insertBookingSchema, insertOfferSchema, insertPriceConfigurationSchema, insertSyrupSchema } from "@shared/schema";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
@@ -333,6 +333,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/price-configs/:id", async (req, res) => {
     try {
       await storage.deletePriceConfiguration(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get active syrups (public)
+  app.get("/api/syrups", async (req, res) => {
+    try {
+      const syrups = await storage.getActiveSyrups();
+      res.json(syrups);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get all syrups (admin)
+  app.get("/api/admin/syrups", async (req, res) => {
+    try {
+      const syrups = await storage.getAllSyrups();
+      res.json(syrups);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create a syrup (admin)
+  app.post("/api/admin/syrups", async (req, res) => {
+    try {
+      const validatedData = insertSyrupSchema.parse(req.body);
+      const syrup = await storage.createSyrup(validatedData);
+      res.json(syrup);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  // Update a syrup (admin)
+  app.patch("/api/admin/syrups/:id", async (req, res) => {
+    try {
+      const syrup = await storage.updateSyrup(req.params.id, req.body);
+      if (!syrup) {
+        return res.status(404).json({ error: "Sirop non trouvé" });
+      }
+      res.json(syrup);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete a syrup (admin)
+  app.delete("/api/admin/syrups/:id", async (req, res) => {
+    try {
+      await storage.deleteSyrup(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
