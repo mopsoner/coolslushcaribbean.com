@@ -38,6 +38,8 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  date: z.union([z.date(), z.string().transform((val) => new Date(val))]),
 });
 
 export type InsertMachine = z.infer<typeof insertMachineSchema>;
