@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Sky Blue Theme - Tropical Caribbean */
+  --background: hsl(210, 40%, 98%);
+  --foreground: hsl(215, 25%, 27%);
+  
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(215, 25%, 27%);
+  
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(215, 25%, 27%);
+  
+  --primary: hsl(199, 89%, 48%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  
+  --secondary: hsl(199, 98%, 32%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  
+  --muted: hsl(210, 40%, 96%);
+  --muted-foreground: hsl(215, 16%, 47%);
+  
+  --accent: hsl(24, 95%, 53%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  
+  --success: hsl(142, 71%, 45%);
+  --success-foreground: hsl(0, 0%, 100%);
+  
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --ring: hsl(199, 89%, 48%);
+  
+  --chart-1: hsl(199, 89%, 48%);
+  --chart-2: hsl(159, 78%, 36%);
+  --chart-3: hsl(42, 93%, 56%);
+  --chart-4: hsl(147, 79%, 42%);
+  --chart-5: hsl(341, 75%, 51%);
+  
+  --sidebar: hsl(180, 7%, 97%);
+  --sidebar-foreground: hsl(215, 25%, 27%);
+  --sidebar-primary: hsl(199, 89%, 48%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(211, 51%, 93%);
+  --sidebar-accent-foreground: hsl(199, 89%, 48%);
+  --sidebar-border: hsl(205, 25%, 91%);
+  --sidebar-ring: hsl(199, 89%, 48%);
+  
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 1rem;
+}
+
+.dark {
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(200, 7%, 91%);
+  --card: hsl(228, 10%, 10%);
+  --card-foreground: hsl(0, 0%, 85%);
+  --popover: hsl(0, 0%, 0%);
+  --popover-foreground: hsl(200, 7%, 91%);
+  --primary: hsl(199, 89%, 48%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(195, 15%, 95%);
+  --secondary-foreground: hsl(215, 25%, 27%);
+  --muted: hsl(0, 0%, 9%);
+  --muted-foreground: hsl(210, 3%, 46%);
+  --accent: hsl(206, 70%, 8%);
+  --accent-foreground: hsl(199, 89%, 48%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(210, 5%, 15%);
+  --input: hsl(208, 28%, 18%);
+  --ring: hsl(199, 89%, 48%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .gradient-tropical {
+    background: linear-gradient(135deg, hsl(199, 89%, 48%) 0%, hsl(199, 98%, 32%) 100%);
+  }
+  
+  .gradient-sunset {
+    background: linear-gradient(135deg, hsl(24, 95%, 53%) 0%, hsl(33, 100%, 55%) 100%);
+  }
+  
+  .feature-card {
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-4px);
+  }
+  
+  .booking-form-input {
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+  
+  .booking-form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px hsl(199 89% 48% / 0.1);
+  }
+}
