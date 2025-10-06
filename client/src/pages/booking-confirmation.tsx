@@ -87,130 +87,151 @@ export default function BookingConfirmation() {
               Réservation confirmée !
             </h1>
             <p className="text-lg text-muted-foreground">
-              Merci pour votre confiance
+              Réservation #{booking.id.slice(-8)}
             </p>
           </div>
 
-          {/* Main Card */}
-          <Card className="shadow-2xl border-0 overflow-hidden mb-6">
-            <CardHeader className="gradient-tropical text-white p-8">
-              <CardTitle className="text-2xl">
-                Réservation #{booking.id.slice(-8)}
-              </CardTitle>
+          {/* PROMINENT SWIKLY CALL-TO-ACTION */}
+          {booking.swiklyUrl && (
+            <Card className="shadow-2xl border-4 border-primary mb-6 overflow-hidden animate-in fade-in-50 duration-500">
+              <CardHeader className="gradient-tropical text-white p-8 text-center">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <Shield className="w-8 h-8" />
+                  <CardTitle className="text-2xl md:text-3xl">
+                    Étape suivante : Caution Swikly
+                  </CardTitle>
+                </div>
+                <p className="text-white/90 text-lg">
+                  Sécurisez votre location en un clic
+                </p>
+              </CardHeader>
+
+              <CardContent className="p-8 space-y-6">
+                <div className="text-center space-y-4">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700">
+                    <p className="text-lg font-semibold text-foreground mb-2">
+                      💳 Empreinte bancaire de 500€
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Aucun débit immédiat • Sécurisé par Swikly • Libérée automatiquement après votre location
+                    </p>
+                  </div>
+
+                  {booking.swiklyUrl.includes('swikly.com') ? (
+                    <Button
+                      onClick={handleContinueToSwikly}
+                      size="lg"
+                      className="w-full gradient-tropical text-white font-bold text-xl py-6 rounded-2xl hover:shadow-2xl transition-all transform hover:scale-105"
+                      data-testid="button-continue-swikly"
+                    >
+                      <Shield className="mr-3 w-6 h-6" />
+                      Payer la caution maintenant
+                      <ArrowRight className="ml-3 w-6 h-6" />
+                    </Button>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 border border-yellow-200 dark:border-yellow-800">
+                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                          ⚠️ Le lien Swikly sera envoyé par email. Vérifiez votre boîte de réception à <strong>{booking.customerEmail}</strong>
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleContinueToSwikly}
+                        size="lg"
+                        variant="outline"
+                        className="w-full font-bold text-lg py-6 rounded-2xl"
+                        data-testid="button-continue-swikly-fallback"
+                      >
+                        <Mail className="mr-3 w-5 h-5" />
+                        Accéder au lien de caution
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="bg-muted/50 rounded-xl p-4">
+                    <p className="text-xs text-muted-foreground text-center">
+                      📧 Un email de confirmation avec le lien a également été envoyé à <strong className="text-foreground">{booking.customerEmail}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* How it Works */}
+                <div className="border-t border-border pt-6">
+                  <h4 className="font-bold text-center text-foreground mb-4">🔒 Comment ça marche ?</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</span>
+                      <span className="text-sm text-muted-foreground">Cliquez sur le bouton ci-dessus</span>
+                    </div>
+                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">2</span>
+                      <span className="text-sm text-muted-foreground">Entrez vos coordonnées bancaires</span>
+                    </div>
+                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">3</span>
+                      <span className="text-sm text-muted-foreground">Empreinte créée (aucun débit)</span>
+                    </div>
+                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">4</span>
+                      <span className="text-sm text-muted-foreground">Continuez vers le paiement</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Booking Details Card */}
+          <Card className="shadow-xl border-0 overflow-hidden mb-6">
+            <CardHeader className="bg-muted/50 p-6">
+              <CardTitle className="text-xl text-foreground">📋 Détails de votre réservation</CardTitle>
             </CardHeader>
 
-            <CardContent className="p-8 space-y-6">
-              {/* Booking Details */}
-              <div>
-                <h3 className="font-bold text-lg text-foreground mb-4">📋 Détails de votre réservation</h3>
-                <div className="bg-muted/50 rounded-xl p-6 space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Date</span>
-                    <span className="font-semibold text-foreground">{bookingDate}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Horaires</span>
-                    <span className="font-semibold text-foreground">
-                      {booking.startHour.toString().padStart(2, '0')}:00 - {booking.endHour.toString().padStart(2, '0')}:00
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Machines</span>
-                    <span className="font-semibold text-foreground">
-                      {booking.machines} machine{booking.machines > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-t border-border pt-3">
-                    <span className="text-muted-foreground">Total</span>
-                    <span className="font-bold text-xl text-primary">
-                      {(booking.totalCents / 100).toFixed(2)}€
-                    </span>
-                  </div>
+            <CardContent className="p-6">
+              <div className="bg-white dark:bg-muted/30 rounded-xl p-6 space-y-3 border border-border">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Date</span>
+                  <span className="font-semibold text-foreground">{bookingDate}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Horaires</span>
+                  <span className="font-semibold text-foreground">
+                    {booking.startHour.toString().padStart(2, '0')}:00 - {booking.endHour.toString().padStart(2, '0')}:00
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Machines</span>
+                  <span className="font-semibold text-foreground">
+                    {booking.machines} machine{booking.machines > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-border pt-3">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-bold text-xl text-primary">
+                    {(booking.totalCents / 100).toFixed(2)}€
+                  </span>
                 </div>
               </div>
 
-              {/* Email Notification */}
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-                      <Mail className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg text-foreground mb-2">
-                      📧 Email de caution envoyé !
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Un email Swikly vous a été envoyé à l'adresse <strong className="text-foreground">{booking.customerEmail}</strong> avec un lien pour sécuriser votre caution de 500€.
-                    </p>
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border border-yellow-200 dark:border-yellow-800">
-                      <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                        <strong>⚠️ Important :</strong> Vérifiez vos spams si vous ne recevez pas l'email dans les 5 minutes.
-                      </p>
-                    </div>
-                  </div>
+              {/* Timeline Indicator */}
+              <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
+                  <Clock className="w-4 h-4" />
+                  <p>
+                    <strong>Prochaines étapes :</strong> Complétez la caution Swikly ci-dessus, puis le paiement de {(booking.totalCents / 100).toFixed(2)}€ pour finaliser votre réservation.
+                  </p>
                 </div>
               </div>
 
-              {/* Swikly Info */}
-              <div className="bg-muted/50 rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Shield className="w-6 h-6 text-primary" />
-                  <h3 className="font-bold text-lg text-foreground">Comment ça marche ?</h3>
-                </div>
-                <ol className="space-y-3 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</span>
-                    <span>Cliquez sur le lien dans l'email Swikly</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">2</span>
-                    <span>Entrez vos coordonnées bancaires de manière sécurisée</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">3</span>
-                    <span>Une empreinte de 500€ est créée (aucun débit)</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">4</span>
-                    <span>Continuez vers le paiement de votre location</span>
-                  </li>
-                </ol>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                {booking.swiklyUrl && booking.swiklyUrl.includes('swikly.com') && (
-                  <Button
-                    onClick={handleContinueToSwikly}
-                    className="w-full gradient-tropical text-white font-bold text-lg py-4 rounded-2xl hover:shadow-2xl transition-all"
-                    data-testid="button-continue-swikly"
-                  >
-                    <Shield className="mr-2 w-5 h-5" />
-                    Accéder à la caution Swikly maintenant
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                )}
-                
+              <div className="mt-4">
                 <Button
                   variant="outline"
                   onClick={() => setLocation("/")}
-                  className="w-full rounded-2xl"
+                  className="w-full rounded-xl"
                   data-testid="button-back-home"
                 >
                   Retour à l'accueil
                 </Button>
-              </div>
-
-              {/* Timeline Indicator */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
-                  <Clock className="w-4 h-4" />
-                  <p>
-                    <strong>Prochaines étapes :</strong> Complétez la caution Swikly, puis le paiement de {(booking.totalCents / 100).toFixed(2)}€ pour finaliser votre réservation.
-                  </p>
-                </div>
               </div>
             </CardContent>
           </Card>
