@@ -38,7 +38,7 @@ class SwiklyAPI {
     this.config = config;
     this.baseUrl = config.environment === 'production' 
       ? 'https://api.swikly.com'
-      : 'https://apisandbox.swikly.com';
+      : 'https://api-sandbox.swikly.com';
   }
 
   async createDeposit(booking: Booking, callbackBaseUrl?: string): Promise<SwiklyResponse> {
@@ -53,31 +53,33 @@ class SwiklyAPI {
       const depositEndDate = new Date(eventDate);
       depositEndDate.setDate(depositEndDate.getDate() + 2); // +2 days after event
 
-      const depositRequest: SwiklyDepositRequest = {
-        clientFirstName: firstName,
-        clientLastName: lastName,
-        clientEmail: booking.customerEmail,
-        clientPhoneNumber: booking.customerPhone,
-        clientLanguage: 'FR',
-        swikAmount: '500', // 500€ deposit
-        swikDescription: `Caution - Location machine à granité Cool'Slush`,
-        swikEndDay: depositEndDate.getDate().toString(),
-        swikEndMonth: (depositEndDate.getMonth() + 1).toString(),
-        swikEndYear: depositEndDate.getFullYear().toString(),
-        swikId: booking.id,
-        sendEmail: 'true', // Swikly will send email to customer
-        swikType: 'security deposit',
-        callbackUrl: callbackBaseUrl ? `${callbackBaseUrl}/api/swikly-callback` : undefined,
-      };
+      // Create FormData for multipart/form-data request (required by Swikly API)
+      const formData = new FormData();
+      formData.append('first_name', firstName);
+      formData.append('last_name', lastName);
+      formData.append('client_email', booking.customerEmail);
+      formData.append('phone_number', booking.customerPhone || '');
+      formData.append('swik_lang', 'FR');
+      formData.append('swik_amount', '500'); // 500€ deposit
+      formData.append('swik_description', `Caution - Location machine à granité Cool'Slush`);
+      formData.append('swik_end_day', depositEndDate.getDate().toString());
+      formData.append('swik_end_month', (depositEndDate.getMonth() + 1).toString());
+      formData.append('swik_end_year', depositEndDate.getFullYear().toString());
+      formData.append('id', booking.id); // Custom business ID
+      formData.append('email', 'true'); // Swikly sends email automatically
+      formData.append('swik_type', 'deposit'); // Type: deposit, reservation, or payment
+      
+      if (callbackBaseUrl) {
+        formData.append('callback_url', `${callbackBaseUrl}/api/swikly-callback`);
+      }
 
-      const response = await fetch(`${this.baseUrl}/api/v1/swik/create`, {
+      const response = await fetch(`${this.baseUrl}/v1_0/newSwik`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': this.config.apiKey,
-          'X-API-SECRET': this.config.apiSecret,
+          'api_key': this.config.apiKey,
+          'api_secret': this.config.apiSecret,
         },
-        body: JSON.stringify(depositRequest),
+        body: formData,
       });
 
       const data: SwiklyResponse = await response.json();
