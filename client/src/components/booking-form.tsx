@@ -25,6 +25,15 @@ const bookingSchema = z.object({
   customerEmail: z.string().email("Email valide requis"),
   machines: z.number().min(1).max(10),
   terms: z.boolean().refine(val => val, "Vous devez accepter les conditions"),
+}).refine((data) => {
+  // Pour les offres multi-jours, endDate est obligatoire
+  if (data.offer !== "1 Journée" && !data.endDate) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Date de fin requise pour cette offre",
+  path: ["endDate"],
 });
 
 type BookingFormData = z.infer<typeof bookingSchema>;
@@ -84,11 +93,11 @@ export default function BookingForm() {
   const onSubmit = (data: BookingFormData) => {
     const { terms, ...bookingData } = data;
     // Pour "1 Journée", endDate = startDate
-    const endDate = data.offer === "1 Journée" ? data.startDate : (data.endDate || data.startDate);
+    const endDate = data.offer === "1 Journée" ? data.startDate : data.endDate!;
     bookingMutation.mutate({ 
       ...bookingData, 
       endDate,
-      machines 
+      machines: data.machines
     });
   };
 
