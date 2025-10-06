@@ -61,6 +61,7 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
       return date;
     })
   ]),
+  machines: z.number().int().min(1, "Au moins 1 machine requise").max(10, "Maximum 10 machines"),
 }).refine((data) => {
   // Pour les offres multi-jours, s'assurer que endDate >= startDate
   const start = data.startDate instanceof Date ? data.startDate : new Date(data.startDate);
