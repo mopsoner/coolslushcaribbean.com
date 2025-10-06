@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import Booking from "@/pages/booking";
+import SwiklyRedirect from "@/pages/swikly-redirect";
 import Checkout from "@/pages/checkout";
 import Success from "@/pages/success";
 import AdminBookings from "@/pages/admin/bookings";
@@ -15,6 +16,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/booking" component={Booking} />
+      <Route path="/swikly-redirect" component={SwiklyRedirect} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/success" component={Success} />
       <Route path="/admin/bookings" component={AdminBookings} />
