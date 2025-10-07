@@ -175,7 +175,7 @@ export default function BookingForm() {
                         field.onChange(value);
                         setSelectedOffer(value);
                       }} 
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger className="booking-form-input" data-testid="select-offer">
@@ -255,7 +255,7 @@ export default function BookingForm() {
                         <Clock className="w-4 h-4 text-primary mr-2" />
                         Heure de début
                       </FormLabel>
-                      <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
                         <FormControl>
                           <SelectTrigger className="booking-form-input" data-testid="select-start-hour">
                             <SelectValue />
@@ -283,7 +283,7 @@ export default function BookingForm() {
                         <Clock className="w-4 h-4 text-primary mr-2" />
                         Heure de fin
                       </FormLabel>
-                      <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
                         <FormControl>
                           <SelectTrigger className="booking-form-input" data-testid="select-end-hour">
                             <SelectValue />
@@ -355,7 +355,7 @@ export default function BookingForm() {
                     </FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger className="booking-form-input" data-testid="select-cup-size">
