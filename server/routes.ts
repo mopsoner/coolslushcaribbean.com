@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertPriceConfigurationSchema, insertSyrupSchema } from "@shared/schema";
+import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema } from "@shared/schema";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
@@ -321,34 +321,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ============= ADMIN PRICE CONFIGURATION ROUTES =============
+  // ============= ADMIN OFFER MACHINE PRICE ROUTES =============
   
-  // Get all price configurations (admin)
-  app.get("/api/admin/price-configs", async (req, res) => {
+  // Get all offer machine prices (admin)
+  app.get("/api/admin/offer-machine-prices", async (req, res) => {
     try {
-      const configs = await storage.getAllPriceConfigurations();
-      res.json(configs);
+      const prices = await storage.getAllOfferMachinePrices();
+      res.json(prices);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Get price configurations by offer (admin)
-  app.get("/api/admin/price-configs/offer/:offerId", async (req, res) => {
+  // Get offer machine prices by offer (admin)
+  app.get("/api/admin/offer-machine-prices/offer/:offerId", async (req, res) => {
     try {
-      const configs = await storage.getPriceConfigurationsByOffer(req.params.offerId);
-      res.json(configs);
+      const prices = await storage.getOfferMachinePricesByOffer(req.params.offerId);
+      res.json(prices);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Create a price configuration (admin)
-  app.post("/api/admin/price-configs", async (req, res) => {
+  // Create an offer machine price (admin)
+  app.post("/api/admin/offer-machine-prices", async (req, res) => {
     try {
-      const validatedData = insertPriceConfigurationSchema.parse(req.body);
-      const config = await storage.createPriceConfiguration(validatedData);
-      res.json(config);
+      const validatedData = insertOfferMachinePriceSchema.parse(req.body);
+      const price = await storage.createOfferMachinePrice(validatedData);
+      res.json(price);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
@@ -358,23 +358,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update a price configuration (admin)
-  app.patch("/api/admin/price-configs/:id", async (req, res) => {
+  // Update an offer machine price (admin)
+  app.patch("/api/admin/offer-machine-prices/:id", async (req, res) => {
     try {
-      const config = await storage.updatePriceConfiguration(req.params.id, req.body);
-      if (!config) {
-        return res.status(404).json({ error: "Configuration de prix non trouvée" });
+      const price = await storage.updateOfferMachinePrice(req.params.id, req.body);
+      if (!price) {
+        return res.status(404).json({ error: "Prix machine non trouvé" });
       }
-      res.json(config);
+      res.json(price);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Delete a price configuration (admin)
-  app.delete("/api/admin/price-configs/:id", async (req, res) => {
+  // Delete an offer machine price (admin)
+  app.delete("/api/admin/offer-machine-prices/:id", async (req, res) => {
     try {
-      await storage.deletePriceConfiguration(req.params.id);
+      await storage.deleteOfferMachinePrice(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

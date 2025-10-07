@@ -125,12 +125,10 @@ export const insertOfferSchema = createInsertSchema(offers).omit({
   updatedAt: true,
 });
 
-export const insertPriceConfigurationSchema = createInsertSchema(priceConfigurations).omit({
+export const insertOfferMachinePriceSchema = createInsertSchema(offerMachinePrices).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-}).extend({
-  currency: z.string().default("EUR"),
 });
 
 export const insertSyrupSchema = createInsertSchema(syrups).omit({
@@ -145,8 +143,8 @@ export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
 export type InsertOffer = z.infer<typeof insertOfferSchema>;
 export type Offer = typeof offers.$inferSelect;
-export type InsertPriceConfiguration = z.infer<typeof insertPriceConfigurationSchema>;
-export type PriceConfiguration = typeof priceConfigurations.$inferSelect;
+export type InsertOfferMachinePrice = z.infer<typeof insertOfferMachinePriceSchema>;
+export type OfferMachinePrice = typeof offerMachinePrices.$inferSelect;
 export type InsertSyrup = z.infer<typeof insertSyrupSchema>;
 export type Syrup = typeof syrups.$inferSelect;
 export type SyrupSelection = z.infer<typeof syrupSelectionSchema>;

@@ -1,4 +1,4 @@
-import { type Machine, type InsertMachine, type Booking, type InsertBooking, type Offer, type InsertOffer, type PriceConfiguration, type InsertPriceConfiguration, type Syrup, type InsertSyrup, machines, bookings, offers, priceConfigurations, syrups } from "@shared/schema";
+import { type Machine, type InsertMachine, type Booking, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, machines, bookings, offers, offerMachinePrices, syrups } from "@shared/schema";
 import { db } from "../db";
 import { eq, gte, lte, and, isNull } from "drizzle-orm";
 
@@ -29,13 +29,13 @@ export interface IStorage {
   updateOffer(id: string, updates: Partial<Offer>): Promise<Offer | undefined>;
   deleteOffer(id: string): Promise<void>;
 
-  // Price configuration methods
-  getPriceConfiguration(id: string): Promise<PriceConfiguration | undefined>;
-  getAllPriceConfigurations(): Promise<PriceConfiguration[]>;
-  getPriceConfigurationsByOffer(offerId: string): Promise<PriceConfiguration[]>;
-  createPriceConfiguration(config: InsertPriceConfiguration): Promise<PriceConfiguration>;
-  updatePriceConfiguration(id: string, updates: Partial<PriceConfiguration>): Promise<PriceConfiguration | undefined>;
-  deletePriceConfiguration(id: string): Promise<void>;
+  // Offer machine price methods
+  getOfferMachinePrice(id: string): Promise<OfferMachinePrice | undefined>;
+  getAllOfferMachinePrices(): Promise<OfferMachinePrice[]>;
+  getOfferMachinePricesByOffer(offerId: string): Promise<OfferMachinePrice[]>;
+  createOfferMachinePrice(config: InsertOfferMachinePrice): Promise<OfferMachinePrice>;
+  updateOfferMachinePrice(id: string, updates: Partial<OfferMachinePrice>): Promise<OfferMachinePrice | undefined>;
+  deleteOfferMachinePrice(id: string): Promise<void>;
   getEffectivePrice(offerId: string, machineId?: string): Promise<{ amountCents: number } | null>;
 
   // Syrup methods
@@ -158,44 +158,50 @@ export class DbStorage implements IStorage {
     await db.delete(offers).where(eq(offers.id, id));
   }
 
-  async getPriceConfiguration(id: string): Promise<PriceConfiguration | undefined> {
-    const result = await db.select().from(priceConfigurations).where(eq(priceConfigurations.id, id)).limit(1);
+  async getOfferMachinePrice(id: string): Promise<OfferMachinePrice | undefined> {
+    const result = await db.select().from(offerMachinePrices).where(eq(offerMachinePrices.id, id)).limit(1);
     return result[0];
   }
 
-  async getAllPriceConfigurations(): Promise<PriceConfiguration[]> {
-    return await db.select().from(priceConfigurations);
+  async getAllOfferMachinePrices(): Promise<OfferMachinePrice[]> {
+    return await db.select().from(offerMachinePrices);
   }
 
-  async getPriceConfigurationsByOffer(offerId: string): Promise<PriceConfiguration[]> {
-    return await db.select().from(priceConfigurations).where(eq(priceConfigurations.offerId, offerId));
+  async getOfferMachinePricesByOffer(offerId: string): Promise<OfferMachinePrice[]> {
+    return await db.select().from(offerMachinePrices).where(eq(offerMachinePrices.offerId, offerId));
   }
 
-  async createPriceConfiguration(config: InsertPriceConfiguration): Promise<PriceConfiguration> {
-    const result = await db.insert(priceConfigurations).values(config).returning();
+  async createOfferMachinePrice(config: InsertOfferMachinePrice): Promise<OfferMachinePrice> {
+    const result = await db.insert(offerMachinePrices).values(config).returning();
     return result[0];
   }
 
-  async updatePriceConfiguration(id: string, updates: Partial<PriceConfiguration>): Promise<PriceConfiguration | undefined> {
+  async updateOfferMachinePrice(id: string, updates: Partial<OfferMachinePrice>): Promise<OfferMachinePrice | undefined> {
     const result = await db
-      .update(priceConfigurations)
+      .update(offerMachinePrices)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(priceConfigurations.id, id))
+      .where(eq(offerMachinePrices.id, id))
       .returning();
     return result[0];
   }
 
-  async deletePriceConfiguration(id: string): Promise<void> {
-    await db.delete(priceConfigurations).where(eq(priceConfigurations.id, id));
+  async deleteOfferMachinePrice(id: string): Promise<void> {
+    await db.delete(offerMachinePrices).where(eq(offerMachinePrices.id, id));
   }
 
   async getEffectivePrice(offerId: string, machineId?: string): Promise<{ amountCents: number } | null> {
-    // If machineId is provided, try to find machine-specific price first
+    // Get the offer to access base price
+    const offer = await this.getOffer(offerId);
+    if (!offer) {
+      return null;
+    }
+
+    // If machineId is provided, try to find machine-specific override price
     if (machineId) {
       const machinePrice = await db
         .select()
-        .from(priceConfigurations)
-        .where(and(eq(priceConfigurations.offerId, offerId), eq(priceConfigurations.machineId, machineId)))
+        .from(offerMachinePrices)
+        .where(and(eq(offerMachinePrices.offerId, offerId), eq(offerMachinePrices.machineId, machineId)))
         .limit(1);
       
       if (machinePrice[0]) {
@@ -203,18 +209,8 @@ export class DbStorage implements IStorage {
       }
     }
 
-    // Fall back to default price (where machineId is null)
-    const defaultPrice = await db
-      .select()
-      .from(priceConfigurations)
-      .where(and(eq(priceConfigurations.offerId, offerId), isNull(priceConfigurations.machineId)))
-      .limit(1);
-
-    if (defaultPrice[0]) {
-      return { amountCents: defaultPrice[0].amountCents };
-    }
-
-    return null;
+    // Fall back to base price from the offer
+    return { amountCents: offer.basePriceCents };
   }
 
   async getSyrup(id: string): Promise<Syrup | undefined> {
