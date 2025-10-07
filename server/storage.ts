@@ -8,7 +8,9 @@ export interface IStorage {
   getAllMachines(): Promise<Machine[]>;
   getAvailableMachines(): Promise<Machine[]>;
   createMachine(machine: InsertMachine): Promise<Machine>;
+  updateMachine(id: string, updates: Partial<Machine>): Promise<Machine | undefined>;
   updateMachineStatus(id: string, status: string): Promise<Machine | undefined>;
+  deleteMachine(id: string): Promise<void>;
 
   // Booking methods
   getBooking(id: string): Promise<Booking | undefined>;
@@ -63,13 +65,21 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async updateMachineStatus(id: string, status: string): Promise<Machine | undefined> {
+  async updateMachine(id: string, updates: Partial<Machine>): Promise<Machine | undefined> {
     const result = await db
       .update(machines)
-      .set({ status, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(machines.id, id))
       .returning();
     return result[0];
+  }
+
+  async updateMachineStatus(id: string, status: string): Promise<Machine | undefined> {
+    return this.updateMachine(id, { status });
+  }
+
+  async deleteMachine(id: string): Promise<void> {
+    await db.delete(machines).where(eq(machines.id, id));
   }
 
   async getBooking(id: string): Promise<Booking | undefined> {
