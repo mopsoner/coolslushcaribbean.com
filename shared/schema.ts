@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, json } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, json, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -28,7 +28,9 @@ export const priceConfigurations = pgTable("price_configurations", {
   currency: text("currency").notNull().default("EUR"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  uniqueOfferMachine: unique().on(table.offerId, table.machineId),
+}));
 
 export const syrups = pgTable("syrups", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
