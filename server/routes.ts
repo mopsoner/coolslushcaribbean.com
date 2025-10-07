@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { insertBookingSchema, insertOfferSchema, insertPriceConfigurationSchema, insertSyrupSchema } from "@shared/schema";
+import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertPriceConfigurationSchema, insertSyrupSchema } from "@shared/schema";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
@@ -32,6 +32,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const machines = await storage.getAvailableMachines();
       res.json(machines);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============= ADMIN MACHINES ROUTES =============
+  
+  // Create a machine (admin)
+  app.post("/api/admin/machines", async (req, res) => {
+    try {
+      const validatedData = insertMachineSchema.parse(req.body);
+      const machine = await storage.createMachine(validatedData);
+      res.json(machine);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  // Update a machine (admin)
+  app.patch("/api/admin/machines/:id", async (req, res) => {
+    try {
+      const machine = await storage.updateMachine(req.params.id, req.body);
+      if (!machine) {
+        return res.status(404).json({ error: "Machine non trouvée" });
+      }
+      res.json(machine);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete a machine (admin)
+  app.delete("/api/admin/machines/:id", async (req, res) => {
+    try {
+      await storage.deleteMachine(req.params.id);
+      res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
