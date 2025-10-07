@@ -137,6 +137,17 @@ export const insertSyrupSchema = createInsertSchema(syrups).omit({
   updatedAt: true,
 });
 
+// Schema for machine price override (without offerId since it's provided by parent)
+export const machinePriceOverrideSchema = z.object({
+  machineId: z.string().min(1, "Machine ID requis"),
+  amountCents: z.number().int().min(0, "Le prix doit être positif"),
+});
+
+// Schema for creating/updating offer with pricing
+export const insertOfferWithPricingSchema = insertOfferSchema.extend({
+  machinePriceOverrides: z.array(machinePriceOverrideSchema).optional().default([]),
+});
+
 export type InsertMachine = z.infer<typeof insertMachineSchema>;
 export type Machine = typeof machines.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
@@ -148,3 +159,10 @@ export type OfferMachinePrice = typeof offerMachinePrices.$inferSelect;
 export type InsertSyrup = z.infer<typeof insertSyrupSchema>;
 export type Syrup = typeof syrups.$inferSelect;
 export type SyrupSelection = z.infer<typeof syrupSelectionSchema>;
+export type MachinePriceOverride = z.infer<typeof machinePriceOverrideSchema>;
+export type InsertOfferWithPricing = z.infer<typeof insertOfferWithPricingSchema>;
+
+// Type for offer with its machine price overrides (for GET requests)
+export type OfferWithPricing = Offer & {
+  machinePriceOverrides: OfferMachinePrice[];
+};

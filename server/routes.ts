@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema } from "@shared/schema";
+import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema } from "@shared/schema";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
@@ -273,21 +273,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============= ADMIN OFFERS ROUTES =============
   
-  // Get all offers (admin)
+  // Get all offers with pricing (admin)
   app.get("/api/admin/offers", async (req, res) => {
     try {
-      const offers = await storage.getAllOffers();
+      const offers = await storage.getAllOffersWithPricing();
       res.json(offers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Create an offer (admin)
+  // Create an offer with pricing (admin)
   app.post("/api/admin/offers", async (req, res) => {
     try {
-      const validatedData = insertOfferSchema.parse(req.body);
-      const offer = await storage.createOffer(validatedData);
+      const validatedData = insertOfferWithPricingSchema.parse(req.body);
+      const offer = await storage.createOfferWithPricing(validatedData);
       res.json(offer);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -298,16 +298,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update an offer (admin)
+  // Update an offer with pricing (admin)
   app.patch("/api/admin/offers/:id", async (req, res) => {
     try {
-      const offer = await storage.updateOffer(req.params.id, req.body);
+      const validatedData = insertOfferWithPricingSchema.partial().parse(req.body);
+      const offer = await storage.updateOfferWithPricing(req.params.id, validatedData);
       if (!offer) {
         return res.status(404).json({ error: "Offre non trouvée" });
       }
       res.json(offer);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   });
 

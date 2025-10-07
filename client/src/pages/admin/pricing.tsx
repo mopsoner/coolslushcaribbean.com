@@ -10,114 +10,70 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { DollarSign, Edit, Trash, Plus } from "lucide-react";
-import type { Offer, PriceConfiguration, Machine } from "@shared/schema";
+import { DollarSign, Edit, Trash, Plus, X } from "lucide-react";
+import type { Machine } from "@shared/schema";
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+
+type OfferWithPricing = {
+  id: string;
+  name: string;
+  description: string | null;
+  basePriceCents: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  machinePriceOverrides: Array<{
+    id: string;
+    offerId: string;
+    machineId: string;
+    amountCents: number;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+};
+
+type MachinePriceOverride = {
+  machineId: string;
+  amountCents: number;
+};
 
 export default function AdminPricing() {
   const { toast } = useToast();
-  const [editingConfig, setEditingConfig] = useState<PriceConfiguration | null>(null);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedOfferId, setSelectedOfferId] = useState<string>("");
-  const [selectedMachineId, setSelectedMachineId] = useState<string>("");
-  const [amountEuros, setAmountEuros] = useState<string>("");
   
-  // Offer management states
-  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
-  const [isCreateOfferDialogOpen, setIsCreateOfferDialogOpen] = useState(false);
-  const [offerName, setOfferName] = useState<string>("");
-  const [offerDescription, setOfferDescription] = useState<string>("");
+  // Form states
+  const [editingOffer, setEditingOffer] = useState<OfferWithPricing | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [offerName, setOfferName] = useState("");
+  const [offerDescription, setOfferDescription] = useState("");
+  const [basePriceEuros, setBasePriceEuros] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [machinePriceOverrides, setMachinePriceOverrides] = useState<MachinePriceOverride[]>([]);
 
-  const { data: offers, isLoading: offersLoading } = useQuery<Offer[]>({
+  const { data: offers, isLoading } = useQuery<OfferWithPricing[]>({
     queryKey: ['/api/admin/offers'],
-  });
-
-  const { data: priceConfigs, isLoading: configsLoading } = useQuery<PriceConfiguration[]>({
-    queryKey: ['/api/admin/price-configs'],
   });
 
   const { data: machines } = useQuery<Machine[]>({
     queryKey: ['/api/machines'],
   });
 
-  const createPriceMutation = useMutation({
-    mutationFn: async (data: { offerId: string; machineId: string | null; amountCents: number }) => {
-      const response = await apiRequest('POST', '/api/admin/price-configs', data);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/price-configs'] });
-      setIsCreateDialogOpen(false);
-      resetForm();
-      toast({
-        title: "Configuration créée",
-        description: "La configuration de prix a été créée avec succès.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible de créer la configuration",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updatePriceMutation = useMutation({
-    mutationFn: async (data: { id: string; amountCents: number }) => {
-      const response = await apiRequest('PATCH', `/api/admin/price-configs/${data.id}`, { amountCents: data.amountCents });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/price-configs'] });
-      setEditingConfig(null);
-      resetForm();
-      toast({
-        title: "Configuration mise à jour",
-        description: "La configuration de prix a été mise à jour avec succès.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible de mettre à jour la configuration",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deletePriceMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiRequest('DELETE', `/api/admin/price-configs/${id}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/price-configs'] });
-      toast({
-        title: "Configuration supprimée",
-        description: "La configuration de prix a été supprimée avec succès.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible de supprimer la configuration",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Offer mutations
-  const createOfferMutation = useMutation({
-    mutationFn: async (data: { name: string; description?: string; active: boolean }) => {
+  const createMutation = useMutation({
+    mutationFn: async (data: {
+      name: string;
+      description?: string;
+      basePriceCents: number;
+      active: boolean;
+      machinePriceOverrides?: MachinePriceOverride[];
+    }) => {
       const response = await apiRequest('POST', '/api/admin/offers', data);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/offers'] });
       queryClient.invalidateQueries({ queryKey: ['/api/offers'] });
-      setIsCreateOfferDialogOpen(false);
-      resetOfferForm();
+      setIsDialogOpen(false);
+      resetForm();
       toast({
         title: "Offre créée",
         description: "L'offre a été créée avec succès.",
@@ -132,16 +88,25 @@ export default function AdminPricing() {
     },
   });
 
-  const updateOfferMutation = useMutation({
-    mutationFn: async (data: { id: string; name?: string; description?: string; active?: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/admin/offers/${data.id}`, data);
+  const updateMutation = useMutation({
+    mutationFn: async (data: {
+      id: string;
+      name?: string;
+      description?: string;
+      basePriceCents?: number;
+      active?: boolean;
+      machinePriceOverrides?: MachinePriceOverride[];
+    }) => {
+      const { id, ...updates } = data;
+      const response = await apiRequest('PATCH', `/api/admin/offers/${id}`, updates);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/offers'] });
       queryClient.invalidateQueries({ queryKey: ['/api/offers'] });
+      setIsDialogOpen(false);
       setEditingOffer(null);
-      resetOfferForm();
+      resetForm();
       toast({
         title: "Offre mise à jour",
         description: "L'offre a été mise à jour avec succès.",
@@ -156,7 +121,7 @@ export default function AdminPricing() {
     },
   });
 
-  const deleteOfferMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await apiRequest('DELETE', `/api/admin/offers/${id}`);
       return response.json();
@@ -178,488 +143,386 @@ export default function AdminPricing() {
     },
   });
 
-  const resetForm = () => {
-    setSelectedOfferId("");
-    setSelectedMachineId("");
-    setAmountEuros("");
-  };
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const response = await apiRequest('PATCH', `/api/admin/offers/${id}`, { active });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/offers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/offers'] });
+      toast({
+        title: "Statut modifié",
+        description: "Le statut de l'offre a été modifié avec succès.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de modifier le statut",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const resetOfferForm = () => {
+  const resetForm = () => {
     setOfferName("");
     setOfferDescription("");
+    setBasePriceEuros("");
+    setIsActive(true);
+    setMachinePriceOverrides([]);
   };
 
-  const handleCreate = () => {
-    if (!selectedOfferId || !amountEuros) {
-      toast({
-        title: "Erreur de validation",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const amountCents = Math.round(parseFloat(amountEuros) * 100);
-    createPriceMutation.mutate({
-      offerId: selectedOfferId,
-      machineId: selectedMachineId || null,
-      amountCents,
-    });
+  const openCreateDialog = () => {
+    resetForm();
+    setEditingOffer(null);
+    setIsDialogOpen(true);
   };
 
-  const handleUpdate = () => {
-    if (!editingConfig || !amountEuros) return;
-
-    const amountCents = Math.round(parseFloat(amountEuros) * 100);
-    updatePriceMutation.mutate({
-      id: editingConfig.id,
-      amountCents,
-    });
-  };
-
-  const openEditDialog = (config: PriceConfiguration) => {
-    setEditingConfig(config);
-    setAmountEuros((config.amountCents / 100).toFixed(2));
-  };
-
-  // Offer handlers
-  const handleCreateOffer = () => {
-    if (!offerName) {
-      toast({
-        title: "Erreur de validation",
-        description: "Veuillez entrer un nom d'offre",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createOfferMutation.mutate({
-      name: offerName,
-      description: offerDescription || undefined,
-      active: true,
-    });
-  };
-
-  const handleEditOffer = () => {
-    if (!editingOffer) return;
-
-    const updates: any = {};
-    if (offerName) updates.name = offerName;
-    if (offerDescription !== undefined) updates.description = offerDescription;
-
-    updateOfferMutation.mutate({
-      id: editingOffer.id,
-      ...updates,
-    });
-  };
-
-  const toggleOfferActive = (offer: Offer) => {
-    updateOfferMutation.mutate({
-      id: offer.id,
-      active: !offer.active,
-    });
-  };
-
-  const openEditOfferDialog = (offer: Offer) => {
+  const openEditDialog = (offer: OfferWithPricing) => {
     setEditingOffer(offer);
     setOfferName(offer.name);
     setOfferDescription(offer.description || "");
+    setBasePriceEuros((offer.basePriceCents / 100).toString());
+    setIsActive(offer.active);
+    setMachinePriceOverrides(
+      offer.machinePriceOverrides.map(override => ({
+        machineId: override.machineId,
+        amountCents: override.amountCents,
+      }))
+    );
+    setIsDialogOpen(true);
   };
 
-  const getOfferName = (offerId: string) => {
-    return offers?.find(o => o.id === offerId)?.name || "Inconnu";
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const basePriceCents = Math.round(parseFloat(basePriceEuros) * 100);
+
+    if (isNaN(basePriceCents) || basePriceCents < 0) {
+      toast({
+        title: "Erreur",
+        description: "Le prix de base doit être un nombre positif",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const data = {
+      name: offerName.trim(),
+      description: offerDescription.trim() || undefined,
+      basePriceCents,
+      active: isActive,
+      machinePriceOverrides: machinePriceOverrides.filter(o => o.machineId && o.amountCents >= 0),
+    };
+
+    if (editingOffer) {
+      updateMutation.mutate({ id: editingOffer.id, ...data });
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
-  const getMachineName = (machineId: string | null) => {
-    if (!machineId) return "Par défaut (toutes les machines)";
-    return machines?.find(m => m.id === machineId)?.name || "Machine inconnue";
+  const addMachineOverride = () => {
+    setMachinePriceOverrides([...machinePriceOverrides, { machineId: "", amountCents: 0 }]);
   };
 
-  if (offersLoading || configsLoading) {
+  const removeMachineOverride = (index: number) => {
+    setMachinePriceOverrides(machinePriceOverrides.filter((_, i) => i !== index));
+  };
+
+  const updateMachineOverride = (index: number, field: "machineId" | "amountCents", value: string | number) => {
+    const newOverrides = [...machinePriceOverrides];
+    if (field === "machineId") {
+      newOverrides[index].machineId = value as string;
+    } else {
+      newOverrides[index].amountCents = typeof value === 'number' ? value : Math.round(parseFloat(value as string) * 100);
+    }
+    setMachinePriceOverrides(newOverrides);
+  };
+
+  const getMachineName = (machineId: string) => {
+    return machines?.find(m => m.id === machineId)?.name || machineId;
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <AdminNav />
-        <div className="h-screen flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading" data-testid="loading-pricing" />
-        </div>
+        <main className="container mx-auto py-8 px-4">
+          <p>Chargement...</p>
+        </main>
       </div>
     );
   }
 
-  const totalConfigs = priceConfigs?.length || 0;
-  const activeOffers = offers?.filter(o => o.active).length || 0;
-
   return (
     <div className="min-h-screen bg-background">
       <AdminNav />
-      <section className="py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="text-pricing-title">
-                Gestion des prix
-              </h1>
-              <p className="text-muted-foreground" data-testid="text-pricing-subtitle">
-                Configurez les tarifs pour chaque offre et machine
-              </p>
-            </div>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2" data-testid="button-create-price">
-                  <Plus className="w-4 h-4" />
-                  Nouveau prix
-                </Button>
-              </DialogTrigger>
-              <DialogContent data-testid="dialog-create-price">
-                <DialogHeader>
-                  <DialogTitle>Créer une configuration de prix</DialogTitle>
-                  <DialogDescription>
-                    Définissez le prix pour une offre spécifique. Laissez "Machine" vide pour définir un prix par défaut.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="offer">Offre *</Label>
-                    <Select value={selectedOfferId} onValueChange={setSelectedOfferId}>
-                      <SelectTrigger id="offer" data-testid="select-offer">
-                        <SelectValue placeholder="Sélectionner une offre" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {offers?.map(offer => (
-                          <SelectItem key={offer.id} value={offer.id} data-testid={`option-offer-${offer.id}`}>
-                            {offer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="machine">Machine (optionnel)</Label>
-                    <Select value={selectedMachineId} onValueChange={setSelectedMachineId}>
-                      <SelectTrigger id="machine" data-testid="select-machine">
-                        <SelectValue placeholder="Par défaut (toutes)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="" data-testid="option-machine-default">Par défaut</SelectItem>
-                        {machines?.map(machine => (
-                          <SelectItem key={machine.id} value={machine.id} data-testid={`option-machine-${machine.id}`}>
-                            {machine.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Prix (€) *</Label>
+      <main className="container mx-auto py-8 px-4">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Gestion des Offres & Prix</h1>
+            <p className="text-muted-foreground mt-2">
+              Gérez les offres avec leurs prix de base et surcharges par machine
+            </p>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreateDialog} data-testid="button-create-offer">
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle Offre
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingOffer ? "Modifier l'offre" : "Créer une nouvelle offre"}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingOffer
+                    ? "Modifiez les informations de l'offre, son prix de base et ses surcharges par machine"
+                    : "Créez une nouvelle offre avec un prix de base et des surcharges optionnelles par machine"}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Nom de l'offre *</Label>
                     <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={amountEuros}
-                      onChange={(e) => setAmountEuros(e.target.value)}
-                      data-testid="input-amount"
+                      id="name"
+                      value={offerName}
+                      onChange={(e) => setOfferName(e.target.value)}
+                      placeholder="Ex: 1 Journée, Week-end, Événement"
+                      required
+                      data-testid="input-offer-name"
                     />
                   </div>
+
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Input
+                      id="description"
+                      value={offerDescription}
+                      onChange={(e) => setOfferDescription(e.target.value)}
+                      placeholder="Description de l'offre (optionnel)"
+                      data-testid="input-offer-description"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="basePrice">Prix de base (€) *</Label>
+                    <Input
+                      id="basePrice"
+                      type="number"
+                      step="0.01"
+                      value={basePriceEuros}
+                      onChange={(e) => setBasePriceEuros(e.target.value)}
+                      placeholder="Ex: 150"
+                      required
+                      data-testid="input-base-price"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="active"
+                      checked={isActive}
+                      onCheckedChange={setIsActive}
+                      data-testid="switch-active"
+                    />
+                    <Label htmlFor="active">Offre active</Label>
+                  </div>
                 </div>
+
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Surcharges par machine</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Optionnel : définissez des prix spécifiques pour certaines machines
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addMachineOverride}
+                      data-testid="button-add-override"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+
+                  {machinePriceOverrides.length > 0 && (
+                    <div className="space-y-3">
+                      {machinePriceOverrides.map((override, index) => (
+                        <div key={index} className="flex gap-3 items-end">
+                          <div className="flex-1">
+                            <Label>Machine</Label>
+                            <Select
+                              value={override.machineId}
+                              onValueChange={(value) => updateMachineOverride(index, "machineId", value)}
+                            >
+                              <SelectTrigger data-testid={`select-machine-${index}`}>
+                                <SelectValue placeholder="Sélectionner une machine" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {machines?.map((machine) => (
+                                  <SelectItem key={machine.id} value={machine.id}>
+                                    {machine.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex-1">
+                            <Label>Prix (€)</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={(override.amountCents / 100).toString()}
+                              onChange={(e) => updateMachineOverride(index, "amountCents", e.target.value)}
+                              placeholder="Ex: 200"
+                              data-testid={`input-price-${index}`}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeMachineOverride(index)}
+                            data-testid={`button-remove-override-${index}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <DialogFooter>
-                  <Button 
-                    onClick={handleCreate} 
-                    disabled={createPriceMutation.isPending}
-                    data-testid="button-confirm-create"
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                    data-testid="button-cancel"
                   >
-                    {createPriceMutation.isPending ? "Création..." : "Créer"}
+                    Annuler
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    data-testid="button-submit"
+                  >
+                    {editingOffer ? "Mettre à jour" : "Créer"}
                   </Button>
                 </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <Card className="rounded-2xl shadow-lg border border-border">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm font-medium" data-testid="stat-total-configs-label">
-                      Configurations de prix
-                    </p>
-                    <p className="text-3xl font-bold text-foreground" data-testid="stat-total-configs-value">
-                      {totalConfigs}
-                    </p>
-                  </div>
-                  <DollarSign className="w-8 h-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-2xl shadow-lg border border-border">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm font-medium" data-testid="stat-active-offers-label">
-                      Offres actives
-                    </p>
-                    <p className="text-3xl font-bold text-foreground" data-testid="stat-active-offers-value">
-                      {activeOffers}
-                    </p>
-                  </div>
-                  <DollarSign className="w-8 h-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Offers Management Section */}
-          <Card className="rounded-2xl shadow-lg border border-border mb-8">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center">
-                  <DollarSign className="w-6 h-6 text-primary mr-2" />
-                  <h2 className="text-2xl font-bold">Gestion des offres</h2>
-                </div>
-                <Dialog open={isCreateOfferDialogOpen} onOpenChange={setIsCreateOfferDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="gradient-tropical" data-testid="button-add-offer">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Ajouter une offre
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent data-testid="dialog-add-offer">
-                    <DialogHeader>
-                      <DialogTitle>Ajouter une offre</DialogTitle>
-                      <DialogDescription>
-                        Créez une nouvelle offre avec son nom et sa description
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div>
-                        <Label htmlFor="offer-name">Nom de l'offre *</Label>
-                        <Input
-                          id="offer-name"
-                          placeholder="Ex: 1 Journée, Week-end..."
-                          value={offerName}
-                          onChange={(e) => setOfferName(e.target.value)}
-                          data-testid="input-offer-name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="offer-description">Description (optionnel)</Label>
-                        <Input
-                          id="offer-description"
-                          placeholder="Description de l'offre..."
-                          value={offerDescription}
-                          onChange={(e) => setOfferDescription(e.target.value)}
-                          data-testid="input-offer-description"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        onClick={handleCreateOffer}
-                        disabled={createOfferMutation.isPending}
-                        data-testid="button-save-offer"
-                      >
-                        {createOfferMutation.isPending ? "Création..." : "Créer"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {offers?.map((offer) => (
-                    <TableRow key={offer.id} data-testid={`row-offer-${offer.id}`}>
-                      <TableCell className="font-medium">{offer.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{offer.description || '-'}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={offer.active ? "default" : "secondary"}
-                          className="cursor-pointer"
-                          onClick={() => toggleOfferActive(offer)}
-                          data-testid={`badge-offer-status-${offer.id}`}
-                        >
-                          {offer.active ? "Actif" : "Inactif"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Dialog open={editingOffer?.id === offer.id} onOpenChange={(open) => !open && setEditingOffer(null)}>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditOfferDialog(offer)}
-                                data-testid={`button-edit-offer-${offer.id}`}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Modifier l'offre</DialogTitle>
-                                <DialogDescription>
-                                  Modifiez le nom ou la description de l'offre
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <div>
-                                  <Label htmlFor="edit-offer-name">Nom de l'offre</Label>
-                                  <Input
-                                    id="edit-offer-name"
-                                    value={offerName}
-                                    onChange={(e) => setOfferName(e.target.value)}
-                                    data-testid="input-edit-offer-name"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="edit-offer-description">Description</Label>
-                                  <Input
-                                    id="edit-offer-description"
-                                    value={offerDescription}
-                                    onChange={(e) => setOfferDescription(e.target.value)}
-                                    data-testid="input-edit-offer-description"
-                                  />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button
-                                  onClick={handleEditOffer}
-                                  disabled={updateOfferMutation.isPending}
-                                  data-testid="button-update-offer"
-                                >
-                                  {updateOfferMutation.isPending ? "Mise à jour..." : "Mettre à jour"}
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteOfferMutation.mutate(offer.id)}
-                            disabled={deleteOfferMutation.isPending}
-                            data-testid={`button-delete-offer-${offer.id}`}
-                          >
-                            <Trash className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {offers?.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8" data-testid="text-no-offers">
-                        Aucune offre configurée. Créez-en une pour commencer.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <h2 className="text-2xl font-bold text-foreground mb-4">Configurations de prix</h2>
-          <Card className="rounded-2xl shadow-lg border border-border">
-            <CardContent className="p-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead data-testid="header-offer">Offre</TableHead>
-                    <TableHead data-testid="header-machine">Machine</TableHead>
-                    <TableHead data-testid="header-price">Prix</TableHead>
-                    <TableHead className="text-right" data-testid="header-actions">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {priceConfigs?.map((config) => (
-                    <TableRow key={config.id} data-testid={`row-config-${config.id}`}>
-                      <TableCell data-testid={`cell-offer-${config.id}`}>
-                        <Badge variant="outline">{getOfferName(config.offerId)}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground" data-testid={`cell-machine-${config.id}`}>
-                        {getMachineName(config.machineId)}
-                      </TableCell>
-                      <TableCell className="font-semibold" data-testid={`cell-price-${config.id}`}>
-                        {(config.amountCents / 100).toFixed(2)} €
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Dialog open={editingConfig?.id === config.id} onOpenChange={(open) => !open && setEditingConfig(null)}>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditDialog(config)}
-                                data-testid={`button-edit-${config.id}`}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent data-testid="dialog-edit-price">
-                              <DialogHeader>
-                                <DialogTitle>Modifier le prix</DialogTitle>
-                                <DialogDescription>
-                                  {getOfferName(config.offerId)} - {getMachineName(config.machineId)}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-amount">Prix (€)</Label>
-                                  <Input
-                                    id="edit-amount"
-                                    type="number"
-                                    step="0.01"
-                                    value={amountEuros}
-                                    onChange={(e) => setAmountEuros(e.target.value)}
-                                    data-testid="input-edit-amount"
-                                  />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button 
-                                  onClick={handleUpdate} 
-                                  disabled={updatePriceMutation.isPending}
-                                  data-testid="button-confirm-update"
-                                >
-                                  {updatePriceMutation.isPending ? "Mise à jour..." : "Mettre à jour"}
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deletePriceMutation.mutate(config.id)}
-                            disabled={deletePriceMutation.isPending}
-                            data-testid={`button-delete-${config.id}`}
-                          >
-                            <Trash className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {priceConfigs?.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8" data-testid="text-no-configs">
-                        Aucune configuration de prix. Créez-en une pour commencer.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
-      </section>
+
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Offre</TableHead>
+                  <TableHead>Prix de base</TableHead>
+                  <TableHead>Surcharges machines</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {offers?.map((offer) => (
+                  <TableRow key={offer.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium" data-testid={`text-offer-name-${offer.id}`}>
+                          {offer.name}
+                        </p>
+                        {offer.description && (
+                          <p className="text-sm text-muted-foreground">{offer.description}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-4 h-4" />
+                        <span data-testid={`text-base-price-${offer.id}`}>
+                          {(offer.basePriceCents / 100).toFixed(2)} €
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {offer.machinePriceOverrides.length > 0 ? (
+                        <div className="space-y-1">
+                          {offer.machinePriceOverrides.map((override) => (
+                            <div key={override.id} className="text-sm">
+                              {getMachineName(override.machineId)}: {(override.amountCents / 100).toFixed(2)} €
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Aucune</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={offer.active}
+                          onCheckedChange={(checked) =>
+                            toggleActiveMutation.mutate({ id: offer.id, active: checked })
+                          }
+                          data-testid={`switch-active-${offer.id}`}
+                        />
+                        <Badge variant={offer.active ? "default" : "secondary"}>
+                          {offer.active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(offer)}
+                          data-testid={`button-edit-${offer.id}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            if (confirm(`Êtes-vous sûr de vouloir supprimer l'offre "${offer.name}" ?`)) {
+                              deleteMutation.mutate(offer.id);
+                            }
+                          }}
+                          data-testid={`button-delete-${offer.id}`}
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {(!offers || offers.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      Aucune offre configurée. Créez votre première offre pour commencer.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 }
