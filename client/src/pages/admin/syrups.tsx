@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import Navbar from "@/components/navbar";
+import AdminNav from "@/components/admin-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,7 +144,7 @@ export default function AdminSyrups() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <AdminNav />
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Gestion des Sirops</h1>

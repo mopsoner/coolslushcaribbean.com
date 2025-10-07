@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import Navbar from "@/components/navbar";
+import AdminNav from "@/components/admin-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,7 +152,7 @@ export default function AdminPricing() {
   if (offersLoading || configsLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <AdminNav />
         <div className="h-screen flex items-center justify-center">
           <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading" data-testid="loading-pricing" />
         </div>
@@ -165,7 +165,7 @@ export default function AdminPricing() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <AdminNav />
       <section className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8 flex justify-between items-center">

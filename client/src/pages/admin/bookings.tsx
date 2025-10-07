@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Eye, Edit, Calendar, Users, TrendingUp } from "lucide-react";
-import Navbar from "@/components/navbar";
+import AdminNav from "@/components/admin-nav";
 
 const statusMap = {
   PENDING: { 
@@ -30,7 +30,7 @@ export default function AdminBookings() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <AdminNav />
         <div className="h-screen flex items-center justify-center">
           <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading" data-testid="loading-admin" />
         </div>
@@ -44,7 +44,7 @@ export default function AdminBookings() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <AdminNav />
       <section className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
