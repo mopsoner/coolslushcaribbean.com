@@ -405,6 +405,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customerEmail: req.query.email as string || "test@example.com",
           customerAddress: "123 Rue de Test, Pointe-à-Pitre",
           machines: 2,
+          selectedSyrups: [],
+          cupSize: "moyen",
           totalCents: 30000,
           status: "PENDING",
           swiklyUrl: `http://localhost:5000/swikly-redirect?booking=test-123`,

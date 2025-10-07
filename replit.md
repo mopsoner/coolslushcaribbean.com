@@ -80,6 +80,7 @@ Preferred communication style: Simple, everyday language.
 - Database-driven pricing with admin-managed offer configurations
 - Support for default offer pricing and optional machine-specific overrides
 - Real-time price calculation on frontend and backend
+- **Updated October 7, 2025**: Pricing section now fetches dynamic prices from API instead of hardcoded values, ensuring consistency between marketing page and booking form
 
 **Admin Interface**
 - Back-office pricing management at `/admin/pricing`
