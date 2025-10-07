@@ -27,6 +27,7 @@ export interface IStorage {
   getActiveOffers(): Promise<Offer[]>;
   createOffer(offer: InsertOffer): Promise<Offer>;
   updateOffer(id: string, updates: Partial<Offer>): Promise<Offer | undefined>;
+  deleteOffer(id: string): Promise<void>;
 
   // Price configuration methods
   getPriceConfiguration(id: string): Promise<PriceConfiguration | undefined>;
@@ -151,6 +152,10 @@ export class DbStorage implements IStorage {
       .where(eq(offers.id, id))
       .returning();
     return result[0];
+  }
+
+  async deleteOffer(id: string): Promise<void> {
+    await db.delete(offers).where(eq(offers.id, id));
   }
 
   async getPriceConfiguration(id: string): Promise<PriceConfiguration | undefined> {

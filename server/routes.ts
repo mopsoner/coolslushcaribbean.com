@@ -311,6 +311,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete an offer (admin)
+  app.delete("/api/admin/offers/:id", async (req, res) => {
+    try {
+      await storage.deleteOffer(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ============= ADMIN PRICE CONFIGURATION ROUTES =============
   
   // Get all price configurations (admin)

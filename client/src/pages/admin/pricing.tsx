@@ -21,6 +21,12 @@ export default function AdminPricing() {
   const [selectedOfferId, setSelectedOfferId] = useState<string>("");
   const [selectedMachineId, setSelectedMachineId] = useState<string>("");
   const [amountEuros, setAmountEuros] = useState<string>("");
+  
+  // Offer management states
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [isCreateOfferDialogOpen, setIsCreateOfferDialogOpen] = useState(false);
+  const [offerName, setOfferName] = useState<string>("");
+  const [offerDescription, setOfferDescription] = useState<string>("");
 
   const { data: offers, isLoading: offersLoading } = useQuery<Offer[]>({
     queryKey: ['/api/admin/offers'],
@@ -101,10 +107,86 @@ export default function AdminPricing() {
     },
   });
 
+  // Offer mutations
+  const createOfferMutation = useMutation({
+    mutationFn: async (data: { name: string; description?: string; active: boolean }) => {
+      const response = await apiRequest('POST', '/api/admin/offers', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/offers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/offers'] });
+      setIsCreateOfferDialogOpen(false);
+      resetOfferForm();
+      toast({
+        title: "Offre créée",
+        description: "L'offre a été créée avec succès.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de créer l'offre",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateOfferMutation = useMutation({
+    mutationFn: async (data: { id: string; name?: string; description?: string; active?: boolean }) => {
+      const response = await apiRequest('PATCH', `/api/admin/offers/${data.id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/offers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/offers'] });
+      setEditingOffer(null);
+      resetOfferForm();
+      toast({
+        title: "Offre mise à jour",
+        description: "L'offre a été mise à jour avec succès.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de mettre à jour l'offre",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteOfferMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/admin/offers/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/offers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/offers'] });
+      toast({
+        title: "Offre supprimée",
+        description: "L'offre a été supprimée avec succès.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de supprimer l'offre",
+        variant: "destructive",
+      });
+    },
+  });
+
   const resetForm = () => {
     setSelectedOfferId("");
     setSelectedMachineId("");
     setAmountEuros("");
+  };
+
+  const resetOfferForm = () => {
+    setOfferName("");
+    setOfferDescription("");
   };
 
   const handleCreate = () => {
@@ -138,6 +220,50 @@ export default function AdminPricing() {
   const openEditDialog = (config: PriceConfiguration) => {
     setEditingConfig(config);
     setAmountEuros((config.amountCents / 100).toFixed(2));
+  };
+
+  // Offer handlers
+  const handleCreateOffer = () => {
+    if (!offerName) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez entrer un nom d'offre",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createOfferMutation.mutate({
+      name: offerName,
+      description: offerDescription || undefined,
+      active: true,
+    });
+  };
+
+  const handleEditOffer = () => {
+    if (!editingOffer) return;
+
+    const updates: any = {};
+    if (offerName) updates.name = offerName;
+    if (offerDescription !== undefined) updates.description = offerDescription;
+
+    updateOfferMutation.mutate({
+      id: editingOffer.id,
+      ...updates,
+    });
+  };
+
+  const toggleOfferActive = (offer: Offer) => {
+    updateOfferMutation.mutate({
+      id: offer.id,
+      active: !offer.active,
+    });
+  };
+
+  const openEditOfferDialog = (offer: Offer) => {
+    setEditingOffer(offer);
+    setOfferName(offer.name);
+    setOfferDescription(offer.description || "");
   };
 
   const getOfferName = (offerId: string) => {
@@ -283,6 +409,164 @@ export default function AdminPricing() {
             </Card>
           </div>
 
+          {/* Offers Management Section */}
+          <Card className="rounded-2xl shadow-lg border border-border mb-8">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center">
+                  <DollarSign className="w-6 h-6 text-primary mr-2" />
+                  <h2 className="text-2xl font-bold">Gestion des offres</h2>
+                </div>
+                <Dialog open={isCreateOfferDialogOpen} onOpenChange={setIsCreateOfferDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="gradient-tropical" data-testid="button-add-offer">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter une offre
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent data-testid="dialog-add-offer">
+                    <DialogHeader>
+                      <DialogTitle>Ajouter une offre</DialogTitle>
+                      <DialogDescription>
+                        Créez une nouvelle offre avec son nom et sa description
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div>
+                        <Label htmlFor="offer-name">Nom de l'offre *</Label>
+                        <Input
+                          id="offer-name"
+                          placeholder="Ex: 1 Journée, Week-end..."
+                          value={offerName}
+                          onChange={(e) => setOfferName(e.target.value)}
+                          data-testid="input-offer-name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="offer-description">Description (optionnel)</Label>
+                        <Input
+                          id="offer-description"
+                          placeholder="Description de l'offre..."
+                          value={offerDescription}
+                          onChange={(e) => setOfferDescription(e.target.value)}
+                          data-testid="input-offer-description"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        onClick={handleCreateOffer}
+                        disabled={createOfferMutation.isPending}
+                        data-testid="button-save-offer"
+                      >
+                        {createOfferMutation.isPending ? "Création..." : "Créer"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {offers?.map((offer) => (
+                    <TableRow key={offer.id} data-testid={`row-offer-${offer.id}`}>
+                      <TableCell className="font-medium">{offer.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{offer.description || '-'}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={offer.active ? "default" : "secondary"}
+                          className="cursor-pointer"
+                          onClick={() => toggleOfferActive(offer)}
+                          data-testid={`badge-offer-status-${offer.id}`}
+                        >
+                          {offer.active ? "Actif" : "Inactif"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Dialog open={editingOffer?.id === offer.id} onOpenChange={(open) => !open && setEditingOffer(null)}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditOfferDialog(offer)}
+                                data-testid={`button-edit-offer-${offer.id}`}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Modifier l'offre</DialogTitle>
+                                <DialogDescription>
+                                  Modifiez le nom ou la description de l'offre
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4 py-4">
+                                <div>
+                                  <Label htmlFor="edit-offer-name">Nom de l'offre</Label>
+                                  <Input
+                                    id="edit-offer-name"
+                                    value={offerName}
+                                    onChange={(e) => setOfferName(e.target.value)}
+                                    data-testid="input-edit-offer-name"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-offer-description">Description</Label>
+                                  <Input
+                                    id="edit-offer-description"
+                                    value={offerDescription}
+                                    onChange={(e) => setOfferDescription(e.target.value)}
+                                    data-testid="input-edit-offer-description"
+                                  />
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button
+                                  onClick={handleEditOffer}
+                                  disabled={updateOfferMutation.isPending}
+                                  data-testid="button-update-offer"
+                                >
+                                  {updateOfferMutation.isPending ? "Mise à jour..." : "Mettre à jour"}
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteOfferMutation.mutate(offer.id)}
+                            disabled={deleteOfferMutation.isPending}
+                            data-testid={`button-delete-offer-${offer.id}`}
+                          >
+                            <Trash className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {offers?.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8" data-testid="text-no-offers">
+                        Aucune offre configurée. Créez-en une pour commencer.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <h2 className="text-2xl font-bold text-foreground mb-4">Configurations de prix</h2>
           <Card className="rounded-2xl shadow-lg border border-border">
             <CardContent className="p-6">
               <Table>
