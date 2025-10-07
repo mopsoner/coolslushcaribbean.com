@@ -66,35 +66,45 @@ Preferred communication style: Simple, everyday language.
 **Data Models**
 - **Machines**: Track slushy machine inventory with status (AVAILABLE, UNAVAILABLE, MAINTENANCE)
 - **Bookings**: Store customer reservations with date, time slots, customer info, payment status, external references (Stripe, Swikly), syrup selections, and cup size preference
-- **Offers**: Define rental offers (1 Journée, Week-end, Événement) with default prices
-- **Price Configurations**: Store pricing rules per offer, with optional machine-specific overrides
+- **Offers**: Define rental offers (1 Journée, Week-end, Événement) with base prices (basePriceCents field added October 7, 2025)
+- **Offer Machine Prices**: Store optional machine-specific price overrides only (formerly price_configurations, refactored October 7, 2025)
 - **Syrups**: Catalog of available syrup flavors with individual pricing and active status
 
 **Validation Strategy**
 - Shared Zod schemas between client and server for consistent validation
 - Schema inference for TypeScript types ensures type safety across the stack
 
-### Dynamic Pricing System
+### Unified Pricing System
 
-**Architecture** (Added October 6, 2025)
-- Database-driven pricing with admin-managed offer configurations
-- Support for default offer pricing and optional machine-specific overrides
+**Architecture** (Refactored October 7, 2025)
+- Database-driven pricing with unified offer management (base price + optional machine overrides)
+- Offers contain basePriceCents directly; separate offer_machine_prices table only for machine-specific overrides
 - Real-time price calculation on frontend and backend
-- **Updated October 7, 2025**: Pricing section now fetches dynamic prices from API instead of hardcoded values, ensuring consistency between marketing page and booking form
+- Transactional integrity: all offer mutations (create/update) wrap offer + overrides in db.transaction for atomicity
 
 **Admin Interface**
-- Back-office pricing management at `/admin/pricing`
-- CRUD operations for offers and price configurations
-- Edit/delete/create pricing rules through intuitive UI
+- Back-office unified pricing management at `/admin/pricing`
+- Single form to create/edit offers with:
+  - Offer details (name, description, active status)
+  - Base price (basePriceCents)
+  - Optional machine-specific price overrides
+- CRUD operations handled through unified API: `createOfferWithPricing`, `updateOfferWithPricing`
+- All mutations are transactional (rollback if any part fails)
 - Automatic cache invalidation via React Query
 
 **Pricing Flow**
-1. Admin defines offers (1 Journée, Week-end, Événement) with default prices in database
-2. Optional: Admin sets machine-specific price overrides
-3. Customer booking form fetches offers via GET `/api/offers`
-4. Frontend calculates and displays total: `price × machineCount`
+1. Admin defines offers with base prices and optional machine overrides through unified form
+2. All data persisted atomically in transaction (offer + overrides)
+3. Customer booking form fetches offers via GET `/api/offers` or `/api/admin/offers` (with overrides)
+4. Frontend calculates and displays total: `effectivePrice × machineCount`
 5. Backend validates and recalculates on booking creation using `storage.getOfferByName()` and `storage.getEffectivePrice()`
+   - getEffectivePrice checks for machine-specific override first, falls back to basePriceCents
 6. Final totalCents stored in booking record for payment processing
+
+**Data Integrity**
+- Transactional writes prevent orphaned price overrides
+- No default price rows needed (base price stored in offer itself)
+- Machine overrides only created when explicitly needed
 
 **Default Offers** (Seeded)
 - "1 Journée": 150€ per machine
