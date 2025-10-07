@@ -15,17 +15,17 @@ export const offers = pgTable("offers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().unique(),
   description: text("description"),
+  basePriceCents: integer("base_price_cents").notNull(), // Prix de base de l'offre
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const priceConfigurations = pgTable("price_configurations", {
+export const offerMachinePrices = pgTable("offer_machine_prices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   offerId: varchar("offer_id").notNull().references(() => offers.id, { onDelete: 'cascade' }),
-  machineId: varchar("machine_id").references(() => machines.id, { onDelete: 'cascade' }), // null = default price for all machines
+  machineId: varchar("machine_id").notNull().references(() => machines.id, { onDelete: 'cascade' }), // Surcharge spécifique pour une machine
   amountCents: integer("amount_cents").notNull(),
-  currency: text("currency").notNull().default("EUR"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
