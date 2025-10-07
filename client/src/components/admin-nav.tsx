@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Snowflake, Calendar, DollarSign, Droplet, LayoutDashboard, Home } from "lucide-react";
+import { Snowflake, Calendar, DollarSign, Droplet, LayoutDashboard, Home, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminNav() {
@@ -10,6 +10,11 @@ export default function AdminNav() {
       href: "/admin/bookings",
       label: "Réservations",
       icon: Calendar,
+    },
+    {
+      href: "/admin/machines",
+      label: "Machines",
+      icon: Settings,
     },
     {
       href: "/admin/pricing",
