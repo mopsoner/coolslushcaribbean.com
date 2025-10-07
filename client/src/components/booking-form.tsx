@@ -138,10 +138,39 @@ export default function BookingForm() {
     if (!selectedOffer || !offers) return 0;
     const offer = offers.find(o => o.name === selectedOffer);
     if (!offer) return 0;
-    return (offer.amountCents * machines) / 100;
+    
+    // Prix des machines
+    let total = offer.amountCents * machines;
+    
+    // Ajouter le prix des sirops sélectionnés
+    if (syrups && syrupSelections.length > 0) {
+      syrupSelections.forEach(selection => {
+        const syrup = syrups.find(s => s.id === selection.syrupId);
+        if (syrup && syrup.amountCents > 0) {
+          total += syrup.amountCents * selection.quantity;
+        }
+      });
+    }
+    
+    return total / 100;
+  };
+
+  const calculateSyrupsTotalPrice = () => {
+    if (!syrups || syrupSelections.length === 0) return 0;
+    
+    let total = 0;
+    syrupSelections.forEach(selection => {
+      const syrup = syrups.find(s => s.id === selection.syrupId);
+      if (syrup && syrup.amountCents > 0) {
+        total += syrup.amountCents * selection.quantity;
+      }
+    });
+    
+    return total / 100;
   };
 
   const totalPrice = calculateTotalPrice();
+  const syrupsTotalPrice = calculateSyrupsTotalPrice();
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -556,16 +585,32 @@ export default function BookingForm() {
               {/* Price Summary */}
               {selectedOffer && totalPrice > 0 && (
                 <div className="bg-primary/10 rounded-xl p-6 border border-primary/20" data-testid="price-summary">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Prix estimé</p>
-                      <p className="text-xs text-muted-foreground mt-1">{machines} machine(s) × {(totalPrice / machines).toFixed(0)}€</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">
+                        {machines} machine(s) × {((totalPrice - syrupsTotalPrice) / machines).toFixed(2)}€
+                      </span>
+                      <span className="font-medium" data-testid="machines-price">
+                        {(totalPrice - syrupsTotalPrice).toFixed(2)} €
+                      </span>
                     </div>
-                    <div className="text-right">
-                      <p className="text-3xl font-bold text-primary" data-testid="total-price">
+                    
+                    {syrupsTotalPrice > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">
+                          Sirops ({syrupSelections.reduce((sum, s) => sum + s.quantity, 0)} unité(s))
+                        </span>
+                        <span className="font-medium" data-testid="syrups-price">
+                          {syrupsTotalPrice.toFixed(2)} €
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="border-t border-primary/20 pt-3 flex justify-between items-center">
+                      <span className="text-muted-foreground font-semibold">Total TTC</span>
+                      <span className="text-3xl font-bold text-primary" data-testid="total-price">
                         {totalPrice.toFixed(2)} €
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">TTC</p>
+                      </span>
                     </div>
                   </div>
                 </div>

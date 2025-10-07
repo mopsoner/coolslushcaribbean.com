@@ -94,7 +94,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const machineCount = validatedData.machines ?? 1;
-      const totalCents = priceData.amountCents * machineCount;
+      let totalCents = priceData.amountCents * machineCount;
+      
+      // Add syrup prices to total
+      if (validatedData.selectedSyrups && validatedData.selectedSyrups.length > 0) {
+        for (const syrupSelection of validatedData.selectedSyrups) {
+          const syrup = await storage.getSyrup(syrupSelection.syrupId);
+          if (syrup && syrup.amountCents > 0) {
+            totalCents += syrup.amountCents * syrupSelection.quantity;
+          }
+        }
+      }
       
       const booking = await storage.createBooking({
         ...validatedData,
