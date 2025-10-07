@@ -65,6 +65,9 @@ export const insertMachineSchema = createInsertSchema(machines).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Le nom de la machine est requis").default("EZBASICS Slushy Machine"),
+  status: z.string().default("AVAILABLE"),
 });
 
 const syrupSelectionSchema = z.object({
@@ -124,6 +127,8 @@ export const insertPriceConfigurationSchema = createInsertSchema(priceConfigurat
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  currency: z.string().default("EUR"),
 });
 
 export const insertSyrupSchema = createInsertSchema(syrups).omit({
