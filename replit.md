@@ -76,40 +76,55 @@ Preferred communication style: Simple, everyday language.
 
 ### Unified Pricing System
 
-**Architecture** (Refactored October 7, 2025)
-- Database-driven pricing with unified offer management (base price + optional machine overrides)
-- Offers contain basePriceCents directly; separate offer_machine_prices table only for machine-specific overrides
-- Real-time price calculation on frontend and backend
+**Architecture** (Updated November 13, 2025 - Daily Pricing)
+- Database-driven pricing with unified offer management (daily price + optional machine overrides)
+- Offers contain basePriceCents which represents the **daily price per machine**
+- Separate offer_machine_prices table for optional machine-specific daily price overrides
+- Real-time price calculation on frontend and backend with rental days
 - Transactional integrity: all offer mutations (create/update) wrap offer + overrides in db.transaction for atomicity
+
+**Pricing Formula** (Added November 13, 2025)
+```
+Total = (dailyPrice × machineCount × rentalDays) + (syrupPrice × quantity)
+```
+- `dailyPrice`: Price per machine per day from offer (basePriceCents)
+- `machineCount`: Number of machines rented
+- `rentalDays`: Calculated inclusively (startDate to endDate)
+  - Same day rental = 1 day
+  - Multi-day rental = (endDate - startDate) + 1 day
+- Utility functions in `shared/utils.ts`: `calculateRentalDays()`, `calculateBookingTotal()`
 
 **Admin Interface**
 - Back-office unified pricing management at `/admin/pricing`
 - Single form to create/edit offers with:
   - Offer details (name, description, active status)
-  - Base price (basePriceCents)
-  - Optional machine-specific price overrides
+  - Daily price per machine (basePriceCents)
+  - Optional machine-specific daily price overrides
 - CRUD operations handled through unified API: `createOfferWithPricing`, `updateOfferWithPricing`
 - All mutations are transactional (rollback if any part fails)
 - Automatic cache invalidation via React Query
 
 **Pricing Flow**
-1. Admin defines offers with base prices and optional machine overrides through unified form
+1. Admin defines offers with daily prices and optional machine overrides through unified form
 2. All data persisted atomically in transaction (offer + overrides)
 3. Customer booking form fetches offers via GET `/api/offers` or `/api/admin/offers` (with overrides)
-4. Frontend calculates and displays total: `effectivePrice × machineCount`
-5. Backend validates and recalculates on booking creation using `storage.getOfferByName()` and `storage.getEffectivePrice()`
+4. Frontend calculates rental days from startDate/endDate using `calculateRentalDays()`
+5. Frontend displays total in real-time: `dailyPrice × machineCount × rentalDays + syrupTotal`
+6. Backend validates and recalculates on booking creation using `storage.getOfferByName()` and `storage.getEffectivePrice()`
    - getEffectivePrice checks for machine-specific override first, falls back to basePriceCents
-6. Final totalCents stored in booking record for payment processing
+   - Rental days calculated server-side to prevent client manipulation
+7. Final totalCents stored in booking record for payment processing
 
 **Data Integrity**
 - Transactional writes prevent orphaned price overrides
-- No default price rows needed (base price stored in offer itself)
+- No default price rows needed (daily price stored in offer itself)
 - Machine overrides only created when explicitly needed
+- Server-side validation ensures client cannot manipulate pricing
 
-**Default Offers** (Seeded)
-- "1 Journée": 150€ per machine
-- "Week-end": 250€ per machine
-- "Événement": 350€ per machine
+**Default Offers** (Seeded - Daily Rates)
+- "1 Journée": 180€ per machine per day (1 day)
+- "Week-end": 150€ per machine per day (typically 2-3 days)
+- "Événement": 117€ per machine per day (typically 3+ days)
 
 **Production Configuration**
 - Swikly deposit: 500€ (50,000 cents)

@@ -142,25 +142,46 @@ export default function BookingForm() {
     }
   };
 
+  const calculateRentalDaysForForm = () => {
+    if (!watchedStartDate || watchedStartDate === "") return 1;
+    
+    const startDate = new Date(watchedStartDate);
+    // Pour "1 Journée", endDate = startDate
+    const endDateValue = watchedOffer === "1 Journée" ? watchedStartDate : watchedEndDate;
+    if (!endDateValue || endDateValue === "") return 1;
+    
+    const endDate = new Date(endDateValue);
+    return calculateRentalDays(startDate, endDate);
+  };
+
   const calculateTotalPrice = () => {
     if (!watchedOffer || !offers) return 0;
     const offer = offers.find(o => o.name === watchedOffer);
     if (!offer) return 0;
     
-    // Prix des machines
-    let total = offer.amountCents * watchedMachines;
+    // Calculate rental days
+    const rentalDays = calculateRentalDaysForForm();
     
-    // Ajouter le prix des sirops sélectionnés
+    // Calculate syrup total
+    let syrupTotalCents = 0;
     if (syrups && watchedSyrups && watchedSyrups.length > 0) {
       watchedSyrups.forEach(selection => {
         const syrup = syrups.find(s => s.id === selection.syrupId);
         if (syrup && syrup.amountCents > 0) {
-          total += syrup.amountCents * selection.quantity;
+          syrupTotalCents += syrup.amountCents * selection.quantity;
         }
       });
     }
     
-    return total / 100;
+    // Calculate total: (daily price × machines × days) + syrups
+    const totalCents = calculateBookingTotal(
+      offer.amountCents, // daily price per machine
+      watchedMachines,
+      rentalDays,
+      syrupTotalCents
+    );
+    
+    return totalCents / 100;
   };
 
   const calculateSyrupsTotalPrice = () => {
@@ -179,6 +200,14 @@ export default function BookingForm() {
 
   const totalPrice = calculateTotalPrice();
   const syrupsTotalPrice = calculateSyrupsTotalPrice();
+  const rentalDays = calculateRentalDaysForForm();
+  
+  // Format dates for display
+  const formatDateForDisplay = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -594,9 +623,35 @@ export default function BookingForm() {
               {selectedOffer && totalPrice > 0 && (
                 <div className="bg-primary/10 rounded-xl p-6 border border-primary/20" data-testid="price-summary">
                   <div className="space-y-3">
+                    {/* Rental Period */}
+                    {watchedStartDate && (
+                      <div className="mb-4 pb-3 border-b border-primary/20">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground font-medium">
+                            <Calendar className="w-4 h-4 inline mr-1" />
+                            Période de location
+                          </span>
+                        </div>
+                        <div className="mt-2 text-foreground">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold">
+                              {formatDateForDisplay(watchedStartDate)}
+                              {watchedOffer !== "1 Journée" && watchedEndDate && (
+                                <> → {formatDateForDisplay(watchedEndDate)}</>
+                              )}
+                            </span>
+                            <span className="bg-primary/20 text-primary px-3 py-1 rounded-full font-bold text-sm" data-testid="rental-days">
+                              {rentalDays} jour{rentalDays > 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Machine Price Calculation */}
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">
-                        {machines} machine(s) × {((totalPrice - syrupsTotalPrice) / machines).toFixed(2)}€
+                        {machines} machine{machines > 1 ? 's' : ''} × {((totalPrice - syrupsTotalPrice) / machines / rentalDays).toFixed(2)}€/jour × {rentalDays} jour{rentalDays > 1 ? 's' : ''}
                       </span>
                       <span className="font-medium" data-testid="machines-price">
                         {(totalPrice - syrupsTotalPrice).toFixed(2)} €
