@@ -82,6 +82,11 @@ export default function BookingForm() {
     },
   });
 
+  // Watch form values for reactive price calculation
+  const watchedOffer = form.watch("offer");
+  const watchedMachines = form.watch("machines");
+  const watchedSyrups = form.watch("selectedSyrups");
+
   const bookingMutation = useMutation({
     mutationFn: async (data: Omit<BookingFormData, "terms">) => {
       const response = await apiRequest("POST", "/api/bookings", data);
@@ -135,16 +140,16 @@ export default function BookingForm() {
   };
 
   const calculateTotalPrice = () => {
-    if (!selectedOffer || !offers) return 0;
-    const offer = offers.find(o => o.name === selectedOffer);
+    if (!watchedOffer || !offers) return 0;
+    const offer = offers.find(o => o.name === watchedOffer);
     if (!offer) return 0;
     
     // Prix des machines
-    let total = offer.amountCents * machines;
+    let total = offer.amountCents * watchedMachines;
     
     // Ajouter le prix des sirops sélectionnés
-    if (syrups && syrupSelections.length > 0) {
-      syrupSelections.forEach(selection => {
+    if (syrups && watchedSyrups && watchedSyrups.length > 0) {
+      watchedSyrups.forEach(selection => {
         const syrup = syrups.find(s => s.id === selection.syrupId);
         if (syrup && syrup.amountCents > 0) {
           total += syrup.amountCents * selection.quantity;
@@ -156,10 +161,10 @@ export default function BookingForm() {
   };
 
   const calculateSyrupsTotalPrice = () => {
-    if (!syrups || syrupSelections.length === 0) return 0;
+    if (!syrups || !watchedSyrups || watchedSyrups.length === 0) return 0;
     
     let total = 0;
-    syrupSelections.forEach(selection => {
+    watchedSyrups.forEach(selection => {
       const syrup = syrups.find(s => s.id === selection.syrupId);
       if (syrup && syrup.amountCents > 0) {
         total += syrup.amountCents * selection.quantity;
