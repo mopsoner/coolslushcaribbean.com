@@ -15,7 +15,7 @@ export const offers = pgTable("offers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().unique(),
   description: text("description"),
-  basePriceCents: integer("base_price_cents").notNull(), // Prix de base de l'offre
+  basePriceCents: integer("base_price_cents").notNull(), // Prix par machine par jour (daily price per machine)
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

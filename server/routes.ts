@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema } from "@shared/schema";
+import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
@@ -94,17 +95,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const machineCount = validatedData.machines ?? 1;
-      let totalCents = priceData.amountCents * machineCount;
       
-      // Add syrup prices to total
+      // Calculate number of rental days
+      const rentalDays = calculateRentalDays(
+        validatedData.startDate instanceof Date ? validatedData.startDate : new Date(validatedData.startDate),
+        validatedData.endDate instanceof Date ? validatedData.endDate : new Date(validatedData.endDate)
+      );
+      
+      // Calculate syrup total
+      let syrupTotalCents = 0;
       if (validatedData.selectedSyrups && validatedData.selectedSyrups.length > 0) {
         for (const syrupSelection of validatedData.selectedSyrups) {
           const syrup = await storage.getSyrup(syrupSelection.syrupId);
           if (syrup && syrup.amountCents > 0) {
-            totalCents += syrup.amountCents * syrupSelection.quantity;
+            syrupTotalCents += syrup.amountCents * syrupSelection.quantity;
           }
         }
       }
+      
+      // Calculate total: (daily price × machines × days) + syrups
+      const totalCents = calculateBookingTotal(
+        priceData.amountCents, // This is the daily price per machine
+        machineCount,
+        rentalDays,
+        syrupTotalCents
+      );
       
       const booking = await storage.createBooking({
         ...validatedData,

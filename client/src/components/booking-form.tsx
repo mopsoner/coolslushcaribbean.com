@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, Phone, Mail, MapPin, Snowflake, Lock, Shield, CheckCircle, Droplet, Coffee } from "lucide-react";
 import type { Offer, Syrup } from "@shared/schema";
+import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
 
 const syrupSelectionSchema = z.object({
   syrupId: z.string(),
@@ -86,6 +87,8 @@ export default function BookingForm() {
   const watchedOffer = form.watch("offer");
   const watchedMachines = form.watch("machines");
   const watchedSyrups = form.watch("selectedSyrups");
+  const watchedStartDate = form.watch("startDate");
+  const watchedEndDate = form.watch("endDate");
 
   const bookingMutation = useMutation({
     mutationFn: async (data: Omit<BookingFormData, "terms">) => {
