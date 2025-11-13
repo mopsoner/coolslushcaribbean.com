@@ -89,6 +89,7 @@ export default function BookingForm() {
   const watchedSyrups = form.watch("selectedSyrups");
   const watchedStartDate = form.watch("startDate");
   const watchedEndDate = form.watch("endDate");
+  const watchedCupSize = form.watch("cupSize");
 
   const bookingMutation = useMutation({
     mutationFn: async (data: Omit<BookingFormData, "terms">) => {
@@ -620,7 +621,7 @@ export default function BookingForm() {
               />
 
               {/* Price Summary */}
-              {selectedOffer && totalPrice > 0 && (
+              {watchedOffer && totalPrice > 0 && (
                 <div className="bg-primary/10 rounded-xl p-6 border border-primary/20" data-testid="price-summary">
                   <div className="space-y-3">
                     {/* Rental Period */}
@@ -644,6 +645,49 @@ export default function BookingForm() {
                               {rentalDays} jour{rentalDays > 1 ? 's' : ''}
                             </span>
                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cup Size Display */}
+                    {watchedCupSize && (
+                      <div className="mb-3 pb-3 border-b border-primary/20">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground font-medium">
+                            <Coffee className="w-4 h-4 inline mr-1" />
+                            Taille des gobelets
+                          </span>
+                          <span className="font-semibold text-foreground capitalize" data-testid="cup-size">
+                            {watchedCupSize === "petit" ? "Petit (250ml)" : watchedCupSize === "moyen" ? "Moyen (350ml)" : "Grand (500ml)"}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Syrups Detail Display */}
+                    {watchedSyrups && watchedSyrups.length > 0 && syrups && (
+                      <div className="mb-3 pb-3 border-b border-primary/20">
+                        <div className="flex items-center text-sm mb-2">
+                          <span className="text-muted-foreground font-medium">
+                            <Droplet className="w-4 h-4 inline mr-1" />
+                            Sirops sélectionnés
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {watchedSyrups.map((selection) => {
+                            const syrup = syrups.find(s => s.id === selection.syrupId);
+                            if (!syrup) return null;
+                            return (
+                              <div key={selection.syrupId} className="flex items-center justify-between text-sm pl-5" data-testid={`syrup-detail-${selection.syrupId}`}>
+                                <span className="text-muted-foreground">
+                                  {syrup.name} × {selection.quantity}
+                                </span>
+                                <span className="text-foreground font-medium">
+                                  {((syrup.amountCents * selection.quantity) / 100).toFixed(2)} €
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
