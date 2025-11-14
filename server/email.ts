@@ -327,26 +327,27 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
               
               <p>Votre réservation <strong>#${booking.id.slice(-8)}</strong> pour le ${bookingDate} est presque finalisée !</p>
               
-              <p><strong>Une dernière étape :</strong> sécurisez votre location avec une empreinte bancaire Swikly de 500€.</p>
+              <p><strong>Étape 1/2 : Caution Swikly</strong><br>
+              Sécurisez votre location avec une empreinte bancaire Swikly de 500€ (aucun débit).</p>
 
               <div class="highlight">
                 <p style="margin: 0; font-weight: bold;">⚠️ Important : Aucun débit ne sera effectué</p>
-                <p style="margin: 5px 0 0 0; font-size: 0.95em;">Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement.</p>
+                <p style="margin: 5px 0 0 0; font-size: 0.95em;">Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. Ensuite, vous serez redirigé vers le paiement Stripe de ${(booking.totalCents / 100).toFixed(2)}€.</p>
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${swiklyLink}" class="button">
-                  🔐 Compléter ma caution Swikly
+                  🔐 Valider la caution (Étape 1/2)
                 </a>
               </div>
 
               <div class="info-box">
-                <h3 style="margin-top: 0; color: #6366F1;">Comment fonctionne Swikly ?</h3>
+                <h3 style="margin-top: 0; color: #6366F1;">Le processus complet en 4 étapes :</h3>
                 <ol style="margin: 10px 0; padding-left: 20px;">
-                  <li style="margin-bottom: 10px;">Cliquez sur le bouton ci-dessus</li>
-                  <li style="margin-bottom: 10px;">Entrez vos coordonnées bancaires de manière sécurisée</li>
-                  <li style="margin-bottom: 10px;">Une empreinte de 500€ est créée (aucun débit)</li>
-                  <li style="margin-bottom: 10px;">L'empreinte est libérée 48h après votre événement</li>
+                  <li style="margin-bottom: 10px;">Validez l'empreinte bancaire Swikly (aucun débit)</li>
+                  <li style="margin-bottom: 10px;">Vous êtes redirigé vers le paiement Stripe</li>
+                  <li style="margin-bottom: 10px;">Payez ${(booking.totalCents / 100).toFixed(2)}€ pour finaliser votre réservation</li>
+                  <li style="margin-bottom: 10px;">L'empreinte bancaire est libérée 48h après votre événement</li>
                 </ol>
               </div>
 
@@ -395,10 +396,12 @@ Bonjour ${booking.customerName},
 
 Votre réservation #${booking.id.slice(-8)} pour le ${bookingDate} est presque finalisée !
 
-Une dernière étape : sécurisez votre location avec une empreinte bancaire Swikly de 500€.
+ÉTAPE 1/2 : Caution Swikly
+Sécurisez votre location avec une empreinte bancaire Swikly de 500€ (aucun débit).
 
 ⚠️ IMPORTANT : Aucun débit ne sera effectué
-Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement.
+Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. 
+Ensuite, vous serez redirigé vers le paiement Stripe de ${(booking.totalCents / 100).toFixed(2)}€.
 
 COMPLÉTER MA CAUTION SWIKLY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━

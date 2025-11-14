@@ -112,11 +112,11 @@ export default function BookingConfirmation() {
                 <div className="flex items-center justify-center gap-3 mb-2">
                   <Shield className="w-8 h-8" />
                   <CardTitle className="text-2xl md:text-3xl">
-                    Étape suivante : Caution Swikly
+                    Étape 1/2 : Caution Swikly
                   </CardTitle>
                 </div>
                 <p className="text-white/90 text-lg">
-                  Sécurisez votre location en un clic
+                  Empreinte bancaire sans débit • Ensuite paiement de {(booking.totalCents / 100).toFixed(2)}€
                 </p>
               </CardHeader>
 
@@ -139,7 +139,7 @@ export default function BookingConfirmation() {
                       data-testid="button-continue-swikly"
                     >
                       <Shield className="mr-3 w-6 h-6" />
-                      Payer la caution maintenant
+                      Valider la caution (aucun débit)
                       <ArrowRight className="ml-3 w-6 h-6" />
                     </Button>
                   ) : (
@@ -171,7 +171,7 @@ export default function BookingConfirmation() {
 
                 {/* How it Works */}
                 <div className="border-t border-border pt-6">
-                  <h4 className="font-bold text-center text-foreground mb-4">🔒 Comment ça marche ?</h4>
+                  <h4 className="font-bold text-center text-foreground mb-4">🔒 Le processus en 4 étapes</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</span>
@@ -179,15 +179,15 @@ export default function BookingConfirmation() {
                     </div>
                     <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">2</span>
-                      <span className="text-sm text-muted-foreground">Entrez vos coordonnées bancaires</span>
+                      <span className="text-sm text-muted-foreground">Autorisez l'empreinte bancaire (aucun débit)</span>
                     </div>
                     <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">3</span>
-                      <span className="text-sm text-muted-foreground">Empreinte créée (aucun débit)</span>
+                      <span className="text-sm text-muted-foreground">Vous êtes redirigé vers le paiement Stripe</span>
                     </div>
                     <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">4</span>
-                      <span className="text-sm text-muted-foreground">Continuez vers le paiement</span>
+                      <span className="text-sm text-muted-foreground">Payez {(booking.totalCents / 100).toFixed(2)}€ pour finaliser</span>
                     </div>
                   </div>
                 </div>
@@ -233,11 +233,15 @@ export default function BookingConfirmation() {
 
               {/* Timeline Indicator */}
               <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
-                  <Clock className="w-4 h-4" />
-                  <p>
-                    <strong>Prochaines étapes :</strong> Complétez la caution Swikly ci-dessus, puis le paiement de {(booking.totalCents / 100).toFixed(2)}€ pour finaliser votre réservation.
-                  </p>
+                <div className="flex items-start gap-2 text-sm text-blue-800 dark:text-blue-200">
+                  <Clock className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-bold mb-2">Prochaines étapes :</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>Validez la <strong>caution Swikly</strong> (empreinte bancaire 500€, aucun débit)</li>
+                      <li>Effectuez le <strong>paiement Stripe</strong> de {(booking.totalCents / 100).toFixed(2)}€ pour finaliser</li>
+                    </ol>
+                  </div>
                 </div>
               </div>
 
