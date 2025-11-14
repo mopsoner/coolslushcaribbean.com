@@ -284,6 +284,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Payment verified! Update payment status
+      await storage.updateBooking(bookingId, {
+        paymentStatus: "COMPLETED",
+        stripePaymentIntentId: paymentIntent.id,
+      });
+
       // Detect the base URL for callbacks
       const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
       const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
@@ -291,8 +297,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create Swikly deposit request via API
       let swiklyUrl = '';
-      let swiklyRequestId: string | undefined;
-      let depositStatus: "PENDING" | "FAILED" = "FAILED"; // Default to FAILED, set to PENDING on success
       
       console.log('[confirm-payment] Creating Swikly deposit for booking:', bookingId);
       console.log('[confirm-payment] Base URL:', baseUrl);
@@ -304,12 +308,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
         console.log('[confirm-payment] Swikly API response:', JSON.stringify(swiklyResult, null, 2));
         
-        if (swiklyResult.request?.link && swiklyResult.request?.id) {
+        if (swiklyResult.request?.link) {
           swiklyUrl = swiklyResult.request.link;
-          swiklyRequestId = swiklyResult.request.id;
-          depositStatus = "PENDING"; // Success: waiting for webhook
           console.log('[confirm-payment] Swikly URL created successfully:', swiklyUrl);
-          console.log('[confirm-payment] Swikly Request ID:', swiklyRequestId);
         } else {
           throw new Error('No Swikly URL returned');
         }
@@ -319,23 +320,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stack: swiklyError.stack,
           cause: swiklyError.cause
         });
-        // depositStatus already FAILED, redirect to return page for manual review
-        swiklyUrl = `${baseUrl}/swikly-return?booking=${booking.id}&error=swikly-failed`;
-        console.log('[confirm-payment] Using fallback return URL with FAILED depositStatus');
-        console.log('[confirm-payment] Manual review required for booking:', bookingId);
+        swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
+        console.log('[confirm-payment] Using fallback URL:', swiklyUrl);
       }
       
-      // Update booking with payment confirmation and Swikly info atomically
-      // Payment is COMPLETED regardless of Swikly success (Stripe payment succeeded)
-      // depositStatus is explicitly set to either PENDING (success) or FAILED (error)
-      const updatedBooking = await storage.updateBooking(bookingId, {
-        paymentStatus: "COMPLETED",
-        stripePaymentIntentId: paymentIntent.id,
-        status: "PENDING", // Always PENDING (wait for webhook confirmation or manual review)
-        depositStatus, // Explicitly: PENDING (wait webhook) or FAILED (manual review required)
-        swiklyUrl,
-        swiklyRequestId,
-      });
+      // Update booking with Swikly URL
+      const updatedBooking = await storage.updateBooking(bookingId, { swiklyUrl });
 
       // Send Swikly deposit email if API failed (Swikly sends email automatically for real URLs)
       if (updatedBooking) {
@@ -355,79 +345,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Swikly callback handler - called by Swikly when deposit is completed/accepted
+  // Swikly callback handler - called by Swikly when deposit is completed
   app.post("/api/swikly-callback", async (req, res) => {
     try {
-      console.log('[swikly-callback] Received webhook:', JSON.stringify(req.body, null, 2));
+      const { swikId, status } = req.body;
       
-      // TODO: Add HMAC signature validation when Swikly documentation is available
-      // const signature = req.headers['x-swikly-signature'];
-      // if (!validateSwiklySignature(req.body, signature, process.env.SWIKLY_WEBHOOK_SECRET)) {
-      //   return res.status(401).json({ error: 'Invalid signature' });
-      // }
-      
-      const payload = req.body;
-      
-      // Extract booking ID from customId (our booking ID is stored as customId in Swikly)
-      const bookingId = payload.customId || payload.request?.customId;
-      
-      // Extract deposit status from webhook
-      const depositStatus = payload.deposit?.status || payload.status;
-      
-      if (!bookingId) {
-        console.error('[swikly-callback] Missing customId in webhook payload');
-        // Return 200 to avoid Swikly retries on malformed payloads
-        return res.status(200).json({ error: 'Missing booking ID (customId)' });
+      // Update booking status based on Swikly callback
+      if (status === 'completed' || status === 'accepted') {
+        await storage.updateBookingStatus(swikId, "CONFIRMED");
       }
       
-      console.log('[swikly-callback] Processing for booking:', bookingId);
-      console.log('[swikly-callback] Deposit status:', depositStatus);
-      
-      // Get current booking to check idempotence
-      const booking = await storage.getBooking(bookingId);
-      if (!booking) {
-        console.error('[swikly-callback] Booking not found:', bookingId);
-        // Return 200 to avoid Swikly retries on unknown bookings
-        return res.status(200).json({ error: 'Booking not found' });
-      }
-      
-      // Idempotence: if already confirmed, return success without updating
-      if (booking.depositStatus === "COMPLETED" && booking.status === "CONFIRMED") {
-        console.log('[swikly-callback] Booking already confirmed (idempotent)');
-        return res.json({ success: true, message: 'Already processed' });
-      }
-      
-      // Update booking status based on Swikly deposit status
-      // Swikly sends: "Pending", "Accepted", "Secured", "Completed", "Released", "Canceled", etc.
-      const depositStatusLower = (depositStatus || '').toLowerCase();
-      const successStates = ['accepted', 'secured', 'completed'];
-      
-      if (successStates.includes(depositStatusLower)) {
-        console.log('[swikly-callback] Updating booking to CONFIRMED');
-        await storage.updateBooking(bookingId, {
-          depositStatus: "COMPLETED",
-          status: "CONFIRMED",
-        });
-        
-        // Send confirmation email
-        const updatedBooking = await storage.getBooking(bookingId);
-        if (updatedBooking) {
-          sendBookingConfirmation(updatedBooking).catch((err: unknown) => 
-            console.error('[swikly-callback] Email send failed:', err)
-          );
-        }
-        
-        console.log('[swikly-callback] Booking confirmed successfully');
-      } else {
-        console.log('[swikly-callback] Deposit status not accepted:', depositStatus);
-      }
-      
-      // Always return 200 to acknowledge receipt (Swikly will retry on non-200)
       res.json({ success: true });
     } catch (error: any) {
-      console.error('[swikly-callback] Webhook processing error:', error);
-      // Return 200 even on error to avoid Swikly retries for non-retryable errors
-      res.status(200).json({ error: error.message });
+      console.error('Swikly callback error:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 

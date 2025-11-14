@@ -54,18 +54,8 @@ Preferred communication style: Simple, everyday language.
 
 - **Two-Step Process**:
     1. **Stripe Payment**: Actual charge for rental cost on `/checkout` page.
-    2. **Swikly Deposit**: Bank authorization for a security deposit via external redirect to Swikly from `/swikly-step`. No actual charge occurs; the hold is released automatically.
-- **User Experience**: 
-    - Clear multi-step indicators and explicit messaging distinguishing payment from deposit.
-    - External redirect to Swikly platform for deposit authorization
-    - Return URL brings users back to `/swikly-return` which polls booking status
-    - Webhook callback updates booking status when deposit is confirmed
-    - Automatic redirect to success page once deposit is complete
-- **Deposit States**:
-    - `depositStatus: "PENDING"`: Waiting for Swikly webhook confirmation
-    - `depositStatus: "COMPLETED"`: Deposit authorized successfully
-    - `depositStatus: "FAILED"`: Swikly API error, manual review required (booking remains `status: "PENDING"` for operator follow-up)
-- **Fallback Handling**: If Swikly API fails, user is redirected to `/swikly-return` with a manual review message. Payment is completed via Stripe, but deposit requires operator intervention.
+    2. **Swikly Deposit**: Bank authorization for a security deposit via an embedded iframe on `/swikly-step`. No actual charge occurs; the hold is released automatically.
+- **User Experience**: Clear multi-step indicators, polling mechanism to detect Swikly completion, and explicit messaging distinguishing payment from deposit.
 
 ## External Dependencies
 
