@@ -92,7 +92,12 @@ Total = (dailyPrice × machineCount × rentalDays) + (syrupPrice × quantity)
 - `rentalDays`: Calculated inclusively (startDate to endDate)
   - Same day rental = 1 day
   - Multi-day rental = (endDate - startDate) + 1 day
-- Utility functions in `shared/utils.ts`: `calculateRentalDays()`, `calculateBookingTotal()`
+- Utility functions in `shared/utils.ts`: 
+  - `calculateRentalDays()` - Calculate rental days between dates
+  - `calculateBookingTotal()` - Calculate total booking cost
+  - `computeCautionAmount()` - Calculate Swikly caution (200€ × machines)
+  - `formatEuro()` - Format amounts in cents to euros with French formatting
+  - Constants: `CAUTION_PER_MACHINE_CENTS = 20000` (200€ per machine)
 
 **Admin Interface**
 - Back-office unified pricing management at `/admin/pricing`
@@ -127,7 +132,7 @@ Total = (dailyPrice × machineCount × rentalDays) + (syrupPrice × quantity)
 - "Événement": 117€ per machine per day (typically 3+ days)
 
 **Production Configuration**
-- Swikly deposit: 500€ (50,000 cents)
+- Swikly deposit: 200€ per machine (20,000 cents) - calculated dynamically
 - Swikly environment: Automatically uses production mode when NODE_ENV=production
 - Email: Falls back to Ethereal test account in development, uses SMTP in production
 
@@ -194,7 +199,7 @@ The booking flow consists of two distinct steps to ensure secure transactions:
 
 1. **Step 1: Swikly Deposit (Bank Authorization)**
    - Purpose: Security deposit / guarantee
-   - Amount: 500€ bank authorization (NO actual charge)
+   - Amount: 200€ per machine bank authorization (NO actual charge) - dynamically calculated
    - Process: Customer authorizes a hold on their card
    - Result: No money is debited; hold is automatically released 48h after event
    - Page: `/booking-confirmation` with prominent Swikly call-to-action
@@ -238,7 +243,8 @@ The booking flow consists of two distinct steps to ensure secure transactions:
 
 **Deposit Management**
 - **Swikly**: Third-party deposit/security guarantee service
-  - API integration for creating deposit requests (€500 default)
+  - API integration for creating deposit requests (€200 per machine, dynamically calculated)
+  - Uses `computeCautionAmount()` from `shared/utils.ts` for consistent calculation
   - Sandbox and production environment support
   - Environment: `SWIKLY_API_KEY`, `SWIKLY_API_SECRET`, `SWIKLY_ENVIRONMENT`
   - Automatically switches to production mode when NODE_ENV=production
