@@ -50,12 +50,19 @@ Preferred communication style: Simple, everyday language.
 - **Security Warning**: Critical need for authentication on admin routes and verification of Swikly webhooks before production.
 - **Implemented Hardening**: Server-side validation for Stripe payment amounts, Drizzle ORM for SQL injection prevention, React XSS sanitization, and Zod for input validation.
 
-### Payment & Deposit Flow
+### Payment & Deposit Flow (Updated November 14, 2025)
 
 - **Two-Step Process**:
     1. **Stripe Payment**: Actual charge for rental cost on `/checkout` page.
-    2. **Swikly Deposit**: Bank authorization for a security deposit via an embedded iframe on `/swikly-step`. No actual charge occurs; the hold is released automatically.
-- **User Experience**: Clear multi-step indicators, polling mechanism to detect Swikly completion, and explicit messaging distinguishing payment from deposit.
+    2. **Swikly Deposit**: Bank authorization with user choice on `/swikly-step`:
+       - **Option A - "Payer maintenant"**: Opens Swikly link in new tab, auto-redirects to `/success` when caution validated (polling + webhook)
+       - **Option B - "Payer plus tard"**: Confirms booking immediately, sends Swikly link via email for later validation
+
+- **Technical Flow**:
+    - Conditional polling activates only when user chooses "Payer maintenant"
+    - Webhook `/api/swikly-callback` updates booking status to CONFIRMED
+    - Endpoint `/api/bookings/:id/skip-caution` handles "Payer plus tard" option
+    - Email service sends Swikly link with clear "no debit" messaging
 
 ## External Dependencies
 
