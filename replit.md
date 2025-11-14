@@ -188,42 +188,42 @@ Total = (dailyPrice × machineCount × rentalDays) + (syrupPrice × quantity)
 
 ### Payment & Deposit Flow
 
-**Two-Step Booking Process** (Clarified November 14, 2025)
+**Two-Step Booking Process** (Updated November 14, 2025)
 
-The booking flow consists of two distinct steps to ensure secure transactions:
+The booking flow consists of two distinct steps, payment first then deposit:
 
-1. **Step 1: Swikly Deposit (Bank Authorization)**
-   - Purpose: Security deposit / guarantee
-   - Amount: 500€ bank authorization (NO actual charge)
-   - Process: Customer authorizes a hold on their card
-   - Result: No money is debited; hold is automatically released 48h after event
-   - Page: `/booking-confirmation` with prominent Swikly call-to-action
-
-2. **Step 2: Stripe Payment (Actual Charge)**
+1. **Step 1: Stripe Payment (Actual Charge)**
    - Purpose: Payment for the rental
    - Amount: Total booking cost (machines + syrups)
    - Process: Customer pays via Stripe payment form
    - Result: Actual charge to customer's card
    - Page: `/checkout` with Stripe Elements payment form
 
+2. **Step 2: Swikly Deposit (Bank Authorization)**
+   - Purpose: Security deposit / guarantee
+   - Amount: 500€ bank authorization (NO actual charge)
+   - Process: Customer authorizes a hold on their card
+   - Result: No money is debited; hold is automatically released 48h after event
+   - Page: `/booking-confirmation` with prominent Swikly call-to-action
+
 **User Experience Flow:**
 ```
 /booking (form) 
   → POST /api/bookings (creates booking + Swikly request)
-  → /booking-confirmation (shows "Step 1/2: Swikly")
+  → /checkout (shows "Step 1/2: Stripe Payment")
+  → Stripe payment form
+  → Payment success → /booking-confirmation (shows "Step 2/2: Swikly")
   → User clicks "Valider la caution (aucun débit)"
   → Swikly external page (bank authorization)
-  → Redirect to /checkout (shows "Step 2/2: Payment")
-  → Stripe payment form
-  → /success (booking confirmed)
+  → Redirect to /success (booking fully confirmed)
 ```
 
 **Communication Clarity:**
-- All user-facing text explicitly states "Step 1/2" and "Step 2/2"
+- All user-facing text explicitly states "Step 1/2: Stripe Payment" and "Step 2/2: Swikly Deposit"
+- Stripe comes first as actual payment with specific amount
 - Swikly labeled as "bank authorization" with "no debit" messaging
-- Stripe labeled as actual payment with specific amount
-- Email notifications mirror same two-step messaging
-- Timeline indicators show both steps upfront
+- Email notifications mirror same two-step messaging (payment confirmed, then deposit request)
+- Timeline indicators show both steps upfront with payment completed ✓
 
 ### External Dependencies
 
