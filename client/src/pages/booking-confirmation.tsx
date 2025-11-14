@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Mail, Shield, ArrowRight, Clock } from "lucide-react";
+import { CheckCircle, Mail, Shield, ArrowRight, Clock, CreditCard } from "lucide-react";
 import Navbar from "@/components/navbar";
 import type { Booking } from "@shared/schema";
 import { computeCautionAmount, formatEuro } from "@shared/utils";
@@ -76,16 +76,8 @@ export default function BookingConfirmation() {
     ? `${startDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - ${endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
     : bookingDate;
 
-  const handleContinueToSwikly = () => {
-    if (booking.swiklyUrl) {
-      // If it's a real Swikly URL (swikly.com, app.swikly, or swik.link), navigate to it
-      if (booking.swiklyUrl.includes('swikly.com') || booking.swiklyUrl.includes('app.swikly') || booking.swiklyUrl.includes('swik.link')) {
-        window.location.href = booking.swiklyUrl;
-      } else {
-        // Otherwise, it's a fallback URL - navigate to checkout directly
-        setLocation(`/checkout?booking=${booking.id}`);
-      }
-    }
+  const handleContinueToCheckout = () => {
+    setLocation(`/checkout?booking=${booking.id}`);
   };
 
   return (
@@ -106,95 +98,73 @@ export default function BookingConfirmation() {
             </p>
           </div>
 
-          {/* PROMINENT SWIKLY CALL-TO-ACTION */}
-          {booking.swiklyUrl && (
-            <Card className="shadow-2xl border-4 border-primary mb-6 overflow-hidden animate-in fade-in-50 duration-500">
-              <CardHeader className="gradient-tropical text-white p-8 text-center">
-                <div className="flex items-center justify-center gap-3 mb-2">
-                  <Shield className="w-8 h-8" />
-                  <CardTitle className="text-2xl md:text-3xl">
-                    Étape 1/2 : Caution Swikly
-                  </CardTitle>
-                </div>
-                <p className="text-white/90 text-lg">
-                  Empreinte bancaire sans débit • Ensuite paiement de {(booking.totalCents / 100).toFixed(2)}€
-                </p>
-              </CardHeader>
+          {/* PROMINENT STRIPE PAYMENT CALL-TO-ACTION */}
+          <Card className="shadow-2xl border-4 border-primary mb-6 overflow-hidden animate-in fade-in-50 duration-500">
+            <CardHeader className="gradient-tropical text-white p-8 text-center">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <CreditCard className="w-8 h-8" />
+                <CardTitle className="text-2xl md:text-3xl">
+                  Étape 1/2 : Paiement Stripe
+                </CardTitle>
+              </div>
+              <p className="text-white/90 text-lg">
+                Payez {formatEuro(booking.totalCents)} • Ensuite caution Swikly de {formatEuro(computeCautionAmount(booking.machines))}
+              </p>
+            </CardHeader>
 
-              <CardContent className="p-8 space-y-6">
-                <div className="text-center space-y-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700">
-                    <p className="text-lg font-semibold text-foreground mb-2">
-                      💳 Empreinte bancaire de {formatEuro(computeCautionAmount(booking.machines))}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Aucun débit immédiat • Sécurisé par Swikly • Libérée automatiquement après votre location
-                    </p>
-                  </div>
-
-                  {(booking.swiklyUrl.includes('swikly.com') || booking.swiklyUrl.includes('app.swikly') || booking.swiklyUrl.includes('swik.link')) ? (
-                    <Button
-                      onClick={handleContinueToSwikly}
-                      size="lg"
-                      className="w-full gradient-tropical text-white font-bold text-xl py-6 rounded-2xl hover:shadow-2xl transition-all transform hover:scale-105"
-                      data-testid="button-continue-swikly"
-                    >
-                      <Shield className="mr-3 w-6 h-6" />
-                      Valider la caution (aucun débit)
-                      <ArrowRight className="ml-3 w-6 h-6" />
-                    </Button>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 border border-yellow-200 dark:border-yellow-800">
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                          ⚠️ Le lien Swikly sera envoyé par email. Vérifiez votre boîte de réception à <strong>{booking.customerEmail}</strong>
-                        </p>
-                      </div>
-                      <Button
-                        onClick={handleContinueToSwikly}
-                        size="lg"
-                        variant="outline"
-                        className="w-full font-bold text-lg py-6 rounded-2xl"
-                        data-testid="button-continue-swikly-fallback"
-                      >
-                        <Mail className="mr-3 w-5 h-5" />
-                        Accéder au lien de caution
-                      </Button>
-                    </div>
-                  )}
-
-                  <div className="bg-muted/50 rounded-xl p-4">
-                    <p className="text-xs text-muted-foreground text-center">
-                      📧 Un email de confirmation avec le lien a également été envoyé à <strong className="text-foreground">{booking.customerEmail}</strong>
-                    </p>
-                  </div>
+            <CardContent className="p-8 space-y-6">
+              <div className="text-center space-y-4">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700">
+                  <p className="text-lg font-semibold text-foreground mb-2">
+                    💳 Paiement sécurisé de {formatEuro(booking.totalCents)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Paiement par carte bancaire • 100% sécurisé par Stripe • Confirmation immédiate
+                  </p>
                 </div>
 
-                {/* How it Works */}
-                <div className="border-t border-border pt-6">
-                  <h4 className="font-bold text-center text-foreground mb-4">🔒 Le processus en 4 étapes</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</span>
-                      <span className="text-sm text-muted-foreground">Cliquez sur le bouton ci-dessus</span>
-                    </div>
-                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">2</span>
-                      <span className="text-sm text-muted-foreground">Autorisez l'empreinte bancaire (aucun débit)</span>
-                    </div>
-                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">3</span>
-                      <span className="text-sm text-muted-foreground">Vous êtes redirigé vers le paiement Stripe</span>
-                    </div>
-                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">4</span>
-                      <span className="text-sm text-muted-foreground">Payez {(booking.totalCents / 100).toFixed(2)}€ pour finaliser</span>
-                    </div>
+                <Button
+                  onClick={handleContinueToCheckout}
+                  size="lg"
+                  className="w-full gradient-tropical text-white font-bold text-xl py-6 rounded-2xl hover:shadow-2xl transition-all transform hover:scale-105"
+                  data-testid="button-continue-checkout"
+                >
+                  <CreditCard className="mr-3 w-6 h-6" />
+                  Procéder au paiement
+                  <ArrowRight className="ml-3 w-6 h-6" />
+                </Button>
+
+                <div className="bg-muted/50 rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground text-center">
+                    📧 Un email de confirmation a été envoyé à <strong className="text-foreground">{booking.customerEmail}</strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* How it Works */}
+              <div className="border-t border-border pt-6">
+                <h4 className="font-bold text-center text-foreground mb-4">🔒 Le processus en 4 étapes</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</span>
+                    <span className="text-sm text-muted-foreground">Cliquez sur le bouton ci-dessus</span>
+                  </div>
+                  <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">2</span>
+                    <span className="text-sm text-muted-foreground">Payez {formatEuro(booking.totalCents)} par carte</span>
+                  </div>
+                  <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">3</span>
+                    <span className="text-sm text-muted-foreground">Validez la caution Swikly (empreinte, aucun débit)</span>
+                  </div>
+                  <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">4</span>
+                    <span className="text-sm text-muted-foreground">Réservation confirmée !</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Booking Details Card */}
           <Card className="shadow-xl border-0 overflow-hidden mb-6">
@@ -239,8 +209,8 @@ export default function BookingConfirmation() {
                   <div>
                     <p className="font-bold mb-2">Prochaines étapes :</p>
                     <ol className="list-decimal list-inside space-y-1">
-                      <li>Validez la <strong>caution Swikly</strong> (empreinte bancaire {formatEuro(computeCautionAmount(booking.machines))}, aucun débit)</li>
-                      <li>Effectuez le <strong>paiement Stripe</strong> de {formatEuro(booking.totalCents)} pour finaliser</li>
+                      <li>Effectuez le <strong>paiement Stripe</strong> de {formatEuro(booking.totalCents)}</li>
+                      <li>Validez ensuite la <strong>caution Swikly</strong> (empreinte bancaire {formatEuro(computeCautionAmount(booking.machines))}, aucun débit)</li>
                     </ol>
                   </div>
                 </div>

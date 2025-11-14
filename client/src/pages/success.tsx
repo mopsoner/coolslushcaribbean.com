@@ -38,7 +38,10 @@ export default function Success() {
           <h1 className="text-4xl font-bold text-foreground mb-4" data-testid="text-success-title">
             Réservation confirmée !
           </h1>
-          <p className="text-lg text-muted-foreground mb-8" data-testid="text-success-subtitle">
+          <p className="text-lg text-muted-foreground mb-4" data-testid="text-success-subtitle">
+            ✅ Paiement Stripe validé • ✅ Caution Swikly confirmée
+          </p>
+          <p className="text-base text-muted-foreground mb-8">
             Merci pour votre réservation. Vous allez recevoir un email de confirmation avec tous les détails.
           </p>
           

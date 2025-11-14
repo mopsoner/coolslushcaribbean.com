@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import Booking from "@/pages/booking";
 import BookingConfirmation from "@/pages/booking-confirmation";
 import SwiklyRedirect from "@/pages/swikly-redirect";
+import SwiklyStep from "@/pages/swikly-step";
 import Checkout from "@/pages/checkout";
 import Success from "@/pages/success";
 import AdminBookings from "@/pages/admin/bookings";
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/booking" component={Booking} />
       <Route path="/booking-confirmation" component={BookingConfirmation} />
       <Route path="/swikly-redirect" component={SwiklyRedirect} />
+      <Route path="/swikly-step" component={SwiklyStep} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/success" component={Success} />
       <Route path="/admin/bookings" component={AdminBookings} />

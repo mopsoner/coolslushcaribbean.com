@@ -32,11 +32,12 @@ const CheckoutForm = ({ booking }: { booking: Booking }) => {
       return;
     }
 
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/success?booking=${booking.id}`,
+        return_url: `${window.location.origin}/swikly-step?booking=${booking.id}`,
       },
+      redirect: 'if_required', // Only redirect if SCA is required
     });
 
     if (error) {
@@ -45,12 +46,10 @@ const CheckoutForm = ({ booking }: { booking: Booking }) => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Paiement réussi",
-        description: "Merci pour votre achat !",
-      });
-      setLocation(`/success?booking=${booking.id}`);
+    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      // Payment succeeded without redirect (no SCA required), navigate to swikly-step
+      // Pass both ID and client secret for verification
+      setLocation(`/swikly-step?booking=${booking.id}&payment_intent=${paymentIntent.id}&payment_intent_client_secret=${encodeURIComponent(paymentIntent.client_secret!)}`);
     }
   };
 
@@ -134,10 +133,10 @@ export default function Checkout() {
           {/* Progress Indicator */}
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Étape 2/2 : Paiement Stripe
+              Étape 1/2 : Paiement Stripe
             </h1>
             <p className="text-lg text-muted-foreground">
-              Caution Swikly ({formatEuro(computeCautionAmount(booking.machines))}) validée ✓ • Payez maintenant {formatEuro(booking.totalCents)}
+              Payez {formatEuro(booking.totalCents)} • Ensuite caution Swikly ({formatEuro(computeCautionAmount(booking.machines))})
             </p>
           </div>
 

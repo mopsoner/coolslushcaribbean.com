@@ -12,9 +12,8 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-09-30.clover",
-});
+console.log('[Stripe Init] Using key starting with:', process.env.STRIPE_SECRET_KEY.substring(0, 7));
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -126,48 +125,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalCents,
       });
 
-      // Detect the base URL for callbacks
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
-      const baseUrl = `${protocol}://${host}`;
-      
-      // Create Swikly deposit request via API
-      let swiklyUrl = '';
-      let swiklySuccess = false;
-      
-      try {
-        const swiklyClient = getSwiklyClient();
-        const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
-        
-        if (swiklyResult.request?.link) {
-          swiklyUrl = swiklyResult.request.link;
-          swiklySuccess = true;
-        } else {
-          throw new Error('No Swikly URL returned');
-        }
-      } catch (swiklyError: any) {
-        console.error('Swikly creation failed:', swiklyError.message);
-        swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
-      }
-      
-      const updatedBooking = await storage.updateBooking(booking.id, { swiklyUrl });
-
-      // Send confirmation email (Swikly sends its own email automatically)
-      if (updatedBooking) {
-        sendBookingConfirmation(updatedBooking).catch(() => {});
-        
-        // Only send our Swikly email if API failed (Swikly sends email automatically)
-        // Check for swikly.com or swik.link domains
-        const isRealSwiklyUrl = swiklyUrl.includes('swikly.com') || swiklyUrl.includes('swik.link');
-        if (!isRealSwiklyUrl) {
-          sendSwiklyDepositEmail(updatedBooking).catch(() => {});
-        }
-      }
+      // Send confirmation email
+      sendBookingConfirmation(booking).catch(() => {});
 
       res.json({
         success: true,
         bookingId: booking.id,
-        swiklyUrl,
         totalCents,
       });
     } catch (error: any) {
@@ -221,15 +184,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { bookingId } = req.body;
       
+      console.log("[create-payment-intent] Request received for booking:", bookingId);
+      
       if (!bookingId) {
+        console.error("[create-payment-intent] Missing bookingId");
         return res.status(400).json({ error: "Booking ID required" });
       }
 
       // Get booking to verify amount server-side
       const booking = await storage.getBooking(bookingId);
       if (!booking) {
+        console.error("[create-payment-intent] Booking not found:", bookingId);
         return res.status(404).json({ error: "Booking not found" });
       }
+
+      console.log("[create-payment-intent] Creating PaymentIntent for:", {
+        bookingId,
+        amount: booking.totalCents,
+        currency: "eur"
+      });
 
       // Use server-calculated total, never trust client
       const paymentIntent = await stripe.paymentIntents.create({
@@ -240,9 +213,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
       
+      console.log("[create-payment-intent] PaymentIntent created successfully:", paymentIntent.id);
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error: any) {
+      console.error("[create-payment-intent] Error creating PaymentIntent:", {
+        message: error.message,
+        type: error.type,
+        code: error.code,
+        stack: error.stack
+      });
       res.status(500).json({ error: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  // Confirm payment and initiate Swikly deposit (called after Stripe payment succeeds)
+  app.post("/api/bookings/:id/confirm-payment", async (req, res) => {
+    try {
+      const bookingId = req.params.id;
+      const { stripePaymentIntentId } = req.body;
+
+      if (!stripePaymentIntentId) {
+        return res.status(400).json({ error: "Payment Intent ID requis" });
+      }
+
+      // Get booking
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ error: "Réservation non trouvée" });
+      }
+
+      // Check if payment already confirmed (idempotence)
+      if (booking.paymentStatus === "COMPLETED" && booking.swiklyUrl) {
+        return res.json({
+          success: true,
+          swiklyUrl: booking.swiklyUrl,
+          message: "Paiement déjà confirmé",
+        });
+      }
+
+      // CRITICAL: Verify the payment with Stripe server-side
+      const paymentIntent = await stripe.paymentIntents.retrieve(stripePaymentIntentId);
+      
+      if (!paymentIntent) {
+        return res.status(400).json({ error: "Payment Intent introuvable" });
+      }
+
+      if (paymentIntent.status !== 'succeeded') {
+        return res.status(400).json({ 
+          error: `Le paiement n'a pas abouti (statut: ${paymentIntent.status})` 
+        });
+      }
+
+      // CRITICAL: Verify the payment belongs to this booking and matches amount
+      if (paymentIntent.metadata.bookingId !== bookingId) {
+        return res.status(400).json({ 
+          error: "Le paiement ne correspond pas à cette réservation" 
+        });
+      }
+
+      if (paymentIntent.amount !== booking.totalCents) {
+        return res.status(400).json({ 
+          error: "Le montant du paiement ne correspond pas au total de la réservation" 
+        });
+      }
+
+      if (paymentIntent.currency !== 'eur') {
+        return res.status(400).json({ 
+          error: "La devise du paiement n'est pas correcte" 
+        });
+      }
+
+      // Payment verified! Update payment status
+      await storage.updateBooking(bookingId, {
+        paymentStatus: "COMPLETED",
+        stripePaymentIntentId: paymentIntent.id,
+      });
+
+      // Detect the base URL for callbacks
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
+      const baseUrl = `${protocol}://${host}`;
+      
+      // Create Swikly deposit request via API
+      let swiklyUrl = '';
+      
+      try {
+        const swiklyClient = getSwiklyClient();
+        const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
+        
+        if (swiklyResult.request?.link) {
+          swiklyUrl = swiklyResult.request.link;
+        } else {
+          throw new Error('No Swikly URL returned');
+        }
+      } catch (swiklyError: any) {
+        console.error('Swikly creation failed:', swiklyError.message);
+        swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
+      }
+      
+      // Update booking with Swikly URL
+      const updatedBooking = await storage.updateBooking(bookingId, { swiklyUrl });
+
+      // Send Swikly deposit email if API failed (Swikly sends email automatically for real URLs)
+      if (updatedBooking) {
+        const isRealSwiklyUrl = swiklyUrl.includes('swikly.com') || swiklyUrl.includes('swik.link');
+        if (!isRealSwiklyUrl) {
+          sendSwiklyDepositEmail(updatedBooking).catch(() => {});
+        }
+      }
+
+      res.json({
+        success: true,
+        swiklyUrl,
+      });
+    } catch (error: any) {
+      console.error('Error confirming payment:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -489,6 +575,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cupSize: "moyen",
           totalCents: 30000,
           status: "PENDING",
+          paymentStatus: "PENDING",
+          depositStatus: "PENDING",
+          stripePaymentIntentId: null,
+          swiklyRequestId: null,
           swiklyUrl: `http://localhost:5000/swikly-redirect?booking=test-123`,
           stripePaymentId: null,
           createdAt: new Date(),

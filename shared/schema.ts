@@ -57,6 +57,10 @@ export const bookings = pgTable("bookings", {
   cupSize: text("cup_size").default("moyen"), // "petit", "moyen", "grand"
   totalCents: integer("total_cents").notNull().default(0),
   status: text("status").notNull().default("PENDING"), // PENDING, CONFIRMED, CANCELLED
+  paymentStatus: text("payment_status").notNull().default("PENDING"), // PENDING, COMPLETED, FAILED
+  depositStatus: text("deposit_status").notNull().default("PENDING"), // PENDING, COMPLETED, FAILED
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  swiklyRequestId: text("swikly_request_id"),
   swiklyUrl: text("swikly_url"),
   stripePaymentId: text("stripe_payment_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

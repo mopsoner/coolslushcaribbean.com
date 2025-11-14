@@ -328,27 +328,27 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
               
               <p>Votre réservation <strong>#${booking.id.slice(-8)}</strong> pour le ${bookingDate} est presque finalisée !</p>
               
-              <p><strong>Étape 1/2 : Caution Swikly</strong><br>
-              Sécurisez votre location avec une empreinte bancaire Swikly de ${formatEuro(computeCautionAmount(booking.machines))} (aucun débit).</p>
+              <p><strong>Étape 2/2 : Caution Swikly</strong><br>
+              Votre paiement de ${formatEuro(booking.totalCents)} a été validé ✅. Il ne reste plus qu'à sécuriser votre location avec une empreinte bancaire Swikly de ${formatEuro(computeCautionAmount(booking.machines))} (aucun débit).</p>
 
               <div class="highlight">
                 <p style="margin: 0; font-weight: bold;">⚠️ Important : Aucun débit ne sera effectué</p>
-                <p style="margin: 5px 0 0 0; font-size: 0.95em;">Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. Ensuite, vous serez redirigé vers le paiement Stripe de ${formatEuro(booking.totalCents)}.</p>
+                <p style="margin: 5px 0 0 0; font-size: 0.95em;">Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement.</p>
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${swiklyLink}" class="button">
-                  🔐 Valider la caution (Étape 1/2)
+                  🔐 Valider la caution (Étape 2/2)
                 </a>
               </div>
 
               <div class="info-box">
-                <h3 style="margin-top: 0; color: #6366F1;">Le processus complet en 4 étapes :</h3>
+                <h3 style="margin-top: 0; color: #6366F1;">Le processus complet :</h3>
                 <ol style="margin: 10px 0; padding-left: 20px;">
+                  <li style="margin-bottom: 10px;">✅ Paiement Stripe de ${formatEuro(booking.totalCents)} effectué</li>
                   <li style="margin-bottom: 10px;">Validez l'empreinte bancaire Swikly (aucun débit)</li>
-                  <li style="margin-bottom: 10px;">Vous êtes redirigé vers le paiement Stripe</li>
-                  <li style="margin-bottom: 10px;">Payez ${formatEuro(booking.totalCents)} pour finaliser votre réservation</li>
-                  <li style="margin-bottom: 10px;">L'empreinte bancaire est libérée 48h après votre événement</li>
+                  <li style="margin-bottom: 10px;">Réservation confirmée et email de confirmation envoyé</li>
+                  <li style="margin-bottom: 10px;">L'empreinte bancaire sera libérée 48h après votre événement</li>
                 </ol>
               </div>
 
@@ -397,23 +397,23 @@ Bonjour ${booking.customerName},
 
 Votre réservation #${booking.id.slice(-8)} pour le ${bookingDate} est presque finalisée !
 
-ÉTAPE 1/2 : Caution Swikly
-Sécurisez votre location avec une empreinte bancaire Swikly de ${formatEuro(computeCautionAmount(booking.machines))} (aucun débit).
+ÉTAPE 2/2 : Caution Swikly
+Votre paiement de ${formatEuro(booking.totalCents)} a été validé ✅. Il ne reste plus qu'à sécuriser votre location avec une empreinte bancaire Swikly de ${formatEuro(computeCautionAmount(booking.machines))} (aucun débit).
 
 ⚠️ IMPORTANT : Aucun débit ne sera effectué
-Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. 
-Ensuite, vous serez redirigé vers le paiement Stripe de ${formatEuro(booking.totalCents)}.
+Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement.
 
 COMPLÉTER MA CAUTION SWIKLY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Cliquez sur ce lien : ${swiklyLink}
 
-COMMENT FONCTIONNE SWIKLY ?
+LE PROCESSUS COMPLET
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Cliquez sur le lien ci-dessus
-2. Entrez vos coordonnées bancaires de manière sécurisée
-3. Une empreinte de ${formatEuro(computeCautionAmount(booking.machines))} est créée (aucun débit)
-4. L'empreinte est libérée 48h après votre événement
+1. ✅ Paiement Stripe de ${formatEuro(booking.totalCents)} effectué
+2. Cliquez sur le lien ci-dessus
+3. Entrez vos coordonnées bancaires de manière sécurisée
+4. Une empreinte de ${formatEuro(computeCautionAmount(booking.machines))} est créée (aucun débit)
+5. L'empreinte sera libérée 48h après votre événement
 
 RÉCAPITULATIF DE VOTRE RÉSERVATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
