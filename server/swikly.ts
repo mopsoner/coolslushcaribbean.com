@@ -16,6 +16,8 @@ interface SwiklyDepositRequest {
   email?: string;
   phoneNumber?: string;
   callbackUrl?: string;
+  returnUrl?: string;
+  redirectUrl?: string;
   endUser: {
     email: string;
     firstName: string;
@@ -91,6 +93,7 @@ class SwiklyAPI {
 
       if (callbackBaseUrl && !callbackBaseUrl.includes('localhost')) {
         requestBody.callbackUrl = `${callbackBaseUrl}/api/swikly-callback`;
+        requestBody.returnUrl = `${callbackBaseUrl}/swikly-return?booking=${booking.id}`;
       }
 
       const response = await fetch(
