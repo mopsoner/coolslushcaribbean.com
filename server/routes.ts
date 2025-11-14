@@ -185,6 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { bookingId } = req.body;
       
       console.log("[create-payment-intent] Request received for booking:", bookingId);
+      console.log("[create-payment-intent] STRIPE_SECRET_KEY starts with:", process.env.STRIPE_SECRET_KEY?.substring(0, 7));
       
       if (!bookingId) {
         console.error("[create-payment-intent] Missing bookingId");
