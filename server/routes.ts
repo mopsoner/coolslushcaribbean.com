@@ -298,18 +298,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create Swikly deposit request via API
       let swiklyUrl = '';
       
+      console.log('[confirm-payment] Creating Swikly deposit for booking:', bookingId);
+      console.log('[confirm-payment] Base URL:', baseUrl);
+      
       try {
         const swiklyClient = getSwiklyClient();
+        console.log('[confirm-payment] Swikly client initialized');
+        
         const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
+        console.log('[confirm-payment] Swikly API response:', JSON.stringify(swiklyResult, null, 2));
         
         if (swiklyResult.request?.link) {
           swiklyUrl = swiklyResult.request.link;
+          console.log('[confirm-payment] Swikly URL created successfully:', swiklyUrl);
         } else {
           throw new Error('No Swikly URL returned');
         }
       } catch (swiklyError: any) {
-        console.error('Swikly creation failed:', swiklyError.message);
+        console.error('[confirm-payment] Swikly creation failed:', {
+          message: swiklyError.message,
+          stack: swiklyError.stack,
+          cause: swiklyError.cause
+        });
         swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
+        console.log('[confirm-payment] Using fallback URL:', swiklyUrl);
       }
       
       // Update booking with Swikly URL
