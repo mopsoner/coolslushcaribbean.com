@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Loader2, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Shield, Loader2, ExternalLink, Clock, CreditCard, Mail } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import Navbar from "@/components/navbar";
 import type { Booking } from "@shared/schema";
@@ -23,6 +24,7 @@ export default function SwiklyStep() {
   const [error, setError] = useState<string | null>(null);
   const [swiklyUrl, setSwiklyUrl] = useState<string | null>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<'now' | 'later' | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -103,9 +105,10 @@ export default function SwiklyStep() {
     verifyPaymentAndCreateSwikly();
   }, [bookingId, booking, paymentIntentClientSecret, isProcessing, swiklyUrl, error, setLocation]);
 
-  // Poll booking status to detect when Swikly is completed
+  // Poll booking status to detect when Swikly is completed (only if user chose "pay now")
   useEffect(() => {
-    if (!bookingId || !swiklyUrl) return;
+    // Only poll if user chose to pay now
+    if (!bookingId || !swiklyUrl || selectedOption !== 'now') return;
 
     let pollCount = 0;
     const MAX_POLLS = 100; // 5 minutes max (100 * 3 seconds)
@@ -140,7 +143,7 @@ export default function SwiklyStep() {
     checkBookingStatus();
 
     return () => clearInterval(interval);
-  }, [bookingId, swiklyUrl, setLocation]);
+  }, [bookingId, swiklyUrl, selectedOption, setLocation]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted to-background">
@@ -179,8 +182,8 @@ export default function SwiklyStep() {
                     Continuer sans caution →
                   </button>
                 </div>
-              ) : swiklyUrl ? (
-                <div className="space-y-4">
+              ) : swiklyUrl && !selectedOption ? (
+                <div className="space-y-6">
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
                     <p className="text-sm text-blue-800 dark:text-blue-200">
                       💡 <strong>Rappel :</strong> Il s'agit d'une empreinte bancaire de{" "}
@@ -189,37 +192,129 @@ export default function SwiklyStep() {
                     </p>
                   </div>
 
-                  {!iframeLoaded && (
-                    <div className="text-center py-8">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-                      <p className="text-sm text-muted-foreground">Chargement du formulaire Swikly...</p>
-                    </div>
-                  )}
-
-                  <div className="relative" style={{ minHeight: '600px' }}>
-                    <iframe
-                      src={swiklyUrl}
-                      className="w-full border-0 rounded-lg"
-                      style={{ height: '600px', display: iframeLoaded ? 'block' : 'none' }}
-                      onLoad={() => setIframeLoaded(true)}
-                      title="Swikly - Autorisation d'empreinte bancaire"
-                      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-                      allow="payment"
-                      data-testid="iframe-swikly"
-                    />
+                  <div className="text-center mb-4">
+                    <h3 className="text-lg font-semibold mb-2">Quand souhaitez-vous valider la caution ?</h3>
+                    <p className="text-sm text-muted-foreground">Choisissez l'option qui vous convient le mieux</p>
                   </div>
 
-                  <div className="text-center pt-4">
-                    <a
-                      href={swiklyUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                      data-testid="link-open-swikly-new-tab"
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Option 1: Payer maintenant */}
+                    <Card className="border-2 border-primary/30 hover:border-primary transition-all hover:shadow-lg">
+                      <CardContent className="p-6 text-center space-y-4">
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                          <CreditCard className="w-8 h-8 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-lg mb-2">Payer maintenant</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Validez votre empreinte bancaire immédiatement pour finaliser votre réservation
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => setSelectedOption('now')}
+                          className="w-full"
+                          size="lg"
+                          data-testid="button-pay-now"
+                        >
+                          <CreditCard className="w-5 h-5 mr-2" />
+                          Valider maintenant
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Option 2: Payer plus tard */}
+                    <Card className="border-2 border-muted hover:border-primary/50 transition-all hover:shadow-lg">
+                      <CardContent className="p-6 text-center space-y-4">
+                        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+                          <Clock className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-lg mb-2">Payer plus tard</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Recevez le lien par email et validez quand vous le souhaitez
+                          </p>
+                        </div>
+                        <Button
+                          onClick={async () => {
+                            try {
+                              setIsProcessing(true);
+                              await apiRequest("POST", `/api/bookings/${bookingId}/skip-caution`);
+                              setLocation(`/success?booking=${bookingId}`);
+                            } catch (err) {
+                              setError("Impossible de finaliser la réservation");
+                              setIsProcessing(false);
+                            }
+                          }}
+                          variant="outline"
+                          className="w-full"
+                          size="lg"
+                          disabled={isProcessing}
+                          data-testid="button-pay-later"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              Traitement...
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="w-5 h-5 mr-2" />
+                              Recevoir le lien par email
+                            </>
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              ) : swiklyUrl && selectedOption === 'now' ? (
+                <div className="space-y-6">
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800 text-center">
+                    <h3 className="font-bold text-lg mb-3 text-green-800 dark:text-green-200">
+                      ✓ Lien de caution prêt !
+                    </h3>
+                    <p className="text-sm text-green-700 dark:text-green-300 mb-4">
+                      Cliquez sur le bouton ci-dessous pour valider votre empreinte bancaire sur le site sécurisé Swikly
+                    </p>
+                    <Button
+                      asChild
+                      size="lg"
+                      className="mb-4"
+                      data-testid="button-open-swikly"
                     >
-                      <ExternalLink className="w-4 h-4" />
-                      Ouvrir dans un nouvel onglet
-                    </a>
+                      <a
+                        href={swiklyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="w-5 h-5 mr-2" />
+                        Ouvrir Swikly
+                      </a>
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Une nouvelle fenêtre s'ouvrira. Revenez ici une fois la validation terminée.
+                    </p>
+                  </div>
+
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-3">Caution déjà validée ?</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setLocation(`/success?booking=${bookingId}`)}
+                      data-testid="button-go-to-success"
+                    >
+                      Voir ma confirmation de réservation
+                    </Button>
+                  </div>
+
+                  <div className="text-center pt-4 border-t">
+                    <button
+                      onClick={() => setSelectedOption(null)}
+                      className="text-sm text-muted-foreground hover:text-foreground underline"
+                      data-testid="link-change-option"
+                    >
+                      ← Changer d'option
+                    </button>
                   </div>
                 </div>
               ) : (

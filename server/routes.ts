@@ -345,6 +345,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Skip caution (pay later) - confirm booking and send Swikly link via email
+  app.post("/api/bookings/:id/skip-caution", async (req, res) => {
+    try {
+      const bookingId = req.params.id;
+
+      // Get booking
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ error: "Réservation non trouvée" });
+      }
+
+      // Check if booking already has a Swikly URL
+      if (!booking.swiklyUrl) {
+        return res.status(400).json({ error: "Lien Swikly non disponible" });
+      }
+
+      // Confirm the booking (allow user to proceed without immediate caution)
+      await storage.updateBookingStatus(bookingId, "CONFIRMED");
+
+      // Send email with Swikly link
+      await sendSwiklyDepositEmail(booking);
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error skipping caution:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Swikly callback handler - called by Swikly when deposit is completed
   app.post("/api/swikly-callback", async (req, res) => {
     try {
