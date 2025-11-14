@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Booking } from "@shared/schema";
 import Navbar from "@/components/navbar";
 import { CreditCard, Shield, Lock } from "lucide-react";
+import { computeCautionAmount, formatEuro } from "@shared/utils";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
@@ -136,7 +137,7 @@ export default function Checkout() {
               Étape 2/2 : Paiement Stripe
             </h1>
             <p className="text-lg text-muted-foreground">
-              Caution Swikly (500€) validée ✓ • Payez maintenant {(booking.totalCents / 100).toFixed(2)}€
+              Caution Swikly ({formatEuro(computeCautionAmount(booking.machines))}) validée ✓ • Payez maintenant {formatEuro(booking.totalCents)}
             </p>
           </div>
 
