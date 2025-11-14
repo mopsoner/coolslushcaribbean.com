@@ -98,13 +98,13 @@ export default function BookingForm() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Réservation confirmée !",
-        description: "Vérifiez votre email pour la caution Swikly...",
+        title: "Réservation créée !",
+        description: "Procédez au paiement pour finaliser votre réservation...",
       });
       
-      // Redirect to confirmation page instead of directly to Swikly
+      // Redirect to checkout (Stripe payment) instead of Swikly
       if (data.bookingId) {
-        window.location.href = `/booking-confirmation?booking=${data.bookingId}`;
+        window.location.href = `/checkout?booking=${data.bookingId}`;
       }
     },
     onError: (error: any) => {
