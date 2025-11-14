@@ -325,29 +325,29 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
             <div class="content">
               <p>Bonjour ${booking.customerName},</p>
               
-              <p>Merci pour votre paiement de <strong>${(booking.totalCents / 100).toFixed(2)}€</strong> ! Votre réservation <strong>#${booking.id.slice(-8)}</strong> pour le ${bookingDate} est presque finalisée.</p>
+              <p>Votre réservation <strong>#${booking.id.slice(-8)}</strong> pour le ${bookingDate} est presque finalisée !</p>
               
-              <p><strong>Étape 2/2 : Caution Swikly</strong><br>
-              Pour finaliser, validez l'empreinte bancaire Swikly de 500€ (aucun débit).</p>
+              <p><strong>Étape 1/2 : Caution Swikly</strong><br>
+              Sécurisez votre location avec une empreinte bancaire Swikly de 500€ (aucun débit).</p>
 
               <div class="highlight">
                 <p style="margin: 0; font-weight: bold;">⚠️ Important : Aucun débit ne sera effectué</p>
-                <p style="margin: 5px 0 0 0; font-size: 0.95em;">Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. Le paiement de ${(booking.totalCents / 100).toFixed(2)}€ a déjà été effectué avec succès ✓</p>
+                <p style="margin: 5px 0 0 0; font-size: 0.95em;">Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. Ensuite, vous serez redirigé vers le paiement Stripe de ${(booking.totalCents / 100).toFixed(2)}€.</p>
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${swiklyLink}" class="button">
-                  🔐 Valider la caution (Étape 2/2)
+                  🔐 Valider la caution (Étape 1/2)
                 </a>
               </div>
 
               <div class="info-box">
-                <h3 style="margin-top: 0; color: #6366F1;">Comment finaliser votre réservation :</h3>
+                <h3 style="margin-top: 0; color: #6366F1;">Le processus complet en 4 étapes :</h3>
                 <ol style="margin: 10px 0; padding-left: 20px;">
-                  <li style="margin-bottom: 10px; text-decoration: line-through; color: #10b981;">Paiement Stripe de ${(booking.totalCents / 100).toFixed(2)}€ ✓ Effectué</li>
-                  <li style="margin-bottom: 10px;">Cliquez sur le bouton ci-dessous pour accéder à Swikly</li>
-                  <li style="margin-bottom: 10px;">Autorisez l'empreinte bancaire de 500€ (aucun débit)</li>
-                  <li style="margin-bottom: 10px;">Votre réservation est finalisée ! L'empreinte sera libérée 48h après votre événement</li>
+                  <li style="margin-bottom: 10px;">Validez l'empreinte bancaire Swikly (aucun débit)</li>
+                  <li style="margin-bottom: 10px;">Vous êtes redirigé vers le paiement Stripe</li>
+                  <li style="margin-bottom: 10px;">Payez ${(booking.totalCents / 100).toFixed(2)}€ pour finaliser votre réservation</li>
+                  <li style="margin-bottom: 10px;">L'empreinte bancaire est libérée 48h après votre événement</li>
                 </ol>
               </div>
 
@@ -390,19 +390,18 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
         </html>
       `,
       text: `
-Cool'Slush Guadeloupe - Finalisez votre réservation
+Cool'Slush Guadeloupe - Sécurisez votre réservation
 
 Bonjour ${booking.customerName},
 
-Merci pour votre paiement de ${(booking.totalCents / 100).toFixed(2)}€ ! 
-Votre réservation #${booking.id.slice(-8)} pour le ${bookingDate} est presque finalisée.
+Votre réservation #${booking.id.slice(-8)} pour le ${bookingDate} est presque finalisée !
 
-ÉTAPE 2/2 : Caution Swikly
-Pour finaliser, validez l'empreinte bancaire Swikly de 500€ (aucun débit).
+ÉTAPE 1/2 : Caution Swikly
+Sécurisez votre location avec une empreinte bancaire Swikly de 500€ (aucun débit).
 
 ⚠️ IMPORTANT : Aucun débit ne sera effectué
 Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. 
-Le paiement de ${(booking.totalCents / 100).toFixed(2)}€ a déjà été effectué avec succès ✓
+Ensuite, vous serez redirigé vers le paiement Stripe de ${(booking.totalCents / 100).toFixed(2)}€.
 
 COMPLÉTER MA CAUTION SWIKLY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
