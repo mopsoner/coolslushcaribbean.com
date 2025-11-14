@@ -81,8 +81,8 @@ class SwiklyAPI {
           phoneNumber: booking.customerPhone || undefined,
         },
         deposit: {
-          amount: 50000,
-          description: `Caution - Location machine à granité Cool'Slush`,
+          amount: booking.machines * 20000, // 200€ per machine
+          description: `Caution - Location machine à granité Cool'Slush (${booking.machines} machine${booking.machines > 1 ? 's' : ''})`,
           startDate: depositStartDate.toISOString().split('T')[0],
           endDate: depositEndDate.toISOString().split('T')[0],
         },
