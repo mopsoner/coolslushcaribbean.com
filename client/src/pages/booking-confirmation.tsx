@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Mail, Shield, ArrowRight, Clock, CreditCard } from "lucide-react";
 import Navbar from "@/components/navbar";
+import BookingDetails from "@/components/booking-details";
 import type { Booking } from "@shared/schema";
 import { computeCautionAmount, formatEuro } from "@shared/utils";
 
@@ -173,34 +174,7 @@ export default function BookingConfirmation() {
             </CardHeader>
 
             <CardContent className="p-6">
-              <div className="bg-white dark:bg-muted/30 rounded-xl p-6 space-y-3 border border-border">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Offre</span>
-                  <span className="font-semibold text-foreground">{booking.offer}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{isMultipleDays ? 'Période' : 'Date'}</span>
-                  <span className="font-semibold text-foreground">{dateDisplay}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Horaires</span>
-                  <span className="font-semibold text-foreground">
-                    {booking.startHour.toString().padStart(2, '0')}:00 - {booking.endHour.toString().padStart(2, '0')}:00
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Machines</span>
-                  <span className="font-semibold text-foreground">
-                    {booking.machines} machine{booking.machines > 1 ? 's' : ''}
-                  </span>
-                </div>
-                <div className="flex justify-between border-t border-border pt-3">
-                  <span className="text-muted-foreground">Total</span>
-                  <span className="font-bold text-xl text-primary">
-                    {formatEuro(booking.totalCents)}
-                  </span>
-                </div>
-              </div>
+              <BookingDetails booking={booking} showTotal={false} />
 
               {/* Timeline Indicator */}
               <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Booking } from "@shared/schema";
 import Navbar from "@/components/navbar";
+import BookingDetails from "@/components/booking-details";
 import { CreditCard, Shield, Lock } from "lucide-react";
 import { computeCautionAmount, formatEuro } from "@shared/utils";
 
@@ -150,46 +151,17 @@ export default function Checkout() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-8">
-                <div className="space-y-4">
+                <div className="space-y-4 mb-4">
                   <div className="flex justify-between" data-testid="booking-detail-id">
                     <span className="text-muted-foreground">Réservation</span>
                     <span className="font-semibold text-foreground">#{booking.id.slice(-8)}</span>
-                  </div>
-                  <div className="flex justify-between" data-testid="booking-detail-offer">
-                    <span className="text-muted-foreground">Offre</span>
-                    <span className="font-semibold text-foreground">{booking.offer}</span>
-                  </div>
-                  <div className="flex justify-between" data-testid="booking-detail-date">
-                    <span className="text-muted-foreground">
-                      {new Date(booking.startDate).toDateString() !== new Date(booking.endDate).toDateString() ? 'Période' : 'Date'}
-                    </span>
-                    <span className="font-semibold text-foreground">
-                      {new Date(booking.startDate).toDateString() !== new Date(booking.endDate).toDateString() 
-                        ? `${new Date(booking.startDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - ${new Date(booking.endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                        : new Date(booking.startDate).toLocaleDateString('fr-FR')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between" data-testid="booking-detail-time">
-                    <span className="text-muted-foreground">Horaires</span>
-                    <span className="font-semibold text-foreground">
-                      {booking.startHour.toString().padStart(2, '0')}:00 - {booking.endHour.toString().padStart(2, '0')}:00
-                    </span>
-                  </div>
-                  <div className="flex justify-between" data-testid="booking-detail-machines">
-                    <span className="text-muted-foreground">Machines</span>
-                    <span className="font-semibold text-foreground">{booking.machines}x EZBASICS</span>
                   </div>
                   <div className="flex justify-between" data-testid="booking-detail-customer">
                     <span className="text-muted-foreground">Client</span>
                     <span className="font-semibold text-foreground">{booking.customerName}</span>
                   </div>
-                  <div className="border-t border-border pt-4">
-                    <div className="flex justify-between text-lg font-bold" data-testid="booking-detail-total">
-                      <span className="text-foreground">Total à payer</span>
-                      <span className="text-primary">{booking.totalCents / 100}€</span>
-                    </div>
-                  </div>
                 </div>
+                <BookingDetails booking={booking} showTotal={false} />
               </CardContent>
             </Card>
 

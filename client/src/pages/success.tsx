@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Booking } from "@shared/schema";
 import Navbar from "@/components/navbar";
+import BookingDetails from "@/components/booking-details";
 
 export default function Success() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -52,40 +53,14 @@ export default function Success() {
                   Détails de votre réservation
                 </h2>
                 
-                <div className="space-y-4">
+                <div className="space-y-4 mb-4">
                   <div className="flex justify-between" data-testid="success-booking-id">
                     <span className="text-muted-foreground">Numéro de réservation</span>
                     <span className="font-semibold text-foreground">#{booking.id.slice(-8)}</span>
                   </div>
-                  <div className="flex justify-between" data-testid="success-booking-offer">
-                    <span className="text-muted-foreground">Offre</span>
-                    <span className="font-semibold text-foreground">{booking.offer}</span>
-                  </div>
-                  <div className="flex justify-between" data-testid="success-booking-date">
-                    <span className="text-muted-foreground">
-                      {new Date(booking.startDate).toDateString() !== new Date(booking.endDate).toDateString() ? 'Période' : 'Date'}
-                    </span>
-                    <span className="font-semibold text-foreground">
-                      {new Date(booking.startDate).toDateString() !== new Date(booking.endDate).toDateString() 
-                        ? `${new Date(booking.startDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - ${new Date(booking.endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                        : new Date(booking.startDate).toLocaleDateString('fr-FR')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between" data-testid="success-booking-time">
-                    <span className="text-muted-foreground">Horaires</span>
-                    <span className="font-semibold text-foreground">
-                      {booking.startHour.toString().padStart(2, '0')}:00 - {booking.endHour.toString().padStart(2, '0')}:00
-                    </span>
-                  </div>
-                  <div className="flex justify-between" data-testid="success-booking-machines">
-                    <span className="text-muted-foreground">Machines</span>
-                    <span className="font-semibold text-foreground">{booking.machines}x EZBASICS</span>
-                  </div>
-                  <div className="flex justify-between" data-testid="success-booking-total">
-                    <span className="text-muted-foreground">Total payé</span>
-                    <span className="font-semibold text-success">{booking.totalCents / 100}€</span>
-                  </div>
                 </div>
+                
+                <BookingDetails booking={booking} showTotal={true} />
               </CardContent>
             </Card>
           )}
