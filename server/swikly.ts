@@ -1,4 +1,5 @@
 import type { Booking } from "@shared/schema";
+import { computeCautionAmount } from "@shared/utils";
 
 interface SwiklyConfig {
   apiToken: string;
@@ -81,7 +82,7 @@ class SwiklyAPI {
           phoneNumber: booking.customerPhone || undefined,
         },
         deposit: {
-          amount: booking.machines * 20000, // 200€ per machine
+          amount: computeCautionAmount(booking.machines),
           description: `Caution - Location machine à granité Cool'Slush (${booking.machines} machine${booking.machines > 1 ? 's' : ''})`,
           startDate: depositStartDate.toISOString().split('T')[0],
           endDate: depositEndDate.toISOString().split('T')[0],

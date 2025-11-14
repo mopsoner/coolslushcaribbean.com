@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, Mail, Shield, ArrowRight, Clock } from "lucide-react";
 import Navbar from "@/components/navbar";
 import type { Booking } from "@shared/schema";
+import { computeCautionAmount, formatEuro } from "@shared/utils";
 
 export default function BookingConfirmation() {
   const [, setLocation] = useLocation();
@@ -124,7 +125,7 @@ export default function BookingConfirmation() {
                 <div className="text-center space-y-4">
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700">
                     <p className="text-lg font-semibold text-foreground mb-2">
-                      💳 Empreinte bancaire de 500€
+                      💳 Empreinte bancaire de {formatEuro(computeCautionAmount(booking.machines))}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Aucun débit immédiat • Sécurisé par Swikly • Libérée automatiquement après votre location
@@ -226,7 +227,7 @@ export default function BookingConfirmation() {
                 <div className="flex justify-between border-t border-border pt-3">
                   <span className="text-muted-foreground">Total</span>
                   <span className="font-bold text-xl text-primary">
-                    {(booking.totalCents / 100).toFixed(2)}€
+                    {formatEuro(booking.totalCents)}
                   </span>
                 </div>
               </div>
@@ -238,8 +239,8 @@ export default function BookingConfirmation() {
                   <div>
                     <p className="font-bold mb-2">Prochaines étapes :</p>
                     <ol className="list-decimal list-inside space-y-1">
-                      <li>Validez la <strong>caution Swikly</strong> (empreinte bancaire 500€, aucun débit)</li>
-                      <li>Effectuez le <strong>paiement Stripe</strong> de {(booking.totalCents / 100).toFixed(2)}€ pour finaliser</li>
+                      <li>Validez la <strong>caution Swikly</strong> (empreinte bancaire {formatEuro(computeCautionAmount(booking.machines))}, aucun débit)</li>
+                      <li>Effectuez le <strong>paiement Stripe</strong> de {formatEuro(booking.totalCents)} pour finaliser</li>
                     </ol>
                   </div>
                 </div>

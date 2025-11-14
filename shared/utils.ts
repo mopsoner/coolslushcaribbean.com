@@ -1,4 +1,32 @@
 /**
+ * Swikly caution amount per machine in cents
+ * 200€ per machine
+ */
+export const CAUTION_PER_MACHINE_CENTS = 20000;
+
+/**
+ * Calculate the total Swikly caution amount for a booking
+ * 
+ * @param machineCount - Number of machines being rented
+ * @returns Total caution amount in cents
+ */
+export function computeCautionAmount(machineCount: number): number {
+  return machineCount * CAUTION_PER_MACHINE_CENTS;
+}
+
+/**
+ * Format an amount in cents to euros with proper formatting
+ * 
+ * @param amountCents - Amount in cents
+ * @returns Formatted string like "200,00€" or "1 500,00€"
+ */
+export function formatEuro(amountCents: number): string {
+  const euros = (amountCents / 100).toFixed(2);
+  // Use French number formatting (space for thousands, comma for decimals)
+  return euros.replace(/\B(?=(\d{3})+(?!\d))/g, ' ').replace('.', ',') + '€';
+}
+
+/**
  * Calculate the number of rental days between two dates (inclusive)
  * 
  * Examples:
