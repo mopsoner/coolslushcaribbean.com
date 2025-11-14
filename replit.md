@@ -186,6 +186,45 @@ Total = (dailyPrice × machineCount × rentalDays) + (syrupPrice × quantity)
 - Consider rate limiting on payment and booking routes
 - Add error monitoring and logging
 
+### Payment & Deposit Flow
+
+**Two-Step Booking Process** (Clarified November 14, 2025)
+
+The booking flow consists of two distinct steps to ensure secure transactions:
+
+1. **Step 1: Swikly Deposit (Bank Authorization)**
+   - Purpose: Security deposit / guarantee
+   - Amount: 500€ bank authorization (NO actual charge)
+   - Process: Customer authorizes a hold on their card
+   - Result: No money is debited; hold is automatically released 48h after event
+   - Page: `/booking-confirmation` with prominent Swikly call-to-action
+
+2. **Step 2: Stripe Payment (Actual Charge)**
+   - Purpose: Payment for the rental
+   - Amount: Total booking cost (machines + syrups)
+   - Process: Customer pays via Stripe payment form
+   - Result: Actual charge to customer's card
+   - Page: `/checkout` with Stripe Elements payment form
+
+**User Experience Flow:**
+```
+/booking (form) 
+  → POST /api/bookings (creates booking + Swikly request)
+  → /booking-confirmation (shows "Step 1/2: Swikly")
+  → User clicks "Valider la caution (aucun débit)"
+  → Swikly external page (bank authorization)
+  → Redirect to /checkout (shows "Step 2/2: Payment")
+  → Stripe payment form
+  → /success (booking confirmed)
+```
+
+**Communication Clarity:**
+- All user-facing text explicitly states "Step 1/2" and "Step 2/2"
+- Swikly labeled as "bank authorization" with "no debit" messaging
+- Stripe labeled as actual payment with specific amount
+- Email notifications mirror same two-step messaging
+- Timeline indicators show both steps upfront
+
 ### External Dependencies
 
 **Payment Processing**
@@ -194,6 +233,8 @@ Total = (dailyPrice × machineCount × rentalDays) + (syrupPrice × quantity)
   - Server-side: `stripe` npm package with API version 2025-09.30.clover
   - Webhook endpoint for payment confirmation at `/api/webhook/stripe`
   - Environment: `STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`
+  - Payment intent created in `/api/create-payment-intent`
+  - Checkout page at `/checkout` with Stripe Elements
 
 **Deposit Management**
 - **Swikly**: Third-party deposit/security guarantee service
@@ -201,6 +242,7 @@ Total = (dailyPrice × machineCount × rentalDays) + (syrupPrice × quantity)
   - Sandbox and production environment support
   - Environment: `SWIKLY_API_KEY`, `SWIKLY_API_SECRET`, `SWIKLY_ENVIRONMENT`
   - Automatically switches to production mode when NODE_ENV=production
+  - Confirmation page at `/booking-confirmation` explains two-step flow
 
 **Email Service**
 - **Nodemailer**: Email delivery for booking confirmations
