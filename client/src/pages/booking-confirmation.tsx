@@ -81,8 +81,8 @@ export default function BookingConfirmation() {
       if (booking.swiklyUrl.includes('swikly.com') || booking.swiklyUrl.includes('app.swikly') || booking.swiklyUrl.includes('swik.link')) {
         window.location.href = booking.swiklyUrl;
       } else {
-        // Otherwise, it's a fallback URL - navigate to success directly
-        setLocation(`/success?booking=${booking.id}`);
+        // Otherwise, it's a fallback URL - navigate to checkout directly
+        setLocation(`/checkout?booking=${booking.id}`);
       }
     }
   };
@@ -98,10 +98,10 @@ export default function BookingConfirmation() {
               <CheckCircle className="w-12 h-12 text-success" />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Paiement validé !
+              Réservation confirmée !
             </h1>
             <p className="text-lg text-muted-foreground">
-              Réservation #{booking.id.slice(-8)} • {(booking.totalCents / 100).toFixed(2)}€ payé
+              Réservation #{booking.id.slice(-8)}
             </p>
           </div>
 
@@ -112,11 +112,11 @@ export default function BookingConfirmation() {
                 <div className="flex items-center justify-center gap-3 mb-2">
                   <Shield className="w-8 h-8" />
                   <CardTitle className="text-2xl md:text-3xl">
-                    Étape 2/2 : Caution Swikly
+                    Étape 1/2 : Caution Swikly
                   </CardTitle>
                 </div>
                 <p className="text-white/90 text-lg">
-                  Empreinte bancaire sans débit • Paiement de {(booking.totalCents / 100).toFixed(2)}€ déjà effectué ✓
+                  Empreinte bancaire sans débit • Ensuite paiement de {(booking.totalCents / 100).toFixed(2)}€
                 </p>
               </CardHeader>
 
@@ -171,23 +171,23 @@ export default function BookingConfirmation() {
 
                 {/* How it Works */}
                 <div className="border-t border-border pt-6">
-                  <h4 className="font-bold text-center text-foreground mb-4">🔒 Comment ça fonctionne</h4>
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold">✓</span>
-                      <span className="text-sm text-muted-foreground">Paiement Stripe de {(booking.totalCents / 100).toFixed(2)}€ effectué avec succès</span>
-                    </div>
+                  <h4 className="font-bold text-center text-foreground mb-4">🔒 Le processus en 4 étapes</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</span>
-                      <span className="text-sm text-muted-foreground">Cliquez sur le bouton ci-dessus pour accéder à Swikly</span>
+                      <span className="text-sm text-muted-foreground">Cliquez sur le bouton ci-dessus</span>
                     </div>
                     <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">2</span>
-                      <span className="text-sm text-muted-foreground">Autorisez l'empreinte bancaire de 500€ (aucun débit)</span>
+                      <span className="text-sm text-muted-foreground">Autorisez l'empreinte bancaire (aucun débit)</span>
                     </div>
                     <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">3</span>
-                      <span className="text-sm text-muted-foreground">Votre réservation est finalisée et l'empreinte sera libérée 48h après votre événement</span>
+                      <span className="text-sm text-muted-foreground">Vous êtes redirigé vers le paiement Stripe</span>
+                    </div>
+                    <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">4</span>
+                      <span className="text-sm text-muted-foreground">Payez {(booking.totalCents / 100).toFixed(2)}€ pour finaliser</span>
                     </div>
                   </div>
                 </div>

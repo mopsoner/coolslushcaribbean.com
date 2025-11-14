@@ -34,7 +34,7 @@ const CheckoutForm = ({ booking }: { booking: Booking }) => {
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/booking-confirmation?booking=${booking.id}`,
+        return_url: `${window.location.origin}/success?booking=${booking.id}`,
       },
     });
 
@@ -47,9 +47,9 @@ const CheckoutForm = ({ booking }: { booking: Booking }) => {
     } else {
       toast({
         title: "Paiement réussi",
-        description: "Procédez maintenant à la caution Swikly...",
+        description: "Merci pour votre achat !",
       });
-      setLocation(`/booking-confirmation?booking=${booking.id}`);
+      setLocation(`/success?booking=${booking.id}`);
     }
   };
 
@@ -133,10 +133,10 @@ export default function Checkout() {
           {/* Progress Indicator */}
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Étape 1/2 : Paiement Stripe
+              Étape 2/2 : Paiement Stripe
             </h1>
             <p className="text-lg text-muted-foreground">
-              Payez {(booking.totalCents / 100).toFixed(2)}€ • Ensuite : Caution Swikly (500€ - aucun débit)
+              Caution Swikly (500€) validée ✓ • Payez maintenant {(booking.totalCents / 100).toFixed(2)}€
             </p>
           </div>
 
