@@ -203,6 +203,8 @@ export default function SwiklyStep() {
                       style={{ height: '600px', display: iframeLoaded ? 'block' : 'none' }}
                       onLoad={() => setIframeLoaded(true)}
                       title="Swikly - Autorisation d'empreinte bancaire"
+                      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                      allow="payment"
                       data-testid="iframe-swikly"
                     />
                   </div>
