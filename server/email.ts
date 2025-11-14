@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import type { Booking } from '@shared/schema';
+import { computeCautionAmount, formatEuro } from '@shared/utils';
 
 // Create transporter with SMTP or fall back to ethereal for testing
 let transporter: nodemailer.Transporter;
@@ -319,7 +320,7 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
           <div class="container">
             <div class="header">
               <h1>🔒 Sécurisez votre réservation</h1>
-              <p style="margin-top: 10px; font-size: 1.1em;">Caution Swikly - 500€</p>
+              <p style="margin-top: 10px; font-size: 1.1em;">Caution Swikly - ${formatEuro(computeCautionAmount(booking.machines))}</p>
             </div>
             
             <div class="content">
@@ -328,11 +329,11 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
               <p>Votre réservation <strong>#${booking.id.slice(-8)}</strong> pour le ${bookingDate} est presque finalisée !</p>
               
               <p><strong>Étape 1/2 : Caution Swikly</strong><br>
-              Sécurisez votre location avec une empreinte bancaire Swikly de 500€ (aucun débit).</p>
+              Sécurisez votre location avec une empreinte bancaire Swikly de ${formatEuro(computeCautionAmount(booking.machines))} (aucun débit).</p>
 
               <div class="highlight">
                 <p style="margin: 0; font-weight: bold;">⚠️ Important : Aucun débit ne sera effectué</p>
-                <p style="margin: 5px 0 0 0; font-size: 0.95em;">Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. Ensuite, vous serez redirigé vers le paiement Stripe de ${(booking.totalCents / 100).toFixed(2)}€.</p>
+                <p style="margin: 5px 0 0 0; font-size: 0.95em;">Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. Ensuite, vous serez redirigé vers le paiement Stripe de ${formatEuro(booking.totalCents)}.</p>
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
@@ -346,7 +347,7 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
                 <ol style="margin: 10px 0; padding-left: 20px;">
                   <li style="margin-bottom: 10px;">Validez l'empreinte bancaire Swikly (aucun débit)</li>
                   <li style="margin-bottom: 10px;">Vous êtes redirigé vers le paiement Stripe</li>
-                  <li style="margin-bottom: 10px;">Payez ${(booking.totalCents / 100).toFixed(2)}€ pour finaliser votre réservation</li>
+                  <li style="margin-bottom: 10px;">Payez ${formatEuro(booking.totalCents)} pour finaliser votre réservation</li>
                   <li style="margin-bottom: 10px;">L'empreinte bancaire est libérée 48h après votre événement</li>
                 </ol>
               </div>
@@ -366,7 +367,7 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
                 <li>📅 Date : ${bookingDate}</li>
                 <li>🕐 Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00</li>
                 <li>❄️ Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''}</li>
-                <li>💰 Total : ${(booking.totalCents / 100).toFixed(2)}€</li>
+                <li>💰 Total : ${formatEuro(booking.totalCents)}</li>
               </ul>
               
               <p style="margin-top: 25px;"><strong>Besoin d'aide ?</strong></p>
@@ -397,11 +398,11 @@ Bonjour ${booking.customerName},
 Votre réservation #${booking.id.slice(-8)} pour le ${bookingDate} est presque finalisée !
 
 ÉTAPE 1/2 : Caution Swikly
-Sécurisez votre location avec une empreinte bancaire Swikly de 500€ (aucun débit).
+Sécurisez votre location avec une empreinte bancaire Swikly de ${formatEuro(computeCautionAmount(booking.machines))} (aucun débit).
 
 ⚠️ IMPORTANT : Aucun débit ne sera effectué
 Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement. 
-Ensuite, vous serez redirigé vers le paiement Stripe de ${(booking.totalCents / 100).toFixed(2)}€.
+Ensuite, vous serez redirigé vers le paiement Stripe de ${formatEuro(booking.totalCents)}.
 
 COMPLÉTER MA CAUTION SWIKLY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -411,7 +412,7 @@ COMMENT FONCTIONNE SWIKLY ?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1. Cliquez sur le lien ci-dessus
 2. Entrez vos coordonnées bancaires de manière sécurisée
-3. Une empreinte de 500€ est créée (aucun débit)
+3. Une empreinte de ${formatEuro(computeCautionAmount(booking.machines))} est créée (aucun débit)
 4. L'empreinte est libérée 48h après votre événement
 
 RÉCAPITULATIF DE VOTRE RÉSERVATION
@@ -419,7 +420,7 @@ RÉCAPITULATIF DE VOTRE RÉSERVATION
 Date : ${bookingDate}
 Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00
 Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''}
-Total : ${(booking.totalCents / 100).toFixed(2)}€
+Total : ${formatEuro(booking.totalCents)}
 
 BESOIN D'AIDE ?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
