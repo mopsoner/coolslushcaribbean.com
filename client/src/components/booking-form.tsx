@@ -738,7 +738,7 @@ export default function BookingForm() {
                         />
                       </FormControl>
                       <div className="text-sm text-muted-foreground flex-1">
-                        J'accepte les <a href="/legal/terms" className="text-primary hover:underline">conditions générales</a> et comprends qu'une caution de 1€ sera bloquée via Swikly (aucun débit effectué).
+                        J'accepte les <a href="/legal/terms" className="text-primary hover:underline">conditions générales</a> et comprends qu'une caution de 150€ par machine sera bloquée via Swikly (aucun débit effectué).
                       </div>
                     </div>
                     <FormMessage />

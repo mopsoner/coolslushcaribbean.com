@@ -36,7 +36,7 @@ export default function MachineCard({ machine }: MachineCardProps) {
       <div className="relative">
         <img 
           src="https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400" 
-          alt="Machine à granité EZBASICS professionnelle double cuve" 
+          alt="Machine à granité Ninja professionnelle" 
           className={`w-full h-56 object-cover ${!isAvailable ? 'grayscale' : ''}`}
           data-testid={`img-machine-${machine.id}`}
         />
@@ -57,30 +57,30 @@ export default function MachineCard({ machine }: MachineCardProps) {
           <h3 className="text-xl font-bold text-foreground mb-2" data-testid={`text-machine-name-${machine.id}`}>
             {machine.name}
           </h3>
-          <p className="text-sm text-muted-foreground">Machine professionnelle EZBASICS</p>
+          <p className="text-sm text-muted-foreground">Machine professionnelle Ninja</p>
         </div>
         
         <div className="bg-muted/50 rounded-2xl p-4 mb-6">
           <h4 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
             <Snowflake className="w-4 h-4 text-primary" />
-            Caractéristiques techniques
+            Ninja Slushi 2,5L - 5 programmes
           </h4>
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2" data-testid={`feature-capacity-${machine.id}`}>
               <Droplets className="w-4 h-4 text-primary" />
-              <span><strong>2 cuves</strong> de 12L chacune (24L total)</span>
+              <span><strong>Capacité :</strong> 2,5 litres</span>
+            </div>
+            <div className="flex items-center gap-2" data-testid={`feature-programs-${machine.id}`}>
+              <Zap className="w-4 h-4 text-primary" />
+              <span><strong>5 programmes :</strong> Slushi, Milkshake, Frozen Drink, Smoothie, Glace italienne</span>
             </div>
             <div className="flex items-center gap-2" data-testid={`feature-cooling-${machine.id}`}>
               <ThermometerSnowflake className="w-4 h-4 text-primary" />
-              <span>Température réglable <strong>-3°C à -6°C</strong></span>
-            </div>
-            <div className="flex items-center gap-2" data-testid={`feature-power-${machine.id}`}>
-              <Zap className="w-4 h-4 text-primary" />
-              <span>Compresseur <strong>haute performance</strong></span>
+              <span>Refroidissement rapide et efficace</span>
             </div>
             <div className="flex items-center gap-2" data-testid={`feature-clean-${machine.id}`}>
               <CheckCircle className="w-4 h-4 text-success" />
-              <span>Nettoyage facile et rapide</span>
+              <span>Facile à nettoyer</span>
             </div>
           </div>
         </div>

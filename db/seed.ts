@@ -15,15 +15,15 @@ async function seed() {
   // Create initial machines
   await db.insert(machines).values([
     {
-      name: "EZBASICS Slushy Machine #1",
+      name: "Ninja Slushi #1",
       status: "AVAILABLE",
     },
     {
-      name: "EZBASICS Slushy Machine #2",
+      name: "Ninja Slushi #2",
       status: "UNAVAILABLE",
     },
     {
-      name: "EZBASICS Slushy Machine #3",
+      name: "Ninja Slushi #3",
       status: "MAINTENANCE",
     },
   ]);

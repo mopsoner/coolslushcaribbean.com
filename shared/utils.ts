@@ -1,8 +1,8 @@
 /**
  * Swikly caution amount per machine in cents
- * 200€ per machine
+ * 150€ per machine
  */
-export const CAUTION_PER_MACHINE_CENTS = 20000;
+export const CAUTION_PER_MACHINE_CENTS = 15000;
 
 /**
  * Calculate the total Swikly caution amount for a booking

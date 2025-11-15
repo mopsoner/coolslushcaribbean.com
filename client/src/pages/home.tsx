@@ -62,7 +62,7 @@ const testimonials = [
 const faqs = [
   {
     question: "Comment fonctionne la caution Swikly ?",
-    answer: "Swikly est un système de caution 100% en ligne et sécurisé. Nous bloquons temporairement 500€ sur votre carte bancaire, mais aucun débit n'est effectué. La caution est automatiquement libérée après la restitution de la machine en bon état."
+    answer: "Swikly est un système de caution 100% en ligne et sécurisé. Nous bloquons temporairement 150€ par machine sur votre carte bancaire, mais aucun débit n'est effectué. La caution est automatiquement libérée après la restitution de la machine en bon état."
   },
   {
     question: "Quelles zones de livraison couvrez-vous ?",
@@ -78,7 +78,7 @@ const faqs = [
   },
   {
     question: "La machine est-elle facile à utiliser ?",
-    answer: "Absolument ! Nos machines EZBASICS sont conçues pour être intuitives. Nous fournissons un manuel d'utilisation détaillé et notre équipe est disponible 7j/7 pour vous accompagner par téléphone si besoin."
+    answer: "Absolument ! Nos machines Ninja sont conçues pour être intuitives. Nous fournissons un manuel d'utilisation détaillé et notre équipe est disponible 7j/7 pour vous accompagner par téléphone si besoin."
   }
 ];
 
@@ -164,7 +164,7 @@ export default function Home() {
               Nos machines disponibles
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-machines-subtitle">
-              Des machines professionnelles EZBASICS pour des granités parfaits à chaque fois
+              Des machines professionnelles Ninja Slushi 2,5L avec 5 programmes : Slushi, Milkshake, Frozen Drink, Smoothie et Glace italienne
             </p>
           </div>
 

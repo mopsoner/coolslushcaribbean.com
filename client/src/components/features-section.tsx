@@ -16,7 +16,7 @@ const features = [
   {
     icon: ServerCog,
     title: "Machine professionnelle",
-    description: "Machine EZBASICS haut de gamme, facile à utiliser, avec manuel d'utilisation et assistance téléphonique.",
+    description: "Machine Ninja Slushi haut de gamme, facile à utiliser, avec manuel d'utilisation et assistance téléphonique.",
     gradient: "gradient-tropical"
   },
   {

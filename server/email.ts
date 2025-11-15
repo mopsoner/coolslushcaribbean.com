@@ -111,7 +111,7 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Nombre de machines</span>
-                  <span class="detail-value">${booking.machines} machine${booking.machines > 1 ? 's' : ''} EZBASICS</span>
+                  <span class="detail-value">${booking.machines} machine${booking.machines > 1 ? 's' : ''} Ninja</span>
                 </div>
                 <div class="detail-row" style="border: none;">
                   <span class="detail-label">Contact</span>
@@ -181,7 +181,7 @@ DÉTAILS DE VOTRE RÉSERVATION
 Numéro : #${booking.id.slice(-8)}
 Date : ${bookingDate}
 Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00
-Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''} EZBASICS
+Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''} Ninja
 Contact : ${booking.customerPhone}
 Total : ${(booking.totalCents / 100).toFixed(2)}€
 

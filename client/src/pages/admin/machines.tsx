@@ -221,7 +221,7 @@ export default function AdminMachines() {
                       <Label htmlFor="machine-name">Nom de la machine</Label>
                       <Input
                         id="machine-name"
-                        placeholder="Ex: EZBASICS Slushy Machine"
+                        placeholder="Ex: Ninja Slushi #1"
                         value={machineName}
                         onChange={(e) => setMachineName(e.target.value)}
                         data-testid="input-machine-name"

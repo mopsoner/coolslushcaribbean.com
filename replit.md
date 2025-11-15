@@ -1,8 +1,8 @@
-# Cool'Slush Guadeloupe - Slushy Machine Rental Platform
+# Cool'Slush Guadeloupe - Ninja Slushi Machine Rental Platform
 
 ## Overview
 
-Cool'Slush is a web application for renting slushy machines in Guadeloupe. It allows customers to browse machines, make bookings, and complete secure payments via Stripe, with deposits managed through Swikly. The platform provides a complete booking workflow, including email notifications and administrative tools for managing bookings. The project aims to capture the market for event rentals in Guadeloupe by offering a seamless and secure booking experience.
+Cool'Slush is a web application for renting Ninja Slushi 2,5L professional machines in Guadeloupe. The platform features machines with 5 programs (Slushi, Milkshake, Frozen Drink, Smoothie, and Italian Ice Cream), allowing customers to browse available machines, make bookings, and complete secure payments via Stripe, with deposits of 150€ per machine managed through Swikly. The platform provides a complete booking workflow, including email notifications, a recipe page showcasing the machine's capabilities, and comprehensive administrative tools for managing bookings, machines, pricing, and syrups. The project aims to capture the market for event rentals in Guadeloupe by offering a seamless and secure booking experience.
 
 ## User Preferences
 
@@ -18,6 +18,7 @@ Preferred communication style: Simple, everyday language.
 - **UI Components**: Shadcn/ui (Radix UI primitives) and TailwindCSS for styling with a tropical theme.
 - **State Management**: TanStack Query for server state, React Hook Form with Zod for form validation, and React hooks for local UI state.
 - **Design Patterns**: Path aliases for clean imports, component co-location, custom hooks for reusable logic, and clear separation of page and reusable components.
+- **Key Pages**: Home, Booking, Checkout, Success, Recipes (showcasing 5 machine programs), Admin panels (Bookings, Machines, Pricing, Syrups), and Legal pages.
 
 ### Backend
 
@@ -29,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 
 - **Database**: PostgreSQL via Neon serverless database, utilizing connection pooling and WebSocket configuration.
 - **ORM**: Drizzle ORM for type-safe queries and schema definition, with Drizzle Kit for migrations.
-- **Data Models**: Includes `Machines` for inventory, `Bookings` for reservations, `Offers` for rental packages, `Offer Machine Prices` for overrides, and `Syrups` for flavor catalog.
+- **Data Models**: Includes `Machines` (Ninja Slushi inventory), `Bookings` for reservations, `Offers` for rental packages with descriptions, `Offer Machine Prices` for overrides, and `Syrups` for flavor catalog.
 - **Validation**: Shared Zod schemas between client and server for consistent validation.
 
 ### Unified Pricing System
@@ -50,11 +51,11 @@ Preferred communication style: Simple, everyday language.
 - **Security Warning**: Critical need for authentication on admin routes and verification of Swikly webhooks before production.
 - **Implemented Hardening**: Server-side validation for Stripe payment amounts, Drizzle ORM for SQL injection prevention, React XSS sanitization, and Zod for input validation.
 
-### Payment & Deposit Flow (Updated November 14, 2025)
+### Payment & Deposit Flow (Updated November 15, 2025)
 
 - **Two-Step Process**:
     1. **Stripe Payment**: Actual charge for rental cost on `/checkout` page.
-    2. **Swikly Deposit**: Bank authorization with user choice on `/swikly-step`:
+    2. **Swikly Deposit**: Bank authorization of 150€ per machine with user choice on `/swikly-step`:
        - **Option A - "Payer maintenant"**: Opens Swikly link in new tab, auto-redirects to `/success` when caution validated (polling + webhook)
        - **Option B - "Payer plus tard"**: Confirms booking immediately, sends Swikly link via email for later validation
 
@@ -63,11 +64,25 @@ Preferred communication style: Simple, everyday language.
     - Webhook `/api/swikly-callback` updates booking status to CONFIRMED
     - Endpoint `/api/bookings/:id/skip-caution` handles "Payer plus tard" option
     - Email service sends Swikly link with clear "no debit" messaging
+    - Caution amount: 150€ per machine (defined in `shared/utils.ts` as `CAUTION_PER_MACHINE_CENTS = 15000`)
+
+## Machine Specifications (Updated November 15, 2025)
+
+- **Model**: Ninja Slushi 2,5L professional machine
+- **Capacity**: 2,5 liters per machine
+- **Programs**: 5 different programs
+  1. Slushi - Classic frozen slushy drinks
+  2. Milkshake - Creamy milkshakes
+  3. Frozen Drink - Frozen cocktails and beverages
+  4. Smoothie - Healthy fruit smoothies
+  5. Italian Ice Cream - Soft-serve ice cream
+- **Brand**: All machines are professional Ninja brand (no longer EZBASICS)
+- **Recipe Page**: Platform includes a `/recipes` page with 10+ recipes showcasing all 5 machine programs to inspire customers
 
 ## External Dependencies
 
 -   **Payment Processing**: Stripe (`@stripe/stripe-js`, `@stripe/react-stripe-js`, `stripe` npm package) for rental payments, with a webhook endpoint for confirmation.
--   **Deposit Management**: Swikly API for security deposits, supporting sandbox and production environments.
+-   **Deposit Management**: Swikly API for security deposits (150€ per machine), supporting sandbox and production environments.
 -   **Email Service**: Nodemailer for booking confirmations, configurable for SMTP in production and Ethereal in development.
 -   **Database**: Neon PostgreSQL for serverless database hosting.
 -   **Development Tools**: Replit-specific plugins, TypeScript, and ESBuild.

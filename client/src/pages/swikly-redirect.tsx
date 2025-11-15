@@ -36,7 +36,7 @@ export default function SwiklyRedirect() {
                 Caution Swikly
               </CardTitle>
               <p className="text-lg text-white/90">
-                Sécurisez votre réservation avec une caution de 500€
+                Sécurisez votre réservation avec une caution de 150€ par machine
               </p>
             </CardHeader>
 
@@ -55,7 +55,7 @@ export default function SwiklyRedirect() {
                     </li>
                     <li className="flex items-start">
                       <span className="mr-2">2.</span>
-                      <span>Une simple empreinte bancaire de 500€ est prise</span>
+                      <span>Une simple empreinte bancaire de 150€ par machine est prise</span>
                     </li>
                     <li className="flex items-start">
                       <span className="mr-2">3.</span>

@@ -43,12 +43,12 @@ export default function Terms() {
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">3. Tarifs et paiement</h2>
               <p className="text-muted-foreground">
                 Les tarifs sont affichés TTC sur notre site. Le paiement s'effectue en ligne via Stripe.
-                Une caution de 500€ est requise via Swikly (sans débit bancaire).
+                Une caution de 150€ par machine est requise via Swikly (sans débit bancaire).
               </p>
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">4. Caution Swikly</h2>
               <p className="text-muted-foreground">
-                Une empreinte bancaire de 500€ est prise via Swikly pour garantir le bon état de la machine.
+                Une empreinte bancaire de 150€ par machine est prise via Swikly pour garantir le bon état de la machine.
                 Cette caution est automatiquement libérée 48h après la restitution de la machine en bon état.
                 Aucun débit n'est effectué sauf en cas de dommage constaté.
               </p>

@@ -5,7 +5,7 @@ import { z } from "zod";
 
 export const machines = pgTable("machines", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull().default("EZBASICS Slushy Machine"),
+  name: text("name").notNull().default("Ninja Slushi"),
   status: text("status").notNull().default("AVAILABLE"), // AVAILABLE, UNAVAILABLE, MAINTENANCE
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -72,7 +72,7 @@ export const insertMachineSchema = createInsertSchema(machines).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  name: z.string().min(1, "Le nom de la machine est requis").default("EZBASICS Slushy Machine"),
+  name: z.string().min(1, "Le nom de la machine est requis").default("Ninja Slushi"),
   status: z.string().default("AVAILABLE"),
 });
 
