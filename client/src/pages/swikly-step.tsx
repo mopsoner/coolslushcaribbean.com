@@ -159,7 +159,7 @@ export default function SwiklyStep() {
                 </CardTitle>
               </div>
               <p className="text-white/90 text-lg">
-                Paiement de {booking ? formatEuro(booking.totalCents) : "..."} validé ✓
+                Paiement validé ✓ • Caution : 150€ par machine = {booking ? formatEuro(computeCautionAmount(booking.machines)) : "..."}
               </p>
             </CardHeader>
 
@@ -186,8 +186,8 @@ export default function SwiklyStep() {
                 <div className="space-y-6">
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
                     <p className="text-sm text-blue-800 dark:text-blue-200">
-                      💡 <strong>Rappel :</strong> Il s'agit d'une empreinte bancaire de{" "}
-                      {booking ? formatEuro(computeCautionAmount(booking.machines)) : "..."}, 
+                      💡 <strong>Rappel :</strong> Il s'agit d'une empreinte bancaire de 150€ par machine, soit{" "}
+                      {booking ? formatEuro(computeCautionAmount(booking.machines)) : "..."} au total, 
                       aucun débit ne sera effectué. L'empreinte sera automatiquement libérée 48h après votre événement.
                     </p>
                   </div>

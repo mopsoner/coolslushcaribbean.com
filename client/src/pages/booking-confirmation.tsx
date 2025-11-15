@@ -109,7 +109,7 @@ export default function BookingConfirmation() {
                 </CardTitle>
               </div>
               <p className="text-white/90 text-lg">
-                Payez {formatEuro(booking.totalCents)} • Ensuite caution Swikly de {formatEuro(computeCautionAmount(booking.machines))}
+                Payez {formatEuro(booking.totalCents)} • Ensuite caution Swikly de {formatEuro(computeCautionAmount(booking.machines))} (150€ par machine)
               </p>
             </CardHeader>
 
@@ -184,7 +184,7 @@ export default function BookingConfirmation() {
                     <p className="font-bold mb-2">Prochaines étapes :</p>
                     <ol className="list-decimal list-inside space-y-1">
                       <li>Effectuez le <strong>paiement Stripe</strong> de {formatEuro(booking.totalCents)}</li>
-                      <li>Validez ensuite la <strong>caution Swikly</strong> (empreinte bancaire {formatEuro(computeCautionAmount(booking.machines))}, aucun débit)</li>
+                      <li>Validez ensuite la <strong>caution Swikly</strong> (empreinte bancaire 150€ par machine, soit {formatEuro(computeCautionAmount(booking.machines))} au total, aucun débit)</li>
                     </ol>
                   </div>
                 </div>

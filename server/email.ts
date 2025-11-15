@@ -320,7 +320,7 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
           <div class="container">
             <div class="header">
               <h1>🔒 Sécurisez votre réservation</h1>
-              <p style="margin-top: 10px; font-size: 1.1em;">Caution Swikly - ${formatEuro(computeCautionAmount(booking.machines))}</p>
+              <p style="margin-top: 10px; font-size: 1.1em;">Caution Swikly - ${formatEuro(computeCautionAmount(booking.machines))} (150€ par machine)</p>
             </div>
             
             <div class="content">
@@ -329,7 +329,7 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
               <p>Votre réservation <strong>#${booking.id.slice(-8)}</strong> pour le ${bookingDate} est presque finalisée !</p>
               
               <p><strong>Étape 2/2 : Caution Swikly</strong><br>
-              Votre paiement de ${formatEuro(booking.totalCents)} a été validé ✅. Il ne reste plus qu'à sécuriser votre location avec une empreinte bancaire Swikly de ${formatEuro(computeCautionAmount(booking.machines))} (aucun débit).</p>
+              Votre paiement de ${formatEuro(booking.totalCents)} a été validé ✅. Il ne reste plus qu'à sécuriser votre location avec une empreinte bancaire Swikly de ${formatEuro(computeCautionAmount(booking.machines))} (150€ par machine, aucun débit).</p>
 
               <div class="highlight">
                 <p style="margin: 0; font-weight: bold;">⚠️ Important : Aucun débit ne sera effectué</p>
@@ -398,7 +398,7 @@ Bonjour ${booking.customerName},
 Votre réservation #${booking.id.slice(-8)} pour le ${bookingDate} est presque finalisée !
 
 ÉTAPE 2/2 : Caution Swikly
-Votre paiement de ${formatEuro(booking.totalCents)} a été validé ✅. Il ne reste plus qu'à sécuriser votre location avec une empreinte bancaire Swikly de ${formatEuro(computeCautionAmount(booking.machines))} (aucun débit).
+Votre paiement de ${formatEuro(booking.totalCents)} a été validé ✅. Il ne reste plus qu'à sécuriser votre location avec une empreinte bancaire Swikly de 150€ par machine, soit ${formatEuro(computeCautionAmount(booking.machines))} au total (aucun débit).
 
 ⚠️ IMPORTANT : Aucun débit ne sera effectué
 Il s'agit uniquement d'une empreinte de sécurité qui sera automatiquement libérée après votre événement.
@@ -412,7 +412,7 @@ LE PROCESSUS COMPLET
 1. ✅ Paiement Stripe de ${formatEuro(booking.totalCents)} effectué
 2. Cliquez sur le lien ci-dessus
 3. Entrez vos coordonnées bancaires de manière sécurisée
-4. Une empreinte de ${formatEuro(computeCautionAmount(booking.machines))} est créée (aucun débit)
+4. Une empreinte bancaire de 150€ par machine, soit ${formatEuro(computeCautionAmount(booking.machines))} au total, est créée (aucun débit)
 5. L'empreinte sera libérée 48h après votre événement
 
 RÉCAPITULATIF DE VOTRE RÉSERVATION

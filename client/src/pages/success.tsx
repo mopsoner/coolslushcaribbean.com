@@ -40,7 +40,7 @@ export default function Success() {
             Réservation confirmée !
           </h1>
           <p className="text-lg text-muted-foreground mb-4" data-testid="text-success-subtitle">
-            ✅ Paiement Stripe validé • ✅ Caution Swikly confirmée
+            ✅ Paiement Stripe validé • ✅ Caution Swikly confirmée (150€ par machine)
           </p>
           <p className="text-base text-muted-foreground mb-8">
             Merci pour votre réservation. Vous allez recevoir un email de confirmation avec tous les détails.
