@@ -1,4 +1,5 @@
 import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Snowflake, IceCream, Coffee, Grape, Cake } from "lucide-react";
@@ -196,6 +197,8 @@ export default function Recipes() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }
