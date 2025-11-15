@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema } from "@shared/schema";
 import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
 import { z } from "zod";
-import { sendBookingConfirmation, sendSwiklyDepositEmail } from "./email";
+import { sendBookingConfirmation, sendSwiklyDepositEmail, sendBookingStatusChangeEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -169,10 +169,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/bookings/:id/status", async (req, res) => {
     try {
       const { status } = req.body;
+      
+      // Get old booking status before update
+      const oldBooking = await storage.getBooking(req.params.id);
+      if (!oldBooking) {
+        return res.status(404).json({ error: "Réservation non trouvée" });
+      }
+      const oldStatus = oldBooking.status;
+      
+      // Update the status
       const booking = await storage.updateBookingStatus(req.params.id, status);
       if (!booking) {
         return res.status(404).json({ error: "Réservation non trouvée" });
       }
+      
+      // Send email notification if status changed
+      if (oldStatus !== status) {
+        sendBookingStatusChangeEmail(booking, oldStatus, status).catch(error => {
+          console.error('Failed to send status change email:', error);
+        });
+      }
+      
       res.json(booking);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

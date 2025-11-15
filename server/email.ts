@@ -439,6 +439,191 @@ Cool'Slush Guadeloupe - Guadeloupe, Antilles Françaises
   }
 }
 
+export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: string, newStatus: string): Promise<void> {
+  try {
+    const transporter = await getTransporter();
+    const fromEmail = process.env.EMAIL_FROM || 'Cool\'Slush Guadeloupe <noreply@coolslush.gp>';
+    
+    const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    let subject = '';
+    let statusMessage = '';
+    let statusColor = '';
+    let statusIcon = '';
+
+    switch (newStatus) {
+      case 'CONFIRMED':
+        subject = `✅ Réservation confirmée - Cool'Slush`;
+        statusMessage = 'Votre réservation est maintenant confirmée';
+        statusColor = '#10B981';
+        statusIcon = '✅';
+        break;
+      case 'CANCELLED':
+        subject = `❌ Réservation annulée - Cool'Slush`;
+        statusMessage = 'Votre réservation a été annulée';
+        statusColor = '#EF4444';
+        statusIcon = '❌';
+        break;
+      case 'PENDING':
+        subject = `⏳ Statut de votre réservation - Cool'Slush`;
+        statusMessage = 'Votre réservation est en attente';
+        statusColor = '#F59E0B';
+        statusIcon = '⏳';
+        break;
+      default:
+        subject = `Mise à jour de votre réservation - Cool'Slush`;
+        statusMessage = `Le statut de votre réservation a changé`;
+        statusColor = '#0EA5E9';
+        statusIcon = 'ℹ️';
+    }
+
+    await transporter.sendMail({
+      from: fromEmail,
+      to: booking.customerEmail,
+      subject,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; }
+            .status-badge { display: inline-block; padding: 10px 20px; background: ${statusColor}; color: white; border-radius: 20px; font-weight: bold; margin: 20px 0; }
+            .booking-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
+            .footer { text-align: center; padding: 20px; color: #64748b; font-size: 0.9em; }
+            .cta-button { display: inline-block; padding: 12px 30px; background: #0EA5E9; color: white; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>${statusIcon} ${statusMessage}</h1>
+            </div>
+            
+            <div class="content">
+              <p>Bonjour ${booking.customerName},</p>
+              
+              <p>Nous vous informons que le statut de votre réservation a changé.</p>
+              
+              <div class="status-badge">
+                Nouveau statut : ${newStatus === 'CONFIRMED' ? 'Confirmée' : newStatus === 'CANCELLED' ? 'Annulée' : 'En attente'}
+              </div>
+              
+              <div class="booking-details">
+                <h3>Détails de votre réservation</h3>
+                <div class="detail-row">
+                  <span>Numéro de réservation</span>
+                  <strong>#${booking.id.slice(-8)}</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Date</span>
+                  <strong>${bookingDate}</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Horaires</span>
+                  <strong>${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Machines</span>
+                  <strong>${booking.machines} machine${booking.machines > 1 ? 's' : ''}</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Total</span>
+                  <strong>${formatEuro(booking.totalCents)}</strong>
+                </div>
+              </div>
+              
+              ${newStatus === 'CONFIRMED' ? `
+                <p><strong>Prochaines étapes :</strong></p>
+                <ul>
+                  <li>✅ Votre paiement est validé</li>
+                  <li>✅ Votre caution Swikly est confirmée</li>
+                  <li>📦 Nous livrerons les machines le jour de votre événement</li>
+                </ul>
+              ` : newStatus === 'CANCELLED' ? `
+                <p><strong>Informations importantes :</strong></p>
+                <ul>
+                  <li>Votre paiement sera remboursé sous 5-7 jours ouvrés</li>
+                  <li>La caution Swikly sera automatiquement libérée</li>
+                </ul>
+              ` : ''}
+              
+              <p><strong>Besoin d'aide ?</strong></p>
+              <p>Notre équipe est disponible :</p>
+              <ul>
+                <li>📞 Téléphone : <a href="tel:+590690123456" style="color: #0EA5E9;">0690 12 34 56</a></li>
+                <li>📧 Email : <a href="mailto:contact@coolslush.gp" style="color: #0EA5E9;">contact@coolslush.gp</a></li>
+              </ul>
+              
+              <p style="margin-top: 30px;">À très bientôt,<br><strong>L'équipe Cool'Slush</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>Cool'Slush Guadeloupe - Location de machines à granité professionnelles</p>
+              <p style="font-size: 0.8em; color: #94a3b8; margin-top: 10px;">
+                Vous recevez cet email car vous avez effectué une réservation sur coolslush.gp
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Cool'Slush Guadeloupe - Mise à jour de votre réservation
+
+Bonjour ${booking.customerName},
+
+${statusMessage}
+
+NOUVEAU STATUT : ${newStatus === 'CONFIRMED' ? 'CONFIRMÉE' : newStatus === 'CANCELLED' ? 'ANNULÉE' : 'EN ATTENTE'}
+
+DÉTAILS DE VOTRE RÉSERVATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Numéro : #${booking.id.slice(-8)}
+Date : ${bookingDate}
+Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00
+Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''}
+Total : ${formatEuro(booking.totalCents)}
+
+${newStatus === 'CONFIRMED' ? `
+PROCHAINES ÉTAPES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Votre paiement est validé
+✅ Votre caution Swikly est confirmée
+📦 Nous livrerons les machines le jour de votre événement
+` : newStatus === 'CANCELLED' ? `
+INFORMATIONS IMPORTANTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Votre paiement sera remboursé sous 5-7 jours ouvrés
+- La caution Swikly sera automatiquement libérée
+` : ''}
+
+BESOIN D'AIDE ?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Téléphone : 0690 12 34 56
+Email : contact@coolslush.gp
+
+À très bientôt,
+L'équipe Cool'Slush
+
+Cool'Slush Guadeloupe - Guadeloupe, Antilles Françaises
+      `,
+    });
+
+  } catch (error) {
+    console.error('Error sending booking status change email:', error);
+  }
+}
+
 export async function sendFollowUpEmail(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();

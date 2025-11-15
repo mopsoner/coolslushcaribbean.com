@@ -32,6 +32,12 @@ export default function SwiklyStep() {
     const piId = params.get("payment_intent");
     const piClientSecret = params.get("payment_intent_client_secret");
     
+    console.log('[swikly-step] URL params:', {
+      booking: id,
+      payment_intent: piId,
+      payment_intent_client_secret: piClientSecret ? 'present' : 'missing'
+    });
+    
     if (id) {
       setBookingId(id);
     }
@@ -42,6 +48,9 @@ export default function SwiklyStep() {
       setPaymentIntentId(piIdFromSecret);
     } else if (piId) {
       setPaymentIntentId(piId);
+      // If we have payment_intent but not client_secret, this means we came from a Stripe redirect
+      // The client_secret should be in the URL params added by Stripe
+      console.warn('[swikly-step] payment_intent present but client_secret missing - checking redirect parameters');
     }
   }, []);
 
@@ -84,13 +93,12 @@ export default function SwiklyStep() {
           const isRealSwiklyUrl = data.swiklyUrl.includes('swikly.com') || 
                                    data.swiklyUrl.includes('swik.link');
           
-          if (isRealSwiklyUrl) {
-            // Display Swikly in iframe
-            setSwiklyUrl(data.swiklyUrl);
-          } else {
-            // Fallback URL - redirect to success
-            setLocation(`/success?booking=${bookingId}`);
-          }
+          console.log('[swikly-step] Swikly URL received:', data.swiklyUrl);
+          console.log('[swikly-step] Is real Swikly URL:', isRealSwiklyUrl);
+          
+          // Always display the Swikly step, whether it's a real URL or fallback
+          // If it's a fallback, the user will see options to complete the caution later
+          setSwiklyUrl(data.swiklyUrl);
         } else {
           throw new Error("Impossible de créer la demande de caution Swikly");
         }

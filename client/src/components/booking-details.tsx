@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Booking, Syrup } from "@shared/schema";
+import type { Booking, Syrup, Offer } from "@shared/schema";
 import { formatEuro } from "@shared/utils";
 
 interface BookingDetailsProps {
@@ -11,6 +11,10 @@ interface BookingDetailsProps {
 export default function BookingDetails({ booking, showTotal = true, className = "" }: BookingDetailsProps) {
   const { data: syrups, isLoading: syrupsLoading, error: syrupsError } = useQuery<Syrup[]>({
     queryKey: ['/api', 'syrups'],
+  });
+
+  const { data: offers } = useQuery<Offer[]>({
+    queryKey: ['/api', 'offers'],
   });
 
   const startDate = new Date(booking.startDate);
@@ -36,6 +40,12 @@ export default function BookingDetails({ booking, showTotal = true, className = 
     grand: "Grand (500ml)"
   }[booking.cupSize || "moyen"];
 
+  // Find the offer to get its price
+  const currentOffer = offers?.find(o => o.name === booking.offer);
+  
+  // Calculate rental days
+  const rentalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
   return (
     <div className={`bg-white dark:bg-muted/30 rounded-xl p-6 space-y-3 border border-border ${className}`}>
       <div className="flex justify-between" data-testid="booking-detail-offer">
@@ -58,6 +68,22 @@ export default function BookingDetails({ booking, showTotal = true, className = 
           {booking.machines} machine{booking.machines > 1 ? 's' : ''}
         </span>
       </div>
+      
+      {/* Price breakdown */}
+      {currentOffer && (
+        <div className="bg-primary/5 rounded-lg p-3 border border-primary/20" data-testid="booking-detail-price-breakdown">
+          <div className="text-sm space-y-1">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Prix par machine/jour :</span>
+              <span>{formatEuro(currentOffer.basePriceCents)}</span>
+            </div>
+            <div className="flex justify-between font-medium text-foreground">
+              <span>{formatEuro(currentOffer.basePriceCents)} × {booking.machines} machine{booking.machines > 1 ? 's' : ''} × {rentalDays} jour{rentalDays > 1 ? 's' : ''}</span>
+              <span>{formatEuro(currentOffer.basePriceCents * booking.machines * rentalDays)}</span>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Sirops Section */}
       {selectedSyrups.length > 0 && (
