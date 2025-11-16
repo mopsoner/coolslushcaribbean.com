@@ -59,9 +59,9 @@ export default function Success() {
                     <span className="text-muted-foreground">Numéro de réservation</span>
                     <span className="font-semibold text-foreground">#{booking.id.slice(-8)}</span>
                   </div>
-                  <div className="flex justify-between items-center py-3 px-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border-2 border-primary/20" data-testid="success-total-amount">
-                    <span className="text-lg font-semibold text-foreground">Montant total</span>
-                    <span className="text-2xl font-bold text-primary">{formatEuro(booking.totalCents)}</span>
+                  <div className="flex justify-between items-center py-3 px-4 bg-success/10 rounded-xl border-2 border-success/20" data-testid="success-total-amount">
+                    <span className="text-lg font-semibold text-foreground">Montant payé</span>
+                    <span className="text-2xl font-bold text-success">{formatEuro(booking.totalCents)}</span>
                   </div>
                 </div>
                 

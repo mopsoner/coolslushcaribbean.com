@@ -160,6 +160,10 @@ export default function Checkout() {
                     <span className="text-muted-foreground">Client</span>
                     <span className="font-semibold text-foreground">{booking.customerName}</span>
                   </div>
+                  <div className="flex justify-between items-center py-3 px-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border-2 border-primary/20" data-testid="checkout-total-amount">
+                    <span className="text-lg font-semibold text-foreground">Montant à payer</span>
+                    <span className="text-2xl font-bold text-primary">{formatEuro(booking.totalCents)}</span>
+                  </div>
                 </div>
                 <BookingDetails booking={booking} showTotal={false} />
               </CardContent>
