@@ -10,15 +10,37 @@ async function getTransporter() {
 
   // If SMTP credentials are provided, use them
   if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
-    transporter = nodemailer.createTransport({
+    const config: any = {
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT),
-      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+      secure: process.env.SMTP_SECURE === 'true',
       auth: process.env.SMTP_USER && process.env.SMTP_PASS ? {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       } : undefined,
-    });
+      tls: {
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2'
+      },
+      debug: true,
+      logger: true
+    };
+    
+    transporter = nodemailer.createTransport(config);
+    
+    // Verify connection
+    try {
+      await transporter.verify();
+      console.log('✅ SMTP connection verified successfully');
+    } catch (error: any) {
+      console.error('❌ SMTP verification failed:', error.message);
+      console.error('SMTP Config:', {
+        host: config.host,
+        port: config.port,
+        secure: config.secure,
+        user: config.auth?.user
+      });
+    }
   } else {
     // For development/testing, create ethereal email account
     try {
