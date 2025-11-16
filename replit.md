@@ -4,6 +4,14 @@
 
 Cool'Slush is a web application for renting Ninja Slushi 2,5L professional machines in Guadeloupe. The platform features machines with 5 programs (Slushi, Milkshake, Frozen Drink, Smoothie, and Italian Ice Cream), allowing customers to browse available machines, make bookings, and complete secure payments via Stripe, with deposits of 150€ per machine managed through Swikly. The platform provides a complete booking workflow, including email notifications, a recipe page showcasing the machine's capabilities, and comprehensive administrative tools for managing bookings, machines, pricing, and syrups. The project aims to capture the market for event rentals in Guadeloupe by offering a seamless and secure booking experience.
 
+## Recent Changes (November 16, 2025)
+
+- **BookingDetails Integration**: Integrated BookingDetails component into BookingForm to display real-time booking preview on `/booking` page
+- **Query Key Standardization**: Unified query keys across components (`['/api/syrups']` and `['/api/offers']`) for efficient cache sharing via TanStack Query
+- **Syrup Pricing Update**: Updated 7 syrups (Ananas, Cassis, Coco, Fruit de la Passion, Grenadine, Mangue, Vanille) from 0€ to 3.00€ in database
+- **Real-time Preview**: Booking total now updates instantly as user selects machines and syrups, showing complete breakdown before checkout
+- **Enhanced UI**: BookingDetails features colored header, separated sections, and prominent total display with gradient background
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
