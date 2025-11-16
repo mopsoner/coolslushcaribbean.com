@@ -13,6 +13,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Settings, Edit, Trash, Plus, Snowflake } from "lucide-react";
 import type { Machine } from "@shared/schema";
 import { useState } from "react";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 
 const statusOptions = [
   { value: "AVAILABLE", label: "Disponible", variant: "default" as const },
@@ -21,6 +22,8 @@ const statusOptions = [
 ];
 
 export default function AdminMachines() {
+  useAdminAuth();
+
   const { toast } = useToast();
   const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);

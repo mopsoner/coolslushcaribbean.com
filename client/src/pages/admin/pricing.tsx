@@ -14,6 +14,7 @@ import { DollarSign, Edit, Trash, Plus, X } from "lucide-react";
 import type { Machine } from "@shared/schema";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 
 type OfferWithPricing = {
   id: string;
@@ -39,6 +40,8 @@ type MachinePriceOverride = {
 };
 
 export default function AdminPricing() {
+  useAdminAuth();
+
   const { toast } = useToast();
   
   // Form states

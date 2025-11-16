@@ -14,7 +14,7 @@ export default function AdminNav() {
     {
       href: "/admin/machines",
       label: "Machines",
-      icon: Settings,
+      icon: Snowflake,
     },
     {
       href: "/admin/pricing",
@@ -25,6 +25,11 @@ export default function AdminNav() {
       href: "/admin/syrups",
       label: "Sirops",
       icon: Droplet,
+    },
+    {
+      href: "/admin/settings",
+      label: "Paramètres",
+      icon: Settings,
     },
   ];
 

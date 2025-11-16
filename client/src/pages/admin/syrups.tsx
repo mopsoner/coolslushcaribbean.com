@@ -12,8 +12,11 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Droplet, Edit, Trash, Plus } from "lucide-react";
 import type { Syrup } from "@shared/schema";
 import { useState } from "react";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 
 export default function AdminSyrups() {
+  useAdminAuth();
+
   const { toast } = useToast();
   const [editingSyrup, setEditingSyrup] = useState<Syrup | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);

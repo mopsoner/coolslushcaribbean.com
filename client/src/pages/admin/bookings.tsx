@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AdminNav from "@/components/admin-nav";
 import { useState } from "react";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 
 const statusMap = {
   PENDING: { 
@@ -28,6 +29,8 @@ const statusMap = {
 };
 
 export default function AdminBookings() {
+  useAdminAuth();
+
   const { toast } = useToast();
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [editingStatusBooking, setEditingStatusBooking] = useState<Booking | null>(null);

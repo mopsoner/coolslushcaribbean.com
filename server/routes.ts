@@ -2,11 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema } from "@shared/schema";
+import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema, insertSettingSchema } from "@shared/schema";
 import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail, sendBookingStatusChangeEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
+import { requireAdmin, login as performLogin, logout as performLogout, validateToken } from "./auth-middleware";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -16,6 +17,102 @@ console.log('[Stripe Init] Using key starting with:', process.env.STRIPE_SECRET_
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // ============= AUTH ROUTES =============
+  
+  // Login
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { password } = req.body;
+      if (!password) {
+        return res.status(400).json({ error: "Mot de passe requis" });
+      }
+      
+      const token = performLogin(password);
+      if (!token) {
+        return res.status(401).json({ error: "Mot de passe incorrect" });
+      }
+      
+      res.json({ token });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Logout
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (token) {
+        performLogout(token);
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Check auth status
+  app.get("/api/auth/check", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) {
+        return res.status(401).json({ authenticated: false });
+      }
+      
+      const isValid = validateToken(token);
+      res.json({ authenticated: isValid });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // ============= SETTINGS ROUTES =============
+  
+  // Get all active settings (public)
+  app.get("/api/settings", async (req, res) => {
+    try {
+      const settings = await storage.getActiveSettings();
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Get all settings (admin)
+  app.get("/api/admin/settings", requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAllSettings();
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Update or create setting (admin)
+  app.post("/api/admin/settings", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertSettingSchema.parse(req.body);
+      const setting = await storage.upsertSetting(validatedData);
+      res.json(setting);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+  
+  // Delete setting (admin)
+  app.delete("/api/admin/settings/:key", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteSetting(req.params.key);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   
   // Get all machines
   app.get("/api/machines", async (req, res) => {
@@ -40,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============= ADMIN MACHINES ROUTES =============
   
   // Create a machine (admin)
-  app.post("/api/admin/machines", async (req, res) => {
+  app.post("/api/admin/machines", requireAdmin, async (req, res) => {
     try {
       const validatedData = insertMachineSchema.parse(req.body);
       const machine = await storage.createMachine(validatedData);
@@ -55,7 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update a machine (admin)
-  app.patch("/api/admin/machines/:id", async (req, res) => {
+  app.patch("/api/admin/machines/:id", requireAdmin, async (req, res) => {
     try {
       const machine = await storage.updateMachine(req.params.id, req.body);
       if (!machine) {
@@ -68,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete a machine (admin)
-  app.delete("/api/admin/machines/:id", async (req, res) => {
+  app.delete("/api/admin/machines/:id", requireAdmin, async (req, res) => {
     try {
       await storage.deleteMachine(req.params.id);
       res.json({ success: true });
@@ -488,7 +585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============= ADMIN OFFERS ROUTES =============
   
   // Get all offers with pricing (admin)
-  app.get("/api/admin/offers", async (req, res) => {
+  app.get("/api/admin/offers", requireAdmin, async (req, res) => {
     try {
       const offers = await storage.getAllOffersWithPricing();
       res.json(offers);
@@ -498,7 +595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create an offer with pricing (admin)
-  app.post("/api/admin/offers", async (req, res) => {
+  app.post("/api/admin/offers", requireAdmin, async (req, res) => {
     try {
       const validatedData = insertOfferWithPricingSchema.parse(req.body);
       const offer = await storage.createOfferWithPricing(validatedData);
@@ -513,7 +610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update an offer with pricing (admin)
-  app.patch("/api/admin/offers/:id", async (req, res) => {
+  app.patch("/api/admin/offers/:id", requireAdmin, async (req, res) => {
     try {
       const validatedData = insertOfferWithPricingSchema.partial().parse(req.body);
       const offer = await storage.updateOfferWithPricing(req.params.id, validatedData);
@@ -531,7 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete an offer (admin)
-  app.delete("/api/admin/offers/:id", async (req, res) => {
+  app.delete("/api/admin/offers/:id", requireAdmin, async (req, res) => {
     try {
       await storage.deleteOffer(req.params.id);
       res.json({ success: true });
@@ -543,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============= ADMIN OFFER MACHINE PRICE ROUTES =============
   
   // Get all offer machine prices (admin)
-  app.get("/api/admin/offer-machine-prices", async (req, res) => {
+  app.get("/api/admin/offer-machine-prices", requireAdmin, async (req, res) => {
     try {
       const prices = await storage.getAllOfferMachinePrices();
       res.json(prices);
@@ -553,7 +650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get offer machine prices by offer (admin)
-  app.get("/api/admin/offer-machine-prices/offer/:offerId", async (req, res) => {
+  app.get("/api/admin/offer-machine-prices/offer/:offerId", requireAdmin, async (req, res) => {
     try {
       const prices = await storage.getOfferMachinePricesByOffer(req.params.offerId);
       res.json(prices);
@@ -563,7 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create an offer machine price (admin)
-  app.post("/api/admin/offer-machine-prices", async (req, res) => {
+  app.post("/api/admin/offer-machine-prices", requireAdmin, async (req, res) => {
     try {
       const validatedData = insertOfferMachinePriceSchema.parse(req.body);
       const price = await storage.createOfferMachinePrice(validatedData);
@@ -578,7 +675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update an offer machine price (admin)
-  app.patch("/api/admin/offer-machine-prices/:id", async (req, res) => {
+  app.patch("/api/admin/offer-machine-prices/:id", requireAdmin, async (req, res) => {
     try {
       const price = await storage.updateOfferMachinePrice(req.params.id, req.body);
       if (!price) {
@@ -591,7 +688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete an offer machine price (admin)
-  app.delete("/api/admin/offer-machine-prices/:id", async (req, res) => {
+  app.delete("/api/admin/offer-machine-prices/:id", requireAdmin, async (req, res) => {
     try {
       await storage.deleteOfferMachinePrice(req.params.id);
       res.json({ success: true });
@@ -611,7 +708,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all syrups (admin)
-  app.get("/api/admin/syrups", async (req, res) => {
+  app.get("/api/admin/syrups", requireAdmin, async (req, res) => {
     try {
       const syrups = await storage.getAllSyrups();
       res.json(syrups);
@@ -621,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a syrup (admin)
-  app.post("/api/admin/syrups", async (req, res) => {
+  app.post("/api/admin/syrups", requireAdmin, async (req, res) => {
     try {
       const validatedData = insertSyrupSchema.parse(req.body);
       const syrup = await storage.createSyrup(validatedData);
@@ -636,7 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update a syrup (admin)
-  app.patch("/api/admin/syrups/:id", async (req, res) => {
+  app.patch("/api/admin/syrups/:id", requireAdmin, async (req, res) => {
     try {
       const syrup = await storage.updateSyrup(req.params.id, req.body);
       if (!syrup) {
@@ -649,7 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete a syrup (admin)
-  app.delete("/api/admin/syrups/:id", async (req, res) => {
+  app.delete("/api/admin/syrups/:id", requireAdmin, async (req, res) => {
     try {
       await storage.deleteSyrup(req.params.id);
       res.json({ success: true });

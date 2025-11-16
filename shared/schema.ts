@@ -198,3 +198,22 @@ export type InsertOfferWithPricing = z.infer<typeof insertOfferWithPricingSchema
 export type OfferWithPricing = Offer & {
   machinePriceOverrides: OfferMachinePrice[];
 };
+
+// Settings table for tracking codes and admin configuration
+export const settings = pgTable("settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(), // Unique setting key (e.g., "google_analytics", "facebook_pixel")
+  value: text("value"), // Setting value (can be tracking code or other config)
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSettingSchema = createInsertSchema(settings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSetting = z.infer<typeof insertSettingSchema>;
+export type Setting = typeof settings.$inferSelect;

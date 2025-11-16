@@ -1,4 +1,4 @@
-import { type Machine, type InsertMachine, type Booking, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, type InsertOfferWithPricing, type OfferWithPricing, machines, bookings, offers, offerMachinePrices, syrups } from "@shared/schema";
+import { type Machine, type InsertMachine, type Booking, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, type InsertOfferWithPricing, type OfferWithPricing, type Setting, type InsertSetting, machines, bookings, offers, offerMachinePrices, syrups, settings } from "@shared/schema";
 import { db } from "../db";
 import { eq, gte, lte, and, or, isNull, inArray } from "drizzle-orm";
 
@@ -52,6 +52,15 @@ export interface IStorage {
   createSyrup(syrup: InsertSyrup): Promise<Syrup>;
   updateSyrup(id: string, updates: Partial<Syrup>): Promise<Syrup | undefined>;
   deleteSyrup(id: string): Promise<void>;
+
+  // Setting methods
+  getSetting(key: string): Promise<Setting | undefined>;
+  getAllSettings(): Promise<Setting[]>;
+  getActiveSettings(): Promise<Setting[]>;
+  createSetting(setting: InsertSetting): Promise<Setting>;
+  updateSetting(key: string, updates: Partial<Setting>): Promise<Setting | undefined>;
+  deleteSetting(key: string): Promise<void>;
+  upsertSetting(setting: InsertSetting): Promise<Setting>;
 }
 
 export class DbStorage implements IStorage {
@@ -357,6 +366,45 @@ export class DbStorage implements IStorage {
 
   async deleteSyrup(id: string): Promise<void> {
     await db.delete(syrups).where(eq(syrups.id, id));
+  }
+
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const result = await db.select().from(settings).where(eq(settings.key, key)).limit(1);
+    return result[0];
+  }
+
+  async getAllSettings(): Promise<Setting[]> {
+    return await db.select().from(settings);
+  }
+
+  async getActiveSettings(): Promise<Setting[]> {
+    return await db.select().from(settings).where(eq(settings.active, true));
+  }
+
+  async createSetting(insertSetting: InsertSetting): Promise<Setting> {
+    const result = await db.insert(settings).values(insertSetting).returning();
+    return result[0];
+  }
+
+  async updateSetting(key: string, updates: Partial<Setting>): Promise<Setting | undefined> {
+    const result = await db
+      .update(settings)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(settings.key, key))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSetting(key: string): Promise<void> {
+    await db.delete(settings).where(eq(settings.key, key));
+  }
+
+  async upsertSetting(insertSetting: InsertSetting): Promise<Setting> {
+    const existing = await this.getSetting(insertSetting.key);
+    if (existing) {
+      return (await this.updateSetting(insertSetting.key, insertSetting))!;
+    }
+    return await this.createSetting(insertSetting);
   }
 }
 
