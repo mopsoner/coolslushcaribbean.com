@@ -10,7 +10,6 @@ import SwiklyRedirect from "@/pages/swikly-redirect";
 import SwiklyStep from "@/pages/swikly-step";
 import Checkout from "@/pages/checkout";
 import Success from "@/pages/success";
-import Recipes from "@/pages/recipes";
 import AdminBookings from "@/pages/admin/bookings";
 import AdminMachines from "@/pages/admin/machines";
 import AdminPricing from "@/pages/admin/pricing";
@@ -31,7 +30,6 @@ function Router() {
       <Route path="/swikly-step" component={SwiklyStep} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/success" component={Success} />
-      <Route path="/recipes" component={Recipes} />
       <Route path="/admin/bookings" component={AdminBookings} />
       <Route path="/admin/machines" component={AdminMachines} />
       <Route path="/admin/pricing" component={AdminPricing} />

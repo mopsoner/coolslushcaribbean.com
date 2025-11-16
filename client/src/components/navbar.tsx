@@ -14,7 +14,6 @@ export default function Navbar() {
           <div className="flex items-center space-x-6">
             <a href="#services" className="hidden md:inline text-foreground hover:text-primary transition-colors">Services</a>
             <a href="#tarifs" className="hidden md:inline text-foreground hover:text-primary transition-colors">Tarifs</a>
-            <Link href="/recipes" className="hidden md:inline text-foreground hover:text-primary transition-colors">Recettes</Link>
             <a href="#comment-ca-marche" className="hidden md:inline text-foreground hover:text-primary transition-colors">Comment ça marche</a>
             <Link 
               href="/booking" 
