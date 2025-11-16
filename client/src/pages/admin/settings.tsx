@@ -96,13 +96,8 @@ export default function AdminSettings() {
 
   const saveMutation = useMutation({
     mutationFn: async (settingsToSave: Array<{ key: string; value: string; active: boolean }>) => {
-      const token = localStorage.getItem("adminToken");
       const promises = settingsToSave.map((setting) =>
-        apiRequest("POST", "/api/admin/settings", setting, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
+        apiRequest("POST", "/api/admin/settings", setting)
       );
       await Promise.all(promises);
     },
