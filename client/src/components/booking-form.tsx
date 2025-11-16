@@ -12,8 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Clock, User, Phone, Mail, MapPin, Snowflake, Lock, Shield, CheckCircle, Droplet, Coffee } from "lucide-react";
-import type { Offer, Syrup } from "@shared/schema";
+import { Calendar, Clock, User, Phone, Mail, MapPin, Snowflake, Lock, Shield, CheckCircle, Droplet, Coffee, Plus, X } from "lucide-react";
+import type { Offer, Syrup, Machine } from "@shared/schema";
 import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
 
 const syrupSelectionSchema = z.object({
@@ -32,6 +32,10 @@ const bookingSchema = z.object({
   customerEmail: z.string().email("Email valide requis"),
   customerAddress: z.string().min(5, "Adresse requise (min. 5 caractères)"),
   machines: z.number().min(1).max(10),
+  bookedMachines: z.array(z.object({
+    machineId: z.string(),
+    machineName: z.string(),
+  })).min(1, "Sélectionnez au moins une machine"),
   selectedSyrups: z.array(syrupSelectionSchema).optional().default([]),
   cupSize: z.enum(["petit", "moyen", "grand"]).default("moyen"),
   terms: z.boolean().refine(val => val, "Vous devez accepter les conditions"),
@@ -54,6 +58,7 @@ export default function BookingForm() {
   const [machines, setMachines] = useState(1);
   const [selectedOffer, setSelectedOffer] = useState("");
   const [syrupSelections, setSyrupSelections] = useState<{ syrupId: string; quantity: number }[]>([]);
+  const [selectedMachines, setSelectedMachines] = useState<{ machineId: string; machineName: string }[]>([]);
   const { toast } = useToast();
 
   const { data: offers, isLoading: offersLoading } = useQuery<OfferWithPrice[]>({
@@ -62,6 +67,10 @@ export default function BookingForm() {
 
   const { data: syrups } = useQuery<Syrup[]>({
     queryKey: ['/api/syrups'],
+  });
+
+  const { data: availableMachines } = useQuery<Machine[]>({
+    queryKey: ['/api/machines/available'],
   });
   
   const form = useForm<BookingFormData>({
@@ -77,6 +86,7 @@ export default function BookingForm() {
       customerEmail: "",
       customerAddress: "",
       machines: 1,
+      bookedMachines: [],
       selectedSyrups: [],
       cupSize: "moyen",
       terms: false,
@@ -127,20 +137,34 @@ export default function BookingForm() {
     });
   };
 
-  const incrementMachines = () => {
-    if (machines < 10) {
-      const newCount = machines + 1;
-      setMachines(newCount);
-      form.setValue("machines", newCount);
+  const addMachine = (machineId: string) => {
+    if (!availableMachines) return;
+    
+    const machine = availableMachines.find(m => m.id === machineId);
+    if (!machine) return;
+    
+    const alreadySelected = selectedMachines.find(m => m.machineId === machineId);
+    if (alreadySelected) {
+      toast({
+        title: "Machine déjà sélectionnée",
+        description: "Cette machine a déjà été ajoutée à votre réservation.",
+        variant: "destructive",
+      });
+      return;
     }
+    
+    const newSelection = { machineId: machine.id, machineName: machine.name };
+    const updatedSelections = [...selectedMachines, newSelection];
+    setSelectedMachines(updatedSelections);
+    form.setValue("bookedMachines", updatedSelections);
+    form.setValue("machines", updatedSelections.length);
   };
 
-  const decrementMachines = () => {
-    if (machines > 1) {
-      const newCount = machines - 1;
-      setMachines(newCount);
-      form.setValue("machines", newCount);
-    }
+  const removeMachine = (machineId: string) => {
+    const updatedSelections = selectedMachines.filter(m => m.machineId !== machineId);
+    setSelectedMachines(updatedSelections);
+    form.setValue("bookedMachines", updatedSelections);
+    form.setValue("machines", updatedSelections.length || 1);
   };
 
   const calculateRentalDaysForForm = () => {
@@ -370,44 +394,66 @@ export default function BookingForm() {
                 />
               </div>
 
-              {/* Number of Machines */}
+              {/* Machine Selection */}
               <div>
-                <Label className="flex items-center text-sm font-semibold text-foreground mb-2">
+                <Label className="flex items-center text-sm font-semibold text-foreground mb-3">
                   <Snowflake className="w-4 h-4 text-primary mr-2" />
-                  Nombre de machines
+                  Machines sélectionnées ({selectedMachines.length})
                 </Label>
-                <div className="flex items-center space-x-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="w-12 h-12 rounded-xl"
-                    onClick={decrementMachines}
-                    disabled={machines <= 1}
-                    data-testid="button-decrement-machines"
-                  >
-                    -
-                  </Button>
-                  <Input
-                    type="number"
-                    value={machines}
-                    readOnly
-                    className="w-20 text-center font-semibold booking-form-input"
-                    data-testid="input-machines"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="w-12 h-12 rounded-xl"
-                    onClick={incrementMachines}
-                    disabled={machines >= 10}
-                    data-testid="button-increment-machines"
-                  >
-                    +
-                  </Button>
-                  <span className="text-muted-foreground text-sm">machine(s)</span>
-                </div>
+                
+                {/* Selected Machines Display */}
+                {selectedMachines.length > 0 && (
+                  <div className="space-y-2 mb-3">
+                    {selectedMachines.map((machine) => (
+                      <div 
+                        key={machine.machineId} 
+                        className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                        data-testid={`selected-machine-${machine.machineId}`}
+                      >
+                        <span className="font-medium">{machine.machineName}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeMachine(machine.machineId)}
+                          data-testid={`button-remove-machine-${machine.machineId}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Available Machines Dropdown */}
+                {availableMachines && availableMachines.length > 0 && (
+                  <div>
+                    <Select onValueChange={addMachine}>
+                      <SelectTrigger className="booking-form-input" data-testid="select-add-machine">
+                        <SelectValue placeholder="Ajouter une machine..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableMachines
+                          .filter(machine => !selectedMachines.find(m => m.machineId === machine.id))
+                          .map((machine) => (
+                            <SelectItem 
+                              key={machine.id} 
+                              value={machine.id}
+                              data-testid={`option-machine-${machine.id}`}
+                            >
+                              {machine.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {selectedMachines.length === 0 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Sélectionnez au moins une machine pour continuer
+                  </p>
+                )}
               </div>
 
               {/* Cup Size */}
