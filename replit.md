@@ -6,11 +6,21 @@ Cool'Slush is a web application for renting Ninja Slushi 2,5L professional machi
 
 ## Recent Changes (November 16, 2025)
 
-- **BookingDetails Integration**: Integrated BookingDetails component into BookingForm to display real-time booking preview on `/booking` page
-- **Query Key Standardization**: Unified query keys across components (`['/api/syrups']` and `['/api/offers']`) for efficient cache sharing via TanStack Query
-- **Syrup Pricing Update**: Updated 7 syrups (Ananas, Cassis, Coco, Fruit de la Passion, Grenadine, Mangue, Vanille) from 0€ to 3.00€ in database
-- **Real-time Preview**: Booking total now updates instantly as user selects machines and syrups, showing complete breakdown before checkout
-- **Enhanced UI**: BookingDetails features colored header, separated sections, and prominent total display with gradient background
+### Swikly iframe Integration
+- **Embedded iframe**: Swikly validation now displays in an embedded iframe (700px height) instead of opening a new tab when user chooses "Payer maintenant"
+- **Enhanced UX**: Spinner during iframe loading, styled container with border and shadow, informational messages about automatic redirection
+- **Option Toggle**: Users can change between "Payer maintenant" and "Payer plus tard" options via "← Changer d'option" button
+
+### Stripe Configuration Security Fix
+- **VITE_STRIPE_PUBLIC_KEY**: Corrected to use proper publishable key (pk_test_...) instead of secret key, resolving client-side Stripe.js initialization errors
+- **STRIPE_SECRET_KEY**: Configured with proper secret key (sk_test_...) for server-side PaymentIntent creation
+- **Security**: Eliminated exposure of secret key to client-side code
+
+### BookingDetails Integration
+- **Real-time Preview**: Integrated BookingDetails component into BookingForm to display booking preview on `/booking` page
+- **Query Key Standardization**: Unified query keys (`['/api/syrups']`, `['/api/offers']`) for efficient TanStack Query cache sharing
+- **Syrup Pricing**: Updated 7 syrups from 0€ to 3.00€ (Ananas, Cassis, Coco, Fruit de la Passion, Grenadine, Mangue, Vanille)
+- **Enhanced UI**: BookingDetails features colored header, separated sections, prominent total display with gradient background
 
 ## User Preferences
 
@@ -59,15 +69,17 @@ Preferred communication style: Simple, everyday language.
 - **Security Warning**: Critical need for authentication on admin routes and verification of Swikly webhooks before production.
 - **Implemented Hardening**: Server-side validation for Stripe payment amounts, Drizzle ORM for SQL injection prevention, React XSS sanitization, and Zod for input validation.
 
-### Payment & Deposit Flow (Updated November 15, 2025)
+### Payment & Deposit Flow (Updated November 16, 2025)
 
 - **Two-Step Process**:
     1. **Stripe Payment**: Actual charge for rental cost on `/checkout` page.
     2. **Swikly Deposit**: Bank authorization of 150€ per machine with user choice on `/swikly-step`:
-       - **Option A - "Payer maintenant"**: Opens Swikly link in new tab, auto-redirects to `/success` when caution validated (polling + webhook)
+       - **Option A - "Payer maintenant"**: Displays Swikly validation form in embedded iframe (700px), auto-redirects to `/success` when caution validated (polling + webhook)
        - **Option B - "Payer plus tard"**: Confirms booking immediately, sends Swikly link via email for later validation
 
 - **Technical Flow**:
+    - Embedded iframe replaces external tab opening for "Payer maintenant" option
+    - Spinner displays during iframe loading, disappears when iframe loads
     - Conditional polling activates only when user chooses "Payer maintenant"
     - Webhook `/api/swikly-callback` updates booking status to CONFIRMED
     - Endpoint `/api/bookings/:id/skip-caution` handles "Payer plus tard" option
