@@ -277,42 +277,39 @@ export default function SwiklyStep() {
                 </div>
               ) : swiklyUrl && selectedOption === 'now' ? (
                 <div className="space-y-6">
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800 text-center">
-                    <h3 className="font-bold text-lg mb-3 text-green-800 dark:text-green-200">
-                      ✓ Lien de caution prêt !
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800 text-center">
+                    <h3 className="font-bold text-lg mb-2 text-green-800 dark:text-green-200">
+                      ✓ Validation de votre empreinte bancaire
                     </h3>
-                    <p className="text-sm text-green-700 dark:text-green-300 mb-4">
-                      Cliquez sur le bouton ci-dessous pour valider votre empreinte bancaire sur le site sécurisé Swikly
-                    </p>
-                    <Button
-                      asChild
-                      size="lg"
-                      className="mb-4"
-                      data-testid="button-open-swikly"
-                    >
-                      <a
-                        href={swiklyUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="w-5 h-5 mr-2" />
-                        Ouvrir Swikly
-                      </a>
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      Une nouvelle fenêtre s'ouvrira. Revenez ici une fois la validation terminée.
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      Complétez le formulaire Swikly ci-dessous de manière sécurisée
                     </p>
                   </div>
 
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground mb-3">Caution déjà validée ?</p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setLocation(`/success?booking=${bookingId}`)}
-                      data-testid="button-go-to-success"
-                    >
-                      Voir ma confirmation de réservation
-                    </Button>
+                  <div className="relative w-full bg-white dark:bg-gray-900 rounded-xl border-2 border-primary/20 shadow-lg overflow-hidden">
+                    {!iframeLoaded && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+                        <div className="text-center space-y-3">
+                          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
+                          <p className="text-sm text-muted-foreground">Chargement du formulaire Swikly...</p>
+                        </div>
+                      </div>
+                    )}
+                    <iframe
+                      src={swiklyUrl}
+                      className="w-full h-[700px] border-0"
+                      title="Swikly - Validation de caution"
+                      onLoad={() => setIframeLoaded(true)}
+                      data-testid="iframe-swikly"
+                      allow="payment"
+                      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                    />
+                  </div>
+
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
+                      💡 Une fois la validation terminée, vous serez automatiquement redirigé vers votre confirmation de réservation
+                    </p>
                   </div>
 
                   <div className="text-center pt-4 border-t">
