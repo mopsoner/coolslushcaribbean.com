@@ -13,7 +13,7 @@ export default function HeroSection() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="text-white">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-              Location de machines à granité en Guadeloupe
+              Location de machines à granité professionnelles
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-white/90">
               Rafraîchissez vos événements avec nos machines professionnelles. Livraison incluse, caution en ligne sécurisée.

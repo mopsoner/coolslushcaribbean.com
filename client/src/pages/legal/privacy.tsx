@@ -16,7 +16,7 @@ export default function Privacy() {
               
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">1. Collecte des données</h2>
               <p className="text-muted-foreground">
-                Cool'Slush Guadeloupe collecte les données personnelles suivantes lors de votre réservation :
+                Cool Slush Lemonade collecte les données personnelles suivantes lors de votre réservation :
               </p>
               <ul className="text-muted-foreground list-disc pl-6 space-y-2">
                 <li>Nom et prénom</li>
@@ -74,7 +74,7 @@ export default function Privacy() {
                 <li><strong>Droit à la portabilité</strong> : récupérer vos données</li>
               </ul>
               <p className="text-muted-foreground mt-4">
-                Pour exercer ces droits, contactez-nous à : <a href="mailto:contact@coolslush.gp" className="text-primary hover:underline">contact@coolslush.gp</a>
+                Pour exercer ces droits, contactez-nous à : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a>
               </p>
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">6. Conservation des données</h2>
@@ -92,7 +92,7 @@ export default function Privacy() {
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">8. Contact</h2>
               <p className="text-muted-foreground">
                 Pour toute question sur cette politique de confidentialité :<br/>
-                Email : <a href="mailto:contact@coolslush.gp" className="text-primary hover:underline">contact@coolslush.gp</a><br/>
+                Email : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a><br/>
                 Téléphone : <a href="tel:+590690123456" className="text-primary hover:underline">0690 12 34 56</a>
               </p>
             </CardContent>

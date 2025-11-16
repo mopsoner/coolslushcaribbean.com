@@ -55,7 +55,7 @@ const testimonials = [
   {
     name: "Sophie M.",
     rating: 5,
-    comment: "Nous avons loué 2 machines pour notre mariage. Tout s'est parfaitement déroulé. Je recommande vivement Cool'Slush !",
+    comment: "Nous avons loué 2 machines pour notre mariage. Tout s'est parfaitement déroulé. Je recommande vivement Cool Slush Lemonade !",
     initial: "S"
   }
 ];
@@ -67,7 +67,7 @@ const faqs = [
   },
   {
     question: "Quelles zones de livraison couvrez-vous ?",
-    answer: "Nous livrons sur toute la Guadeloupe : Grande-Terre, Basse-Terre, et les îles environnantes. La livraison est incluse dans le tarif de location sans frais supplémentaires."
+    answer: "La livraison est incluse dans le tarif de location sans frais supplémentaires."
   },
   {
     question: "Fournissez-vous les ingrédients ?",
@@ -195,7 +195,7 @@ export default function Home() {
               Ce que disent nos clients
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-testimonials-subtitle">
-              Ils ont fait confiance à Cool'Slush pour leurs événements
+              Ils ont fait confiance à Cool Slush Lemonade pour leurs événements
             </p>
           </div>
 
@@ -267,7 +267,7 @@ export default function Home() {
             Prêt à rafraîchir votre événement ?
           </h2>
           <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto" data-testid="text-cta-subtitle">
-            Réservez dès maintenant votre machine à granité et profitez d'une livraison gratuite partout en Guadeloupe
+            Réservez dès maintenant votre machine à granité et profitez d'une livraison gratuite
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

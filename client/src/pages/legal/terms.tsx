@@ -16,8 +16,8 @@ export default function Terms() {
               
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">1. Présentation du service</h2>
               <p className="text-muted-foreground">
-                Cool'Slush Guadeloupe propose un service de location de machines à granité professionnelles 
-                pour événements privés et professionnels en Guadeloupe.
+                Cool Slush Lemonade propose un service de location de machines à granité professionnelles 
+                pour événements privés et professionnels.
               </p>
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">2. Conditions de location</h2>
@@ -62,7 +62,7 @@ export default function Terms() {
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">6. Responsabilité</h2>
               <p className="text-muted-foreground">
-                Cool'Slush Guadeloupe s'engage à fournir du matériel en parfait état de fonctionnement.
+                Cool Slush Lemonade s'engage à fournir du matériel en parfait état de fonctionnement.
                 Le client est responsable du matériel pendant toute la durée de location.
               </p>
 
@@ -70,7 +70,7 @@ export default function Terms() {
               <p className="text-muted-foreground">
                 Pour toute question concernant ces conditions, contactez-nous :<br/>
                 Téléphone : <a href="tel:+590690123456" className="text-primary hover:underline">0690 12 34 56</a><br/>
-                Email : <a href="mailto:contact@coolslush.gp" className="text-primary hover:underline">contact@coolslush.gp</a>
+                Email : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a>
               </p>
             </CardContent>
           </Card>

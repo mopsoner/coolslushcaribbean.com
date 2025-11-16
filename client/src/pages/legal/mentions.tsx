@@ -14,16 +14,16 @@ export default function Mentions() {
             <CardContent className="p-8 prose prose-slate max-w-none">
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">1. Éditeur du site</h2>
               <p className="text-muted-foreground">
-                <strong>Cool'Slush Guadeloupe</strong><br/>
+                <strong>Cool Slush Lemonade</strong><br/>
                 Location de machines à granité professionnelles<br/>
-                Guadeloupe, Antilles Françaises<br/>
+                Guadeloupe<br/>
                 Téléphone : <a href="tel:+590690123456" className="text-primary hover:underline">0690 12 34 56</a><br/>
-                Email : <a href="mailto:contact@coolslush.gp" className="text-primary hover:underline">contact@coolslush.gp</a>
+                Email : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a>
               </p>
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">2. Directeur de publication</h2>
               <p className="text-muted-foreground">
-                Le directeur de la publication est le représentant légal de Cool'Slush Guadeloupe.
+                Le directeur de la publication est le représentant légal de Cool Slush Lemonade.
               </p>
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">3. Hébergement</h2>
@@ -38,7 +38,7 @@ export default function Mentions() {
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">4. Propriété intellectuelle</h2>
               <p className="text-muted-foreground">
-                L'ensemble de ce site (structure, textes, logos, images) est la propriété exclusive de Cool'Slush Guadeloupe,
+                L'ensemble de ce site (structure, textes, logos, images) est la propriété exclusive de Cool Slush Lemonade,
                 sauf mentions contraires. Toute reproduction, même partielle, est interdite sans autorisation préalable.
               </p>
 
@@ -46,7 +46,7 @@ export default function Mentions() {
               <p className="text-muted-foreground">
                 Conformément à la loi "Informatique et Libertés" du 6 janvier 1978 modifiée et au RGPD,
                 vous disposez d'un droit d'accès, de rectification et de suppression des données vous concernant.
-                Pour exercer ce droit, contactez-nous à : <a href="mailto:contact@coolslush.gp" className="text-primary hover:underline">contact@coolslush.gp</a>
+                Pour exercer ce droit, contactez-nous à : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a>
               </p>
               <p className="text-muted-foreground mt-4">
                 Consultez notre <a href="/legal/privacy" className="text-primary hover:underline">Politique de Confidentialité</a> pour plus d'informations.
@@ -60,7 +60,7 @@ export default function Mentions() {
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">7. Limitation de responsabilité</h2>
               <p className="text-muted-foreground">
-                Cool'Slush Guadeloupe s'efforce d'assurer l'exactitude des informations diffusées sur ce site,
+                Cool Slush Lemonade s'efforce d'assurer l'exactitude des informations diffusées sur ce site,
                 mais ne peut garantir l'absence d'erreurs ou d'omissions. Les informations sont susceptibles d'être modifiées sans préavis.
               </p>
 
@@ -72,7 +72,7 @@ export default function Mentions() {
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">9. Contact</h2>
               <p className="text-muted-foreground">
                 Pour toute question concernant ces mentions légales :<br/>
-                Email : <a href="mailto:contact@coolslush.gp" className="text-primary hover:underline">contact@coolslush.gp</a><br/>
+                Email : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a><br/>
                 Téléphone : <a href="tel:+590690123456" className="text-primary hover:underline">0690 12 34 56</a>
               </p>
             </CardContent>
