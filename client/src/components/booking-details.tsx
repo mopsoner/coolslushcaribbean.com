@@ -166,7 +166,7 @@ export default function BookingDetails({ booking, showTotal = true, className = 
       {showTotal && (
         <div className="bg-gradient-to-r from-primary/20 to-primary/10 dark:from-primary/30 dark:to-primary/20 px-6 py-5 border-t-2 border-primary">
           <div className="flex justify-between items-center">
-            <span className="text-base font-semibold text-foreground">Montant total à payer</span>
+            <span className="text-base font-semibold text-foreground">Montant total</span>
             <span className="text-3xl font-bold text-primary" data-testid="booking-detail-total">
               {formatEuro(booking.totalCents)}
             </span>
