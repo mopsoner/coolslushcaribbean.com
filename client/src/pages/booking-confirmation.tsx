@@ -170,7 +170,11 @@ export default function BookingConfirmation() {
           {/* Booking Details Card */}
           <Card className="shadow-xl border-0 overflow-hidden mb-6">
             <CardHeader className="bg-muted/50 p-6">
-              <CardTitle className="text-xl text-foreground">📋 Détails de votre réservation</CardTitle>
+              <CardTitle className="text-xl text-foreground mb-4">📋 Détails de votre réservation</CardTitle>
+              <div className="flex justify-between items-center py-3 px-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border-2 border-primary/20" data-testid="confirmation-total-amount">
+                <span className="text-lg font-semibold text-foreground">Montant total</span>
+                <span className="text-2xl font-bold text-primary">{formatEuro(booking.totalCents)}</span>
+              </div>
             </CardHeader>
 
             <CardContent className="p-6">

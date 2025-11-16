@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Booking } from "@shared/schema";
 import Navbar from "@/components/navbar";
 import BookingDetails from "@/components/booking-details";
+import { formatEuro } from "@shared/utils";
 
 export default function Success() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -57,6 +58,10 @@ export default function Success() {
                   <div className="flex justify-between" data-testid="success-booking-id">
                     <span className="text-muted-foreground">Numéro de réservation</span>
                     <span className="font-semibold text-foreground">#{booking.id.slice(-8)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 px-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border-2 border-primary/20" data-testid="success-total-amount">
+                    <span className="text-lg font-semibold text-foreground">Montant total</span>
+                    <span className="text-2xl font-bold text-primary">{formatEuro(booking.totalCents)}</span>
                   </div>
                 </div>
                 
