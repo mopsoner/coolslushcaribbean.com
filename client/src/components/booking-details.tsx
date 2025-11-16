@@ -10,11 +10,11 @@ interface BookingDetailsProps {
 
 export default function BookingDetails({ booking, showTotal = true, className = "" }: BookingDetailsProps) {
   const { data: syrups, isLoading: syrupsLoading, error: syrupsError } = useQuery<Syrup[]>({
-    queryKey: ['/api', 'syrups'],
+    queryKey: ['/api/syrups'],
   });
 
   const { data: offers } = useQuery<Offer[]>({
-    queryKey: ['/api', 'offers'],
+    queryKey: ['/api/offers'],
   });
 
   const startDate = new Date(booking.startDate);

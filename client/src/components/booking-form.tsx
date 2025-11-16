@@ -13,8 +13,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, Phone, Mail, MapPin, Snowflake, Lock, Shield, CheckCircle, Droplet, Coffee, Plus, X } from "lucide-react";
-import type { Offer, Syrup, Machine } from "@shared/schema";
+import type { Offer, Syrup, Machine, Booking } from "@shared/schema";
 import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
+import BookingDetails from "@/components/booking-details";
 
 const syrupSelectionSchema = z.object({
   syrupId: z.string(),
@@ -760,107 +761,46 @@ export default function BookingForm() {
                 )}
               />
 
-              {/* Price Summary */}
-              {watchedOffer && totalPrice > 0 && (
-                <div className="bg-primary/10 rounded-xl p-6 border border-primary/20" data-testid="price-summary">
-                  <div className="space-y-3">
-                    {/* Rental Period */}
-                    {watchedStartDate && (
-                      <div className="mb-4 pb-3 border-b border-primary/20">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground font-medium">
-                            <Calendar className="w-4 h-4 inline mr-1" />
-                            Période de location
-                          </span>
-                        </div>
-                        <div className="mt-2 text-foreground">
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold">
-                              {formatDateForDisplay(watchedStartDate)}
-                              {watchedOffer !== "1 Journée" && watchedEndDate && (
-                                <> → {formatDateForDisplay(watchedEndDate)}</>
-                              )}
-                            </span>
-                            <span className="bg-primary/20 text-primary px-3 py-1 rounded-full font-bold text-sm" data-testid="rental-days">
-                              {rentalDays} jour{rentalDays > 1 ? 's' : ''}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Cup Size Display */}
-                    {watchedCupSize && (
-                      <div className="mb-3 pb-3 border-b border-primary/20">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground font-medium">
-                            <Coffee className="w-4 h-4 inline mr-1" />
-                            Taille des gobelets
-                          </span>
-                          <span className="font-semibold text-foreground capitalize" data-testid="cup-size">
-                            {watchedCupSize === "petit" ? "Petit (250ml)" : watchedCupSize === "moyen" ? "Moyen (350ml)" : "Grand (500ml)"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Syrups Detail Display */}
-                    {watchedSyrups && watchedSyrups.length > 0 && syrups && (
-                      <div className="mb-3 pb-3 border-b border-primary/20">
-                        <div className="flex items-center text-sm mb-2">
-                          <span className="text-muted-foreground font-medium">
-                            <Droplet className="w-4 h-4 inline mr-1" />
-                            Sirops sélectionnés
-                          </span>
-                        </div>
-                        <div className="space-y-1">
-                          {watchedSyrups.map((selection) => {
-                            const syrup = syrups.find(s => s.id === selection.syrupId);
-                            if (!syrup) return null;
-                            return (
-                              <div key={selection.syrupId} className="flex items-center justify-between text-sm pl-5" data-testid={`syrup-detail-${selection.syrupId}`}>
-                                <span className="text-muted-foreground">
-                                  {syrup.name} × {selection.quantity}
-                                </span>
-                                <span className="text-foreground font-medium">
-                                  {((syrup.amountCents * selection.quantity) / 100).toFixed(2)} €
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Machine Price Calculation */}
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">
-                        {machines} machine{machines > 1 ? 's' : ''} × {((totalPrice - syrupsTotalPrice) / machines / rentalDays).toFixed(2)}€/jour × {rentalDays} jour{rentalDays > 1 ? 's' : ''}
-                      </span>
-                      <span className="font-medium" data-testid="machines-price">
-                        {(totalPrice - syrupsTotalPrice).toFixed(2)} €
-                      </span>
-                    </div>
-                    
-                    {syrupsTotalPrice > 0 && (
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">
-                          Sirops ({syrupSelections.reduce((sum, s) => sum + s.quantity, 0)} unité(s))
-                        </span>
-                        <span className="font-medium" data-testid="syrups-price">
-                          {syrupsTotalPrice.toFixed(2)} €
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className="border-t border-primary/20 pt-3 flex justify-between items-center">
-                      <span className="text-muted-foreground font-semibold">Total TTC</span>
-                      <span className="text-3xl font-bold text-primary" data-testid="total-price">
-                        {totalPrice.toFixed(2)} €
-                      </span>
-                    </div>
-                  </div>
-                </div>
+              {/* Booking Summary - Using BookingDetails component */}
+              {watchedOffer && watchedStartDate && selectedMachines.length > 0 && (
+                (() => {
+                  // Create a temporary booking object for preview
+                  const watchedStartHour = form.watch("startHour");
+                  const watchedEndHour = form.watch("endHour");
+                  const watchedCustomerName = form.watch("customerName");
+                  const watchedCustomerPhone = form.watch("customerPhone");
+                  const watchedCustomerEmail = form.watch("customerEmail");
+                  const watchedCustomerAddress = form.watch("customerAddress");
+                  
+                  const tempBooking: Booking = {
+                    id: "temp-preview",
+                    offer: watchedOffer,
+                    startDate: new Date(watchedStartDate),
+                    endDate: watchedOffer === "1 Journée" ? new Date(watchedStartDate) : (watchedEndDate ? new Date(watchedEndDate) : new Date(watchedStartDate)),
+                    startHour: watchedStartHour,
+                    endHour: watchedEndHour,
+                    customerName: watchedCustomerName || "À compléter",
+                    customerPhone: watchedCustomerPhone || "À compléter",
+                    customerEmail: watchedCustomerEmail || "À compléter",
+                    customerAddress: watchedCustomerAddress || "À compléter",
+                    machines: watchedMachines,
+                    bookedMachines: selectedMachines,
+                    selectedSyrups: watchedSyrups || [],
+                    cupSize: watchedCupSize || "moyen",
+                    totalCents: Math.round(totalPrice * 100),
+                    status: "PENDING",
+                    paymentStatus: "PENDING",
+                    depositStatus: "PENDING",
+                    stripePaymentIntentId: null,
+                    swiklyRequestId: null,
+                    swiklyUrl: null,
+                    stripePaymentId: null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  };
+                  
+                  return <BookingDetails booking={tempBooking} showTotal={true} />;
+                })()
               )}
 
               {/* Terms & Conditions */}
