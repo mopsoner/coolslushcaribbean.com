@@ -16,7 +16,6 @@ export default function Mentions() {
               <p className="text-muted-foreground">
                 <strong>Cool Slush Lemonade</strong><br/>
                 Location de machines à granité professionnelles<br/>
-                Guadeloupe<br/>
                 Téléphone : <a href="tel:+590690123456" className="text-primary hover:underline">0690 12 34 56</a><br/>
                 Email : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a>
               </p>

@@ -49,10 +49,6 @@ export default function Footer() {
                 <Mail className="text-primary mr-3 mt-1 w-4 h-4" />
                 <a href="mailto:contact@coolslushlemonade.com" className="hover:text-primary transition-colors">contact@coolslushlemonade.com</a>
               </li>
-              <li className="flex items-start">
-                <MapPin className="text-primary mr-3 mt-1 w-4 h-4" />
-                <span>Guadeloupe</span>
-              </li>
             </ul>
           </div>
         </div>

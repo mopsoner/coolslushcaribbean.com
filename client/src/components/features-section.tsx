@@ -4,7 +4,7 @@ const features = [
   {
     icon: Truck,
     title: "Livraison incluse",
-    description: "Nous livrons et récupérons la machine à votre domicile ou lieu d'événement partout en Guadeloupe.",
+    description: "Nous livrons et récupérons la machine à votre domicile ou lieu d'événement.",
     gradient: "gradient-tropical"
   },
   {

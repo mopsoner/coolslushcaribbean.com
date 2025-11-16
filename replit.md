@@ -1,12 +1,22 @@
-# Cool'Slush Guadeloupe - Ninja Slushi Machine Rental Platform
+# Cool Slush Lemonade - Ninja Slushi Machine Rental Platform
 
 ## Overview
 
-Cool'Slush is a web application for renting Ninja Slushi 2,5L professional machines in Guadeloupe. The platform features machines with 5 programs (Slushi, Milkshake, Frozen Drink, Smoothie, and Italian Ice Cream), allowing customers to browse available machines, make bookings, and complete secure payments via Stripe, with deposits of 150€ per machine managed through Swikly. The platform provides a complete booking workflow, including email notifications, a recipe page showcasing the machine's capabilities, and comprehensive administrative tools for managing bookings, machines, pricing, and syrups. The project aims to capture the market for event rentals in Guadeloupe by offering a seamless and secure booking experience.
+Cool Slush Lemonade is a web application for renting Ninja Slushi 2,5L professional machines. The platform features machines with 5 programs (Slushi, Milkshake, Frozen Drink, Smoothie, and Italian Ice Cream), allowing customers to browse available machines, make bookings, and complete secure payments via Stripe, with deposits of 150€ per machine managed through Swikly. The platform provides a complete booking workflow, including email notifications, a recipe page showcasing the machine's capabilities, and comprehensive administrative tools for managing bookings, machines, pricing, and syrups. The platform offers a seamless and secure booking experience with professional IONOS email service.
 
 ## Recent Changes (November 16, 2025)
 
-### Admin Authentication & SEO Tracking System (Latest)
+### Rebranding to Cool Slush Lemonade (Latest)
+- **Brand Name**: Updated from "Cool'Slush Guadeloupe" to "Cool Slush Lemonade"
+- **Domain & Email**: Configured for coolslushlemonade.com with contact@coolslushlemonade.com
+- **Email Service**: Integrated IONOS SMTP for professional email delivery
+  - SMTP Host: smtp.ionos.fr
+  - Port: 587 (STARTTLS)
+  - Email credentials stored in Replit secrets (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE, EMAIL_FROM)
+- **SEO Optimization**: Updated meta tags, Open Graph tags, and page titles for better search visibility
+- **Content Updates**: All pages, email templates, and legal documents updated with new brand name
+
+### Admin Authentication & SEO Tracking System
 - **Admin Authentication**: Implemented password-based admin authentication using JWT tokens stored in Replit secrets
   - Login page at `/admin/login` (not publicly linked)
   - Token-based authentication with server-side verification via `/api/auth/check`
@@ -131,6 +141,6 @@ Preferred communication style: Simple, everyday language.
 
 -   **Payment Processing**: Stripe (`@stripe/stripe-js`, `@stripe/react-stripe-js`, `stripe` npm package) for rental payments, with a webhook endpoint for confirmation.
 -   **Deposit Management**: Swikly API for security deposits (150€ per machine), supporting sandbox and production environments.
--   **Email Service**: Nodemailer for booking confirmations, configurable for SMTP in production and Ethereal in development.
+-   **Email Service**: Nodemailer with IONOS SMTP (smtp.ionos.fr:587) for professional email delivery via contact@coolslushlemonade.com. Falls back to Ethereal for development if SMTP credentials not configured.
 -   **Database**: Neon PostgreSQL for serverless database hosting.
 -   **Development Tools**: Replit-specific plugins, TypeScript, and ESBuild.

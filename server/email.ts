@@ -48,7 +48,7 @@ async function getTransporter() {
 export async function sendBookingConfirmation(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <noreply@coolslushlemonade.com>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
 
     const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -160,7 +160,6 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
             
             <div class="footer">
               <p>Cool Slush Lemonade - Location de machines à granité professionnelles</p>
-              <p>Guadeloupe</p>
               <p style="font-size: 0.8em; color: #94a3b8;">
                 Vous recevez cet email car vous avez effectué une réservation sur coolslushlemonade.com
               </p>
@@ -200,7 +199,7 @@ Email : contact@coolslushlemonade.com
 À très bientôt,
 L'équipe Cool Slush Lemonade
 
-Cool Slush Lemonade - Guadeloupe
+Cool Slush Lemonade - Location de machines à granité
       `,
     });
 
@@ -212,7 +211,7 @@ Cool Slush Lemonade - Guadeloupe
 export async function sendReminderEmail(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <noreply@coolslushlemonade.com>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
 
     const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -284,7 +283,7 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
 export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <noreply@coolslushlemonade.com>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
 
     const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -430,7 +429,7 @@ Email : contact@coolslushlemonade.com
 À très bientôt,
 L'équipe Cool Slush Lemonade
 
-Cool Slush Lemonade - Guadeloupe
+Cool Slush Lemonade - Location de machines à granité
       `,
     });
 
@@ -442,7 +441,7 @@ Cool Slush Lemonade - Guadeloupe
 export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: string, newStatus: string): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <noreply@coolslushlemonade.com>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
     
     const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -578,7 +577,7 @@ export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: 
         </html>
       `,
       text: `
-Cool'Slush Guadeloupe - Mise à jour de votre réservation
+Cool Slush Lemonade - Mise à jour de votre réservation
 
 Bonjour ${booking.customerName},
 
@@ -615,7 +614,7 @@ Email : contact@coolslushlemonade.com
 À très bientôt,
 L'équipe Cool Slush Lemonade
 
-Cool Slush Lemonade - Guadeloupe
+Cool Slush Lemonade - Location de machines à granité
       `,
     });
 
@@ -627,12 +626,12 @@ Cool Slush Lemonade - Guadeloupe
 export async function sendFollowUpEmail(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool\'Slush Guadeloupe <noreply@coolslush.gp>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
 
     await transporter.sendMail({
       from: fromEmail,
       to: booking.customerEmail,
-      subject: `⭐ Merci pour votre confiance - Cool'Slush`,
+      subject: `⭐ Merci pour votre confiance - Cool Slush Lemonade`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -656,7 +655,7 @@ export async function sendFollowUpEmail(booking: Booking): Promise<void> {
               <p>Nous espérons que votre événement s'est merveilleusement bien passé et que vos invités ont adoré les granités !</p>
               
               <p><strong>Votre avis compte :</strong></p>
-              <p>Prenez quelques secondes pour nous laisser un avis et aider d'autres personnes à découvrir Cool'Slush.</p>
+              <p>Prenez quelques secondes pour nous laisser un avis et aider d'autres personnes à découvrir Cool Slush Lemonade.</p>
               
               <p><strong>💰 Caution Swikly :</strong></p>
               <p>Votre caution a été libérée automatiquement. Vous ne serez pas débité.</p>
@@ -664,16 +663,16 @@ export async function sendFollowUpEmail(booking: Booking): Promise<void> {
               <p><strong>🎉 Location future ?</strong></p>
               <p>Profitez de 10% de réduction sur votre prochaine réservation avec le code : <strong>COOLSLUSH10</strong></p>
               
-              <p>Au plaisir de vous revoir bientôt,<br><strong>L'équipe Cool'Slush</strong></p>
+              <p>Au plaisir de vous revoir bientôt,<br><strong>L'équipe Cool Slush Lemonade</strong></p>
               
               <p style="text-align: center; margin-top: 30px;">
                 <a href="tel:+590690123456" style="color: #0EA5E9;">0690 12 34 56</a> • 
-                <a href="mailto:contact@coolslush.gp" style="color: #0EA5E9;">contact@coolslush.gp</a>
+                <a href="mailto:contact@coolslushlemonade.com" style="color: #0EA5E9;">contact@coolslushlemonade.com</a>
               </p>
             </div>
             
             <div class="footer">
-              <p>Cool'Slush Guadeloupe</p>
+              <p>Cool Slush Lemonade</p>
             </div>
           </div>
         </body>
