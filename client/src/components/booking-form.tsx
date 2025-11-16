@@ -134,7 +134,8 @@ export default function BookingForm() {
     bookingMutation.mutate({ 
       ...bookingData, 
       endDate,
-      machines: data.machines
+      machines: data.machines,
+      bookedMachines: data.bookedMachines
     });
   };
 
