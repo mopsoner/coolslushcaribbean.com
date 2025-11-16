@@ -94,12 +94,19 @@ const syrupSelectionSchema = z.object({
   quantity: z.number().int().min(1).max(10),
 });
 
+const bookedMachineSchema = z.object({
+  machineId: z.string(),
+  machineName: z.string(),
+  quantity: z.number().int().min(1),
+});
+
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
   machines: true, // Omit to redefine with strict validation
   selectedSyrups: true,
+  bookedMachines: true,
   cupSize: true,
 }).extend({
   startDate: z.union([
@@ -124,6 +131,7 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   ]),
   customerAddress: z.string().min(5, "Adresse requise (min. 5 caractères)"),
   machines: z.number().int().min(1, "Au moins 1 machine requise").max(10, "Maximum 10 machines"),
+  bookedMachines: z.array(bookedMachineSchema).min(1, "Au moins une machine doit être sélectionnée"),
   selectedSyrups: z.array(syrupSelectionSchema).optional().default([]),
   cupSize: z.enum(["petit", "moyen", "grand"]).default("moyen"),
 }).refine((data) => {
@@ -134,6 +142,13 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
 }, {
   message: "La date de fin doit être après ou égale à la date de début",
   path: ["endDate"],
+}).refine((data) => {
+  // Vérifier que le total des quantités dans bookedMachines correspond au champ machines
+  const totalFromBooked = data.bookedMachines.reduce((sum, m) => sum + m.quantity, 0);
+  return totalFromBooked === data.machines;
+}, {
+  message: "Le nombre total de machines ne correspond pas aux machines sélectionnées",
+  path: ["machines"],
 });
 
 export const insertOfferSchema = createInsertSchema(offers).omit({

@@ -35,6 +35,7 @@ const bookingSchema = z.object({
   bookedMachines: z.array(z.object({
     machineId: z.string(),
     machineName: z.string(),
+    quantity: z.number().int().min(1),
   })).min(1, "Sélectionnez au moins une machine"),
   selectedSyrups: z.array(syrupSelectionSchema).optional().default([]),
   cupSize: z.enum(["petit", "moyen", "grand"]).default("moyen"),
@@ -58,7 +59,7 @@ export default function BookingForm() {
   const [machines, setMachines] = useState(1);
   const [selectedOffer, setSelectedOffer] = useState("");
   const [syrupSelections, setSyrupSelections] = useState<{ syrupId: string; quantity: number }[]>([]);
-  const [selectedMachines, setSelectedMachines] = useState<{ machineId: string; machineName: string }[]>([]);
+  const [selectedMachines, setSelectedMachines] = useState<{ machineId: string; machineName: string; quantity: number }[]>([]);
   const { toast } = useToast();
 
   const { data: offers, isLoading: offersLoading } = useQuery<OfferWithPrice[]>({
@@ -143,28 +144,81 @@ export default function BookingForm() {
     const machine = availableMachines.find(m => m.id === machineId);
     if (!machine) return;
     
-    const alreadySelected = selectedMachines.find(m => m.machineId === machineId);
-    if (alreadySelected) {
+    const existingSelection = selectedMachines.find(m => m.machineId === machineId);
+    let updatedSelections: typeof selectedMachines;
+    
+    if (existingSelection) {
+      // Increment quantity if machine already selected
+      const maxQuantity = machine.quantity || 1;
+      if (existingSelection.quantity >= maxQuantity) {
+        toast({
+          title: "Quantité maximale atteinte",
+          description: `Vous ne pouvez pas réserver plus de ${maxQuantity} unité(s) de cette machine.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      updatedSelections = selectedMachines.map(m => 
+        m.machineId === machineId 
+          ? { ...m, quantity: m.quantity + 1 }
+          : m
+      );
+    } else {
+      // Add new machine with quantity 1
+      const newSelection = { machineId: machine.id, machineName: machine.name, quantity: 1 };
+      updatedSelections = [...selectedMachines, newSelection];
+    }
+    
+    // Calculate total machine count
+    const totalMachines = updatedSelections.reduce((sum, m) => sum + m.quantity, 0);
+    
+    setSelectedMachines(updatedSelections);
+    form.setValue("bookedMachines", updatedSelections);
+    form.setValue("machines", totalMachines);
+  };
+
+  const removeMachine = (machineId: string) => {
+    const updatedSelections = selectedMachines.filter(m => m.machineId !== machineId);
+    const totalMachines = updatedSelections.reduce((sum, m) => sum + m.quantity, 0);
+    
+    setSelectedMachines(updatedSelections);
+    form.setValue("bookedMachines", updatedSelections);
+    form.setValue("machines", totalMachines || 1);
+  };
+
+  const updateMachineQuantity = (machineId: string, newQuantity: number) => {
+    if (!availableMachines) return;
+    
+    const machine = availableMachines.find(m => m.id === machineId);
+    if (!machine) return;
+    
+    const maxQuantity = machine.quantity || 1;
+    
+    if (newQuantity < 1) {
+      removeMachine(machineId);
+      return;
+    }
+    
+    if (newQuantity > maxQuantity) {
       toast({
-        title: "Machine déjà sélectionnée",
-        description: "Cette machine a déjà été ajoutée à votre réservation.",
+        title: "Quantité maximale atteinte",
+        description: `Vous ne pouvez pas réserver plus de ${maxQuantity} unité(s) de cette machine.`,
         variant: "destructive",
       });
       return;
     }
     
-    const newSelection = { machineId: machine.id, machineName: machine.name };
-    const updatedSelections = [...selectedMachines, newSelection];
+    const updatedSelections = selectedMachines.map(m => 
+      m.machineId === machineId 
+        ? { ...m, quantity: newQuantity }
+        : m
+    );
+    
+    const totalMachines = updatedSelections.reduce((sum, m) => sum + m.quantity, 0);
+    
     setSelectedMachines(updatedSelections);
     form.setValue("bookedMachines", updatedSelections);
-    form.setValue("machines", updatedSelections.length);
-  };
-
-  const removeMachine = (machineId: string) => {
-    const updatedSelections = selectedMachines.filter(m => m.machineId !== machineId);
-    setSelectedMachines(updatedSelections);
-    form.setValue("bookedMachines", updatedSelections);
-    form.setValue("machines", updatedSelections.length || 1);
+    form.setValue("machines", totalMachines);
   };
 
   const calculateRentalDaysForForm = () => {
@@ -398,52 +452,91 @@ export default function BookingForm() {
               <div>
                 <Label className="flex items-center text-sm font-semibold text-foreground mb-3">
                   <Snowflake className="w-4 h-4 text-primary mr-2" />
-                  Machines sélectionnées ({selectedMachines.length})
+                  Machines sélectionnées (Total: {selectedMachines.reduce((sum, m) => sum + m.quantity, 0)})
                 </Label>
                 
                 {/* Selected Machines Display */}
                 {selectedMachines.length > 0 && (
                   <div className="space-y-2 mb-3">
-                    {selectedMachines.map((machine) => (
-                      <div 
-                        key={machine.machineId} 
-                        className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                        data-testid={`selected-machine-${machine.machineId}`}
-                      >
-                        <span className="font-medium">{machine.machineName}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeMachine(machine.machineId)}
-                          data-testid={`button-remove-machine-${machine.machineId}`}
+                    {selectedMachines.map((machine) => {
+                      const availableMachine = availableMachines?.find(m => m.id === machine.machineId);
+                      const maxQuantity = availableMachine?.quantity || 1;
+                      
+                      return (
+                        <div 
+                          key={machine.machineId} 
+                          className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                          data-testid={`selected-machine-${machine.machineId}`}
                         >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
+                          <div className="flex-1">
+                            <span className="font-medium">{machine.machineName}</span>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Max disponible: {maxQuantity}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateMachineQuantity(machine.machineId, machine.quantity - 1)}
+                              disabled={machine.quantity <= 1}
+                              data-testid={`button-decrement-${machine.machineId}`}
+                            >
+                              -
+                            </Button>
+                            <Input
+                              type="number"
+                              value={machine.quantity}
+                              onChange={(e) => updateMachineQuantity(machine.machineId, parseInt(e.target.value) || 1)}
+                              className="w-16 text-center"
+                              min="1"
+                              max={maxQuantity}
+                              data-testid={`input-quantity-${machine.machineId}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateMachineQuantity(machine.machineId, machine.quantity + 1)}
+                              disabled={machine.quantity >= maxQuantity}
+                              data-testid={`button-increment-${machine.machineId}`}
+                            >
+                              +
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeMachine(machine.machineId)}
+                              data-testid={`button-remove-machine-${machine.machineId}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 
                 {/* Available Machines Dropdown */}
                 {availableMachines && availableMachines.length > 0 && (
                   <div>
-                    <Select onValueChange={addMachine}>
+                    <Select onValueChange={addMachine} value="">
                       <SelectTrigger className="booking-form-input" data-testid="select-add-machine">
                         <SelectValue placeholder="Ajouter une machine..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {availableMachines
-                          .filter(machine => !selectedMachines.find(m => m.machineId === machine.id))
-                          .map((machine) => (
-                            <SelectItem 
-                              key={machine.id} 
-                              value={machine.id}
-                              data-testid={`option-machine-${machine.id}`}
-                            >
-                              {machine.name}
-                            </SelectItem>
-                          ))}
+                        {availableMachines.map((machine) => (
+                          <SelectItem 
+                            key={machine.id} 
+                            value={machine.id}
+                            data-testid={`option-machine-${machine.id}`}
+                          >
+                            {machine.name} (Max: {machine.quantity || 1})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

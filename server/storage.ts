@@ -1,6 +1,6 @@
 import { type Machine, type InsertMachine, type Booking, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, type InsertOfferWithPricing, type OfferWithPricing, machines, bookings, offers, offerMachinePrices, syrups } from "@shared/schema";
 import { db } from "../db";
-import { eq, gte, lte, and, isNull, inArray } from "drizzle-orm";
+import { eq, gte, lte, and, or, isNull, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Machine methods
@@ -19,6 +19,7 @@ export interface IStorage {
   updateBooking(id: string, updates: Partial<Booking>): Promise<Booking | undefined>;
   updateBookingStatus(id: string, status: string): Promise<Booking | undefined>;
   getBookingsByDate(date: Date): Promise<Booking[]>;
+  getOverlappingBookings(startDate: Date, endDate: Date): Promise<Booking[]>;
 
   // Offer methods
   getOffer(id: string): Promise<Offer | undefined>;
@@ -126,6 +127,23 @@ export class DbStorage implements IStorage {
       .select()
       .from(bookings)
       .where(and(gte(bookings.startDate, startOfDay), lte(bookings.startDate, endOfDay)));
+  }
+
+  async getOverlappingBookings(startDate: Date, endDate: Date): Promise<Booking[]> {
+    // Find bookings where the date ranges overlap
+    // Two bookings overlap if:
+    // - booking.startDate <= endDate AND booking.endDate >= startDate
+    return await db
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          lte(bookings.startDate, endDate),
+          gte(bookings.endDate, startDate),
+          // Only consider confirmed or pending bookings (not cancelled)
+          or(eq(bookings.status, "CONFIRMED"), eq(bookings.status, "PENDING"))
+        )
+      );
   }
 
   async getOffer(id: string): Promise<Offer | undefined> {

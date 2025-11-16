@@ -62,11 +62,27 @@ export default function BookingDetails({ booking, showTotal = true, className = 
           {booking.startHour.toString().padStart(2, '0')}:00 - {booking.endHour.toString().padStart(2, '0')}:00
         </span>
       </div>
-      <div className="flex justify-between" data-testid="booking-detail-machines">
-        <span className="text-muted-foreground">Machines</span>
-        <span className="font-semibold text-foreground">
-          {booking.machines} machine{booking.machines > 1 ? 's' : ''}
-        </span>
+      <div data-testid="booking-detail-machines">
+        <div className="flex justify-between mb-2">
+          <span className="text-muted-foreground font-medium">Machines réservées</span>
+          <span className="text-sm text-muted-foreground">
+            Total: {booking.machines} machine{booking.machines > 1 ? 's' : ''}
+          </span>
+        </div>
+        {booking.bookedMachines && (booking.bookedMachines as Array<{ machineId: string; machineName: string; quantity: number }>).length > 0 ? (
+          <div className="space-y-1 ml-4">
+            {(booking.bookedMachines as Array<{ machineId: string; machineName: string; quantity: number }>).map((machine, index) => (
+              <div key={machine.machineId || index} className="flex justify-between text-sm" data-testid={`machine-${machine.machineId}`}>
+                <span className="text-foreground font-medium">• {machine.machineName}</span>
+                <span className="text-muted-foreground">× {machine.quantity}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="ml-4 text-sm text-muted-foreground">
+            {booking.machines} machine{booking.machines > 1 ? 's' : ''}
+          </div>
+        )}
       </div>
       
       {/* Price breakdown */}

@@ -82,6 +82,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertBookingSchema.parse(req.body);
       
+      const startDate = validatedData.startDate instanceof Date ? validatedData.startDate : new Date(validatedData.startDate);
+      const endDate = validatedData.endDate instanceof Date ? validatedData.endDate : new Date(validatedData.endDate);
+      
+      // Get overlapping bookings for the requested period
+      const overlappingBookings = await storage.getOverlappingBookings(startDate, endDate);
+      
+      // Validate machine availability and quantities
+      for (const bookedMachine of validatedData.bookedMachines) {
+        const machine = await storage.getMachine(bookedMachine.machineId);
+        if (!machine) {
+          return res.status(400).json({ 
+            error: `Machine "${bookedMachine.machineName}" non trouvée` 
+          });
+        }
+        
+        if (machine.status !== "AVAILABLE") {
+          return res.status(400).json({ 
+            error: `Machine "${bookedMachine.machineName}" n'est pas disponible` 
+          });
+        }
+        
+        // Calculate total quantity already booked for this machine during overlapping period
+        let bookedQuantity = 0;
+        for (const existingBooking of overlappingBookings) {
+          if (existingBooking.bookedMachines) {
+            const bookedMachinesArray = existingBooking.bookedMachines as Array<{machineId: string, machineName: string, quantity: number}>;
+            const existingMachineBooking = bookedMachinesArray.find(m => m.machineId === bookedMachine.machineId);
+            if (existingMachineBooking) {
+              bookedQuantity += existingMachineBooking.quantity;
+            }
+          }
+        }
+        
+        const availableQuantity = machine.quantity || 1;
+        const remainingQuantity = availableQuantity - bookedQuantity;
+        
+        if (bookedMachine.quantity > remainingQuantity) {
+          return res.status(400).json({ 
+            error: `Quantité demandée (${bookedMachine.quantity}) dépasse la disponibilité restante (${remainingQuantity}/${availableQuantity}) pour "${bookedMachine.machineName}" pendant cette période` 
+          });
+        }
+      }
+      
       // Get price from database based on offer
       const offer = await storage.getOfferByName(validatedData.offer);
       if (!offer) {
@@ -93,7 +136,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Prix non configuré pour cette offre" });
       }
 
-      const machineCount = validatedData.machines ?? 1;
+      // Calculate total machine count from bookedMachines
+      const machineCount = validatedData.bookedMachines.reduce((sum, m) => sum + m.quantity, 0);
       
       // Calculate number of rental days
       const rentalDays = calculateRentalDays(
@@ -630,6 +674,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customerEmail: req.query.email as string || "test@example.com",
           customerAddress: "123 Rue de Test, Pointe-à-Pitre",
           machines: 2,
+          bookedMachines: [
+            { machineId: "test-machine-1", machineName: "Ninja Slushi #1", quantity: 1 },
+            { machineId: "test-machine-2", machineName: "Ninja Slushi #2", quantity: 1 }
+          ],
           selectedSyrups: [],
           cupSize: "moyen",
           totalCents: 30000,
