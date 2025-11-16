@@ -26,6 +26,7 @@ export default function AdminMachines() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [machineName, setMachineName] = useState<string>("");
   const [machineStatus, setMachineStatus] = useState<string>("AVAILABLE");
+  const [machineQuantity, setMachineQuantity] = useState<number>(1);
   const [machineModel, setMachineModel] = useState<string>("Ninja Slushi 2,5L - 5 programmes");
   const [machineCapacity, setMachineCapacity] = useState<string>("2,5 litres");
   const [machinePrograms, setMachinePrograms] = useState<string>("Slushi, Milkshake, Frozen Drink, Smoothie, Glace italienne");
@@ -37,7 +38,7 @@ export default function AdminMachines() {
   });
 
   const createMachineMutation = useMutation({
-    mutationFn: async (data: { name: string; status: string; model?: string; capacity?: string; programs?: string[]; features?: string[]; includedServices?: string[] }) => {
+    mutationFn: async (data: { name: string; status: string; quantity?: number; model?: string; capacity?: string; programs?: string[]; features?: string[]; includedServices?: string[] }) => {
       const response = await apiRequest('POST', '/api/admin/machines', data);
       return response.json();
     },
@@ -61,7 +62,7 @@ export default function AdminMachines() {
   });
 
   const updateMachineMutation = useMutation({
-    mutationFn: async (data: { id: string; name?: string; status?: string; model?: string; capacity?: string; programs?: string[]; features?: string[]; includedServices?: string[] }) => {
+    mutationFn: async (data: { id: string; name?: string; status?: string; quantity?: number; model?: string; capacity?: string; programs?: string[]; features?: string[]; includedServices?: string[] }) => {
       const response = await apiRequest('PATCH', `/api/admin/machines/${data.id}`, data);
       return response.json();
     },
@@ -110,6 +111,7 @@ export default function AdminMachines() {
   const resetForm = () => {
     setMachineName("");
     setMachineStatus("AVAILABLE");
+    setMachineQuantity(1);
     setMachineModel("Ninja Slushi 2,5L - 5 programmes");
     setMachineCapacity("2,5 litres");
     setMachinePrograms("Slushi, Milkshake, Frozen Drink, Smoothie, Glace italienne");
@@ -130,6 +132,7 @@ export default function AdminMachines() {
     createMachineMutation.mutate({
       name: machineName,
       status: machineStatus,
+      quantity: machineQuantity,
       model: machineModel,
       capacity: machineCapacity,
       programs: machinePrograms.split(',').map(p => p.trim()).filter(Boolean),
@@ -144,6 +147,7 @@ export default function AdminMachines() {
     const updates: any = {};
     if (machineName) updates.name = machineName;
     if (machineStatus) updates.status = machineStatus;
+    if (machineQuantity !== undefined) updates.quantity = machineQuantity;
     if (machineModel) updates.model = machineModel;
     if (machineCapacity) updates.capacity = machineCapacity;
     if (machinePrograms) updates.programs = machinePrograms.split(',').map(p => p.trim()).filter(Boolean);
@@ -160,6 +164,7 @@ export default function AdminMachines() {
     setEditingMachine(machine);
     setMachineName(machine.name);
     setMachineStatus(machine.status);
+    setMachineQuantity(machine.quantity || 1);
     setMachineModel(machine.model || "Ninja Slushi 2,5L - 5 programmes");
     setMachineCapacity(machine.capacity || "2,5 litres");
     setMachinePrograms((machine.programs as string[] || []).join(', '));
@@ -266,6 +271,18 @@ export default function AdminMachines() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="machine-quantity">Quantité disponible</Label>
+                      <Input
+                        id="machine-quantity"
+                        type="number"
+                        min="1"
+                        placeholder="Ex: 1"
+                        value={machineQuantity}
+                        onChange={(e) => setMachineQuantity(parseInt(e.target.value) || 1)}
+                        data-testid="input-machine-quantity"
+                      />
                     </div>
                     <div>
                       <Label htmlFor="machine-model">Modèle</Label>
@@ -400,6 +417,17 @@ export default function AdminMachines() {
                                         ))}
                                       </SelectContent>
                                     </Select>
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-machine-quantity">Quantité disponible</Label>
+                                    <Input
+                                      id="edit-machine-quantity"
+                                      type="number"
+                                      min="1"
+                                      value={machineQuantity}
+                                      onChange={(e) => setMachineQuantity(parseInt(e.target.value) || 1)}
+                                      data-testid="input-edit-machine-quantity"
+                                    />
                                   </div>
                                   <div>
                                     <Label htmlFor="edit-machine-model">Modèle</Label>

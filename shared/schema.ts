@@ -7,6 +7,7 @@ export const machines = pgTable("machines", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().default("Ninja Slushi"),
   status: text("status").notNull().default("AVAILABLE"), // AVAILABLE, UNAVAILABLE, MAINTENANCE
+  quantity: integer("quantity").notNull().default(1), // Quantité disponible de cette machine
   model: text("model"),
   capacity: text("capacity"),
   programs: json("programs").$type<string[]>(), // Array of program names
@@ -57,7 +58,8 @@ export const bookings = pgTable("bookings", {
   customerPhone: text("customer_phone").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerAddress: text("customer_address"),
-  machines: integer("machines").notNull().default(1),
+  machines: integer("machines").notNull().default(1), // Legacy: nombre total de machines
+  bookedMachines: json("booked_machines").$type<Array<{machineId: string, machineName: string, quantity: number}>>(), // Détail des machines réservées
   selectedSyrups: json("selected_syrups").default([]), // Array of { syrupId: string, quantity: number }
   cupSize: text("cup_size").default("moyen"), // "petit", "moyen", "grand"
   totalCents: integer("total_cents").notNull().default(0),
@@ -78,6 +80,7 @@ export const insertMachineSchema = createInsertSchema(machines).omit({
   updatedAt: true,
 }).extend({
   name: z.string().min(1, "Le nom de la machine est requis").default("Ninja Slushi"),
+  quantity: z.number().int().min(1).default(1),
   model: z.string().optional(),
   capacity: z.string().optional(),
   programs: z.array(z.string()).optional(),
