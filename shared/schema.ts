@@ -7,6 +7,11 @@ export const machines = pgTable("machines", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().default("Ninja Slushi"),
   status: text("status").notNull().default("AVAILABLE"), // AVAILABLE, UNAVAILABLE, MAINTENANCE
+  model: text("model"),
+  capacity: text("capacity"),
+  programs: json("programs").$type<string[]>(), // Array of program names
+  features: json("features").$type<string[]>(), // Array of features
+  includedServices: json("included_services").$type<string[]>(), // Array of services with icons
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -73,6 +78,11 @@ export const insertMachineSchema = createInsertSchema(machines).omit({
   updatedAt: true,
 }).extend({
   name: z.string().min(1, "Le nom de la machine est requis").default("Ninja Slushi"),
+  model: z.string().optional(),
+  capacity: z.string().optional(),
+  programs: z.array(z.string()).optional(),
+  features: z.array(z.string()).optional(),
+  includedServices: z.array(z.string()).optional(),
   status: z.string().default("AVAILABLE"),
 });
 

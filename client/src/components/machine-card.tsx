@@ -63,39 +63,51 @@ export default function MachineCard({ machine }: MachineCardProps) {
         <div className="bg-muted/50 rounded-2xl p-4 mb-6">
           <h4 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
             <Snowflake className="w-4 h-4 text-primary" />
-            Ninja Slushi 2,5L - 5 programmes
+            {machine.model || "Ninja Slushi 2,5L - 5 programmes"}
           </h4>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2" data-testid={`feature-capacity-${machine.id}`}>
-              <Droplets className="w-4 h-4 text-primary" />
-              <span><strong>Capacité :</strong> 2,5 litres</span>
-            </div>
-            <div className="flex items-center gap-2" data-testid={`feature-programs-${machine.id}`}>
-              <Zap className="w-4 h-4 text-primary" />
-              <span><strong>5 programmes :</strong> Slushi, Milkshake, Frozen Drink, Smoothie, Glace italienne</span>
-            </div>
-            <div className="flex items-center gap-2" data-testid={`feature-cooling-${machine.id}`}>
-              <ThermometerSnowflake className="w-4 h-4 text-primary" />
-              <span>Refroidissement rapide et efficace</span>
-            </div>
-            <div className="flex items-center gap-2" data-testid={`feature-clean-${machine.id}`}>
-              <CheckCircle className="w-4 h-4 text-success" />
-              <span>Facile à nettoyer</span>
-            </div>
+            {machine.capacity && (
+              <div className="flex items-center gap-2" data-testid={`feature-capacity-${machine.id}`}>
+                <Droplets className="w-4 h-4 text-primary" />
+                <span><strong>Capacité :</strong> {machine.capacity}</span>
+              </div>
+            )}
+            {machine.programs && (machine.programs as string[]).length > 0 && (
+              <div className="flex items-center gap-2" data-testid={`feature-programs-${machine.id}`}>
+                <Zap className="w-4 h-4 text-primary" />
+                <span><strong>{(machine.programs as string[]).length} programmes :</strong> {(machine.programs as string[]).join(', ')}</span>
+              </div>
+            )}
+            {machine.features && (machine.features as string[]).map((feature, idx) => (
+              <div key={idx} className="flex items-center gap-2" data-testid={`feature-${idx}-${machine.id}`}>
+                {idx === 0 ? <ThermometerSnowflake className="w-4 h-4 text-primary" /> : <CheckCircle className="w-4 h-4 text-success" />}
+                <span>{feature}</span>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="mb-6">
           <div className="text-xs text-muted-foreground space-y-1">
-            <p className="flex items-center gap-2">
-              ✅ Livraison et installation incluses
-            </p>
-            <p className="flex items-center gap-2">
-              📖 Manuel d'utilisation fourni
-            </p>
-            <p className="flex items-center gap-2">
-              🎯 Support technique 7j/7
-            </p>
+            {machine.includedServices && (machine.includedServices as string[]).length > 0 ? (
+              (machine.includedServices as string[]).map((service, idx) => (
+                <p key={idx} className="flex items-center gap-2" data-testid={`service-${idx}-${machine.id}`}>
+                  {service}
+                </p>
+              ))
+            ) : (
+              <>
+                <p className="flex items-center gap-2">
+                  ✅ Livraison et installation incluses
+                </p>
+                <p className="flex items-center gap-2">
+                  📖 Manuel d'utilisation fourni
+                </p>
+                <p className="flex items-center gap-2">
+                  🎯 Support technique 7j/7
+                </p>
+              </>
+            )}
           </div>
         </div>
         

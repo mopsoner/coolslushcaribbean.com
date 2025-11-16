@@ -26,13 +26,18 @@ export default function AdminMachines() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [machineName, setMachineName] = useState<string>("");
   const [machineStatus, setMachineStatus] = useState<string>("AVAILABLE");
+  const [machineModel, setMachineModel] = useState<string>("Ninja Slushi 2,5L - 5 programmes");
+  const [machineCapacity, setMachineCapacity] = useState<string>("2,5 litres");
+  const [machinePrograms, setMachinePrograms] = useState<string>("Slushi, Milkshake, Frozen Drink, Smoothie, Glace italienne");
+  const [machineFeatures, setMachineFeatures] = useState<string>("Refroidissement rapide et efficace, Facile à nettoyer");
+  const [machineServices, setMachineServices] = useState<string>("✅ Livraison et installation incluses, 📖 Manuel d'utilisation fourni, 🎯 Support technique 7j/7");
 
   const { data: machines, isLoading } = useQuery<Machine[]>({
     queryKey: ['/api/machines'],
   });
 
   const createMachineMutation = useMutation({
-    mutationFn: async (data: { name: string; status: string }) => {
+    mutationFn: async (data: { name: string; status: string; model?: string; capacity?: string; programs?: string[]; features?: string[]; includedServices?: string[] }) => {
       const response = await apiRequest('POST', '/api/admin/machines', data);
       return response.json();
     },
@@ -56,7 +61,7 @@ export default function AdminMachines() {
   });
 
   const updateMachineMutation = useMutation({
-    mutationFn: async (data: { id: string; name?: string; status?: string }) => {
+    mutationFn: async (data: { id: string; name?: string; status?: string; model?: string; capacity?: string; programs?: string[]; features?: string[]; includedServices?: string[] }) => {
       const response = await apiRequest('PATCH', `/api/admin/machines/${data.id}`, data);
       return response.json();
     },
@@ -105,6 +110,11 @@ export default function AdminMachines() {
   const resetForm = () => {
     setMachineName("");
     setMachineStatus("AVAILABLE");
+    setMachineModel("Ninja Slushi 2,5L - 5 programmes");
+    setMachineCapacity("2,5 litres");
+    setMachinePrograms("Slushi, Milkshake, Frozen Drink, Smoothie, Glace italienne");
+    setMachineFeatures("Refroidissement rapide et efficace, Facile à nettoyer");
+    setMachineServices("✅ Livraison et installation incluses, 📖 Manuel d'utilisation fourni, 🎯 Support technique 7j/7");
   };
 
   const handleCreate = () => {
@@ -120,6 +130,11 @@ export default function AdminMachines() {
     createMachineMutation.mutate({
       name: machineName,
       status: machineStatus,
+      model: machineModel,
+      capacity: machineCapacity,
+      programs: machinePrograms.split(',').map(p => p.trim()).filter(Boolean),
+      features: machineFeatures.split(',').map(f => f.trim()).filter(Boolean),
+      includedServices: machineServices.split(',').map(s => s.trim()).filter(Boolean),
     });
   };
 
@@ -129,6 +144,11 @@ export default function AdminMachines() {
     const updates: any = {};
     if (machineName) updates.name = machineName;
     if (machineStatus) updates.status = machineStatus;
+    if (machineModel) updates.model = machineModel;
+    if (machineCapacity) updates.capacity = machineCapacity;
+    if (machinePrograms) updates.programs = machinePrograms.split(',').map(p => p.trim()).filter(Boolean);
+    if (machineFeatures) updates.features = machineFeatures.split(',').map(f => f.trim()).filter(Boolean);
+    if (machineServices) updates.includedServices = machineServices.split(',').map(s => s.trim()).filter(Boolean);
 
     updateMachineMutation.mutate({
       id: editingMachine.id,
@@ -140,6 +160,11 @@ export default function AdminMachines() {
     setEditingMachine(machine);
     setMachineName(machine.name);
     setMachineStatus(machine.status);
+    setMachineModel(machine.model || "Ninja Slushi 2,5L - 5 programmes");
+    setMachineCapacity(machine.capacity || "2,5 litres");
+    setMachinePrograms((machine.programs as string[] || []).join(', '));
+    setMachineFeatures((machine.features as string[] || []).join(', '));
+    setMachineServices((machine.includedServices as string[] || []).join(', '));
   };
 
   const getStatusBadge = (status: string) => {
@@ -213,10 +238,10 @@ export default function AdminMachines() {
                   <DialogHeader>
                     <DialogTitle>Ajouter une machine</DialogTitle>
                     <DialogDescription>
-                      Créez une nouvelle machine avec son nom et son statut
+                      Créez une nouvelle machine avec ses caractéristiques techniques
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
+                  <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
                     <div>
                       <Label htmlFor="machine-name">Nom de la machine</Label>
                       <Input
@@ -241,6 +266,56 @@ export default function AdminMachines() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="machine-model">Modèle</Label>
+                      <Input
+                        id="machine-model"
+                        placeholder="Ex: Ninja Slushi 2,5L - 5 programmes"
+                        value={machineModel}
+                        onChange={(e) => setMachineModel(e.target.value)}
+                        data-testid="input-machine-model"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="machine-capacity">Capacité</Label>
+                      <Input
+                        id="machine-capacity"
+                        placeholder="Ex: 2,5 litres"
+                        value={machineCapacity}
+                        onChange={(e) => setMachineCapacity(e.target.value)}
+                        data-testid="input-machine-capacity"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="machine-programs">Programmes (séparés par des virgules)</Label>
+                      <Input
+                        id="machine-programs"
+                        placeholder="Ex: Slushi, Milkshake, Frozen Drink"
+                        value={machinePrograms}
+                        onChange={(e) => setMachinePrograms(e.target.value)}
+                        data-testid="input-machine-programs"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="machine-features">Fonctionnalités (séparées par des virgules)</Label>
+                      <Input
+                        id="machine-features"
+                        placeholder="Ex: Refroidissement rapide, Facile à nettoyer"
+                        value={machineFeatures}
+                        onChange={(e) => setMachineFeatures(e.target.value)}
+                        data-testid="input-machine-features"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="machine-services">Services inclus (séparés par des virgules)</Label>
+                      <Input
+                        id="machine-services"
+                        placeholder="Ex: ✅ Livraison incluse, 📖 Manuel fourni"
+                        value={machineServices}
+                        onChange={(e) => setMachineServices(e.target.value)}
+                        data-testid="input-machine-services"
+                      />
                     </div>
                   </div>
                   <DialogFooter>
@@ -298,10 +373,10 @@ export default function AdminMachines() {
                                 <DialogHeader>
                                   <DialogTitle>Modifier la machine</DialogTitle>
                                   <DialogDescription>
-                                    Modifiez le nom ou le statut de la machine
+                                    Modifiez les caractéristiques techniques de la machine
                                   </DialogDescription>
                                 </DialogHeader>
-                                <div className="space-y-4 py-4">
+                                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
                                   <div>
                                     <Label htmlFor="edit-machine-name">Nom de la machine</Label>
                                     <Input
@@ -325,6 +400,51 @@ export default function AdminMachines() {
                                         ))}
                                       </SelectContent>
                                     </Select>
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-machine-model">Modèle</Label>
+                                    <Input
+                                      id="edit-machine-model"
+                                      value={machineModel}
+                                      onChange={(e) => setMachineModel(e.target.value)}
+                                      data-testid="input-edit-machine-model"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-machine-capacity">Capacité</Label>
+                                    <Input
+                                      id="edit-machine-capacity"
+                                      value={machineCapacity}
+                                      onChange={(e) => setMachineCapacity(e.target.value)}
+                                      data-testid="input-edit-machine-capacity"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-machine-programs">Programmes (séparés par des virgules)</Label>
+                                    <Input
+                                      id="edit-machine-programs"
+                                      value={machinePrograms}
+                                      onChange={(e) => setMachinePrograms(e.target.value)}
+                                      data-testid="input-edit-machine-programs"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-machine-features">Fonctionnalités (séparées par des virgules)</Label>
+                                    <Input
+                                      id="edit-machine-features"
+                                      value={machineFeatures}
+                                      onChange={(e) => setMachineFeatures(e.target.value)}
+                                      data-testid="input-edit-machine-features"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-machine-services">Services inclus (séparés par des virgules)</Label>
+                                    <Input
+                                      id="edit-machine-services"
+                                      value={machineServices}
+                                      onChange={(e) => setMachineServices(e.target.value)}
+                                      data-testid="input-edit-machine-services"
+                                    />
                                   </div>
                                 </div>
                                 <DialogFooter>
