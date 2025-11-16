@@ -6,6 +6,24 @@ Cool'Slush is a web application for renting Ninja Slushi 2,5L professional machi
 
 ## Recent Changes (November 16, 2025)
 
+### Admin Authentication & SEO Tracking System (Latest)
+- **Admin Authentication**: Implemented password-based admin authentication using JWT tokens stored in Replit secrets
+  - Login page at `/admin/login` (not publicly linked)
+  - Token-based authentication with server-side verification via `/api/auth/check`
+  - All `/api/admin/*` routes protected with `requireAdmin` middleware
+  - Frontend auth guards redirect unauthenticated users to login
+  - Automatic token invalidation on 401 responses
+- **SEO Tracking Codes Management**: New `/admin/settings` page for managing third-party tracking codes
+  - Support for Google Analytics 4, Facebook Pixel, Google Tag Manager, Microsoft Clarity, and TikTok Pixel
+  - Database-driven settings with active/inactive toggle
+  - Strict format validation to prevent XSS attacks
+  - TrackingScripts component auto-injects validated codes into page `<head>`
+- **Security Hardening**: 
+  - Server-side token validation for all admin operations
+  - Client-side auth verification with automatic redirect
+  - Tracking code format validation with regex patterns
+  - 401 error handling with automatic token cleanup
+
 ### Swikly iframe Integration
 - **Embedded iframe**: Swikly validation now displays in an embedded iframe (700px height) instead of opening a new tab when user chooses "Payer maintenant"
 - **Enhanced UX**: Spinner during iframe loading, styled container with border and shadow, informational messages about automatic redirection
@@ -36,7 +54,7 @@ Preferred communication style: Simple, everyday language.
 - **UI Components**: Shadcn/ui (Radix UI primitives) and TailwindCSS for styling with a tropical theme.
 - **State Management**: TanStack Query for server state, React Hook Form with Zod for form validation, and React hooks for local UI state.
 - **Design Patterns**: Path aliases for clean imports, component co-location, custom hooks for reusable logic, and clear separation of page and reusable components.
-- **Key Pages**: Home, Booking, Checkout, Success, Recipes (showcasing 5 machine programs), Admin panels (Bookings, Machines, Pricing, Syrups), and Legal pages.
+- **Key Pages**: Home, Booking, Checkout, Success, Admin panels (Login, Bookings, Machines, Pricing, Syrups, Settings), and Legal pages.
 
 ### Backend
 
@@ -48,7 +66,7 @@ Preferred communication style: Simple, everyday language.
 
 - **Database**: PostgreSQL via Neon serverless database, utilizing connection pooling and WebSocket configuration.
 - **ORM**: Drizzle ORM for type-safe queries and schema definition, with Drizzle Kit for migrations.
-- **Data Models**: Includes `Machines` (Ninja Slushi inventory), `Bookings` for reservations, `Offers` for rental packages with descriptions, `Offer Machine Prices` for overrides, and `Syrups` for flavor catalog.
+- **Data Models**: Includes `Machines` (Ninja Slushi inventory), `Bookings` for reservations, `Offers` for rental packages with descriptions, `Offer Machine Prices` for overrides, `Syrups` for flavor catalog, and `Settings` for SEO tracking codes.
 - **Validation**: Shared Zod schemas between client and server for consistent validation.
 
 ### Unified Pricing System
@@ -65,9 +83,20 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication and Authorization
 
-- **Current Status**: No authentication implemented for admin routes, which are publicly accessible. Session management infrastructure is present but unused.
-- **Security Warning**: Critical need for authentication on admin routes and verification of Swikly webhooks before production.
-- **Implemented Hardening**: Server-side validation for Stripe payment amounts, Drizzle ORM for SQL injection prevention, React XSS sanitization, and Zod for input validation.
+- **Admin Authentication**: Password-based JWT authentication system protecting all admin routes
+  - Password stored in Replit secret `ADMIN_PASSWORD`
+  - JWT tokens with 7-day expiration
+  - Middleware `requireAdmin` protects all `/api/admin/*` endpoints
+  - Frontend auth guard `useAdminAuth` verifies tokens and redirects unauthorized users
+  - Automatic token cleanup on 401 responses
+- **Security Implementation**: 
+  - Server-side token validation via `/api/auth/check`
+  - Bearer token authentication in HTTP headers
+  - XSS prevention through tracking code format validation
+  - Server-side validation for Stripe payment amounts
+  - Drizzle ORM for SQL injection prevention
+  - Zod for input validation
+- **Future Work**: Swikly webhook verification still needed before production
 
 ### Payment & Deposit Flow (Updated November 16, 2025)
 
@@ -97,7 +126,6 @@ Preferred communication style: Simple, everyday language.
   4. Smoothie - Healthy fruit smoothies
   5. Italian Ice Cream - Soft-serve ice cream
 - **Brand**: All machines are professional Ninja brand (no longer EZBASICS)
-- **Recipe Page**: Platform includes a `/recipes` page with 10+ recipes showcasing all 5 machine programs to inspire customers
 
 ## External Dependencies
 
