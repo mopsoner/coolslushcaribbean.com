@@ -10,14 +10,16 @@ async function getTransporter() {
 
   // If SMTP credentials are provided, use them
   if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
+    const smtpUser = process.env.SMTP_USER?.toLowerCase() || '';
     const config: any = {
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT),
       secure: process.env.SMTP_SECURE === 'true',
-      auth: process.env.SMTP_USER && process.env.SMTP_PASS ? {
-        user: process.env.SMTP_USER,
+      auth: smtpUser && process.env.SMTP_PASS ? {
+        user: smtpUser,
         pass: process.env.SMTP_PASS,
       } : undefined,
+      authMethod: 'LOGIN',
       tls: {
         rejectUnauthorized: true,
         minVersion: 'TLSv1.2'
