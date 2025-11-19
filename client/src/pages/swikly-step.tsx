@@ -95,11 +95,13 @@ export default function SwiklyStep() {
           
           console.log('[swikly-step] Swikly URL received:', data.swiklyUrl);
           console.log('[swikly-step] Is real Swikly URL:', isRealSwiklyUrl);
+          console.log('[swikly-step] URL domain:', new URL(data.swiklyUrl).hostname);
           
           // Always display the Swikly step, whether it's a real URL or fallback
           // If it's a fallback, the user will see options to complete the caution later
           setSwiklyUrl(data.swiklyUrl);
         } else {
+          console.error('[swikly-step] No Swikly URL in response:', data);
           throw new Error("Impossible de créer la demande de caution Swikly");
         }
       } catch (err: any) {
@@ -300,9 +302,13 @@ export default function SwiklyStep() {
                       className="w-full h-[700px] border-0"
                       title="Swikly - Validation de caution"
                       onLoad={() => setIframeLoaded(true)}
+                      onError={(e) => {
+                        console.error('[swikly-step] Iframe error:', e);
+                        setError("L'iframe Swikly n'a pas pu se charger. Veuillez réessayer.");
+                      }}
                       data-testid="iframe-swikly"
                       allow="payment"
-                      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-top-navigation-by-user-activation"
                     />
                   </div>
 
