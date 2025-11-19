@@ -129,7 +129,7 @@ export default function SwiklyStep() {
         
         // Stop polling after max attempts
         if (pollCount >= MAX_POLLS) {
-          console.log('Polling timeout reached');
+          console.log('[swikly-step] Polling timeout reached after', pollCount, 'attempts');
           clearInterval(interval);
           return;
         }
@@ -137,12 +137,15 @@ export default function SwiklyStep() {
         const response = await fetch(`/api/bookings/${bookingId}`);
         const data = await response.json();
         
-        if (data.bookingStatus === 'CONFIRMED') {
+        console.log('[swikly-step] Polling check #', pollCount, '- Booking status:', data.status);
+        
+        if (data.status === 'CONFIRMED') {
+          console.log('[swikly-step] Booking confirmed! Redirecting to success page');
           clearInterval(interval);
           setLocation(`/success?booking=${bookingId}`);
         }
       } catch (err) {
-        console.error('Error checking booking status:', err);
+        console.error('[swikly-step] Error checking booking status:', err);
       }
     };
 
