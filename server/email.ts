@@ -10,7 +10,18 @@ async function getTransporter() {
 
   // If SMTP credentials are provided, use them
   if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
-    const smtpUser = process.env.SMTP_USER?.toLowerCase() || '';
+    // Workaround for Replit Secrets truncation issue
+    // If SMTP_USER is truncated, reconstruct the full email
+    let smtpUser = process.env.SMTP_USER || '';
+    if (smtpUser === 'contact@coolslushlemonad') {
+      smtpUser = 'contact@coolslushlemonade.com';
+      console.log('📧 Reconstructed full email address from truncated secret');
+    }
+    
+    console.log('🔍 SMTP Configuration:');
+    console.log('  Username:', smtpUser);
+    console.log('  Password length:', process.env.SMTP_PASS?.length);
+    
     const config: any = {
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT),
@@ -40,7 +51,8 @@ async function getTransporter() {
         host: config.host,
         port: config.port,
         secure: config.secure,
-        user: config.auth?.user
+        user: config.auth?.user,
+        userLength: config.auth?.user?.length
       });
     }
   } else {
