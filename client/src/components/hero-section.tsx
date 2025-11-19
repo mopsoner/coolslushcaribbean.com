@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Calendar, Play, CheckCircle } from "lucide-react";
+import slushieImage from "@assets/generated_images/Colorful_frozen_slushie_drink_68f6a306.png";
 
 export default function HeroSection() {
   return (
@@ -13,10 +14,10 @@ export default function HeroSection() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="text-white">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-              Location de machines à granité professionnelles
+              Location de machines à Slushie professionnelles
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-white/90">
-              Rafraîchissez vos événements avec nos machines professionnelles. Livraison incluse, caution en ligne sécurisée.
+              Rafraîchissez vos événements avec nos Slushies professionnelles. Livraison incluse, caution en ligne sécurisée.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link 
@@ -55,8 +56,8 @@ export default function HeroSection() {
           <div className="relative">
             <div className="absolute -inset-4 bg-white/20 rounded-3xl blur-2xl"></div>
             <img 
-              src="https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=800&h=900" 
-              alt="Colorful granita drinks at tropical beach party" 
+              src={slushieImage} 
+              alt="Boisson Slushie glacée colorée professionnelle" 
               className="relative rounded-3xl shadow-2xl w-full h-auto object-cover"
               data-testid="img-hero"
             />

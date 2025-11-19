@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,6 +21,7 @@ type OfferWithPricing = {
   id: string;
   name: string;
   description: string | null;
+  details: string | null;
   basePriceCents: number;
   active: boolean;
   createdAt: string;
@@ -49,6 +51,7 @@ export default function AdminPricing() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [offerName, setOfferName] = useState("");
   const [offerDescription, setOfferDescription] = useState("");
+  const [offerDetails, setOfferDetails] = useState("");
   const [basePriceEuros, setBasePriceEuros] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [machinePriceOverrides, setMachinePriceOverrides] = useState<MachinePriceOverride[]>([]);
@@ -65,6 +68,7 @@ export default function AdminPricing() {
     mutationFn: async (data: {
       name: string;
       description?: string;
+      details?: string;
       basePriceCents: number;
       active: boolean;
       machinePriceOverrides?: MachinePriceOverride[];
@@ -96,6 +100,7 @@ export default function AdminPricing() {
       id: string;
       name?: string;
       description?: string;
+      details?: string;
       basePriceCents?: number;
       active?: boolean;
       machinePriceOverrides?: MachinePriceOverride[];
@@ -171,6 +176,7 @@ export default function AdminPricing() {
   const resetForm = () => {
     setOfferName("");
     setOfferDescription("");
+    setOfferDetails("");
     setBasePriceEuros("");
     setIsActive(true);
     setMachinePriceOverrides([]);
@@ -186,6 +192,7 @@ export default function AdminPricing() {
     setEditingOffer(offer);
     setOfferName(offer.name);
     setOfferDescription(offer.description || "");
+    setOfferDetails(offer.details || "");
     setBasePriceEuros((offer.basePriceCents / 100).toString());
     setIsActive(offer.active);
     setMachinePriceOverrides(
@@ -214,6 +221,7 @@ export default function AdminPricing() {
     const data = {
       name: offerName.trim(),
       description: offerDescription.trim() || undefined,
+      details: offerDetails.trim() || undefined,
       basePriceCents,
       active: isActive,
       machinePriceOverrides: machinePriceOverrides.filter(o => o.machineId && o.amountCents >= 0),
@@ -311,6 +319,21 @@ export default function AdminPricing() {
                       placeholder="Description de l'offre (optionnel)"
                       data-testid="input-offer-description"
                     />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="details">Détails du prix (ce qui est inclus)</Label>
+                    <Textarea
+                      id="details"
+                      value={offerDetails}
+                      onChange={(e) => setOfferDetails(e.target.value)}
+                      placeholder="Ex: Livraison incluse&#10;Installation et récupération&#10;Guide de recettes&#10;Support 7j/7"
+                      rows={4}
+                      data-testid="textarea-offer-details"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Utilisez des sauts de ligne pour créer une liste
+                    </p>
                   </div>
 
                   <div>

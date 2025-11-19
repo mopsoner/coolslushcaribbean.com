@@ -16,7 +16,7 @@ export default function Terms() {
               
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">1. Présentation du service</h2>
               <p className="text-muted-foreground">
-                Cool Slush Lemonade propose un service de location de machines à granité professionnelles 
+                Cool Slush propose un service de location de machines à Slushie professionnelles 
                 pour événements privés et professionnels.
               </p>
 
@@ -62,7 +62,7 @@ export default function Terms() {
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">6. Responsabilité</h2>
               <p className="text-muted-foreground">
-                Cool Slush Lemonade s'engage à fournir du matériel en parfait état de fonctionnement.
+                Cool Slush s'engage à fournir du matériel en parfait état de fonctionnement.
                 Le client est responsable du matériel pendant toute la durée de location.
               </p>
 

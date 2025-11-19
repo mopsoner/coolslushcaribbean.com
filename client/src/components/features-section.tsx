@@ -28,7 +28,7 @@ const features = [
   {
     icon: Utensils,
     title: "Recettes incluses",
-    description: "Guide de recettes tropicales et conseils pour réaliser les meilleurs granités et cocktails glacés.",
+    description: "Guide de recettes tropicales et conseils pour réaliser les meilleurs Slushies et cocktails glacés.",
     gradient: "gradient-sunset"
   },
   {
@@ -45,7 +45,7 @@ export default function FeaturesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-testid="text-features-title">
-            Pourquoi choisir Cool Slush Lemonade ?
+            Pourquoi choisir Cool Slush ?
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-features-subtitle">
             Nous offrons bien plus qu'une simple location de machine. Profitez d'un service complet pour vos événements.

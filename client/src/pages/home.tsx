@@ -34,7 +34,7 @@ const steps = [
   {
     number: 4,
     title: "Profitez !",
-    description: "Régalez vos invités avec de délicieux granités. Nous récupérons la machine le lendemain.",
+    description: "Régalez vos invités avec de délicieux Slushies. Nous récupérons la machine le lendemain.",
     gradient: "gradient-sunset"
   }
 ];
@@ -55,7 +55,7 @@ const testimonials = [
   {
     name: "Sophie M.",
     rating: 5,
-    comment: "Nous avons loué 2 machines pour notre mariage. Tout s'est parfaitement déroulé. Je recommande vivement Cool Slush Lemonade !",
+    comment: "Nous avons loué 2 machines pour notre mariage. Tout s'est parfaitement déroulé. Je recommande vivement Cool Slush !",
     initial: "S"
   }
 ];

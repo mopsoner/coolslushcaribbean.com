@@ -16,7 +16,7 @@ export default function Privacy() {
               
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">1. Collecte des données</h2>
               <p className="text-muted-foreground">
-                Cool Slush Lemonade collecte les données personnelles suivantes lors de votre réservation :
+                Cool Slush collecte les données personnelles suivantes lors de votre réservation :
               </p>
               <ul className="text-muted-foreground list-disc pl-6 space-y-2">
                 <li>Nom et prénom</li>

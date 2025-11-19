@@ -68,7 +68,7 @@ class SwiklyAPI {
 
       const requestBody: SwiklyDepositRequest = {
         customId: booking.id,
-        description: `Location machine à granité Cool'Slush - ${booking.offer}`,
+        description: `Location machine à Slushie Cool Slush - ${booking.offer}`,
         language: 'fr',
         firstName: firstName,
         lastName: lastName,

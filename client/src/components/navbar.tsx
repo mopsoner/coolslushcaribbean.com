@@ -8,7 +8,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center space-x-2">
             <Snowflake className="text-primary text-3xl" />
-            <span className="text-2xl font-bold text-foreground">Cool Slush Lemonade</span>
+            <span className="text-2xl font-bold text-foreground">Cool Slush</span>
           </Link>
           <div className="flex items-center space-x-6">
             <a href="#services" className="hidden md:inline text-foreground hover:text-primary transition-colors">Services</a>

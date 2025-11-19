@@ -84,7 +84,7 @@ async function getTransporter() {
 export async function sendBookingConfirmation(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush <contact@coolslushlemonade.com>';
 
     const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -96,7 +96,7 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
     const info = await transporter.sendMail({
       from: fromEmail,
       to: booking.customerEmail,
-      subject: `✅ Confirmation de réservation Cool Slush Lemonade - ${bookingDate}`,
+      subject: `✅ Confirmation de réservation Cool Slush - ${bookingDate}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -122,14 +122,14 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🍹 Cool Slush Lemonade</h1>
+              <h1>🍹 Cool Slush</h1>
               <p>Votre réservation est confirmée !</p>
             </div>
             
             <div class="content">
               <p>Bonjour ${booking.customerName},</p>
               
-              <p>Merci d'avoir réservé avec Cool Slush Lemonade ! Nous sommes ravis de vous accompagner pour votre événement.</p>
+              <p>Merci d'avoir réservé avec Cool Slush ! Nous sommes ravis de vous accompagner pour votre événement.</p>
               
               <div class="booking-details">
                 <h2 style="margin-top: 0; color: #0EA5E9;">📋 Détails de votre réservation</h2>
@@ -168,7 +168,7 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
                 </div>
                 <div class="step">
                   <span class="step-number">3</span>
-                  <strong>Profitez de votre événement</strong> - Régalez vos invités avec de délicieux granités !
+                  <strong>Profitez de votre événement</strong> - Régalez vos invités avec de délicieux Slushies !
                 </div>
                 <div class="step">
                   <span class="step-number">4</span>
@@ -191,11 +191,11 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
                 <li>Email : <a href="mailto:contact@coolslushlemonade.com">contact@coolslushlemonade.com</a></li>
               </ul>
               
-              <p style="margin-top: 30px;">À très bientôt,<br><strong>L'équipe Cool Slush Lemonade</strong></p>
+              <p style="margin-top: 30px;">À très bientôt,<br><strong>L'équipe Cool Slush</strong></p>
             </div>
             
             <div class="footer">
-              <p>Cool Slush Lemonade - Location de machines à granité professionnelles</p>
+              <p>Cool Slush - Location de machines à Slushie professionnelles</p>
               <p style="font-size: 0.8em; color: #94a3b8;">
                 Vous recevez cet email car vous avez effectué une réservation sur coolslushlemonade.com
               </p>
@@ -205,11 +205,11 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
         </html>
       `,
       text: `
-Cool Slush Lemonade - Confirmation de réservation
+Cool Slush - Confirmation de réservation
 
 Bonjour ${booking.customerName},
 
-Merci d'avoir réservé avec Cool Slush Lemonade ! Votre réservation est confirmée.
+Merci d'avoir réservé avec Cool Slush ! Votre réservation est confirmée.
 
 DÉTAILS DE VOTRE RÉSERVATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -233,9 +233,9 @@ Téléphone : 0690 12 34 56
 Email : contact@coolslushlemonade.com
 
 À très bientôt,
-L'équipe Cool Slush Lemonade
+L'équipe Cool Slush
 
-Cool Slush Lemonade - Location de machines à granité
+Cool Slush - Location de machines à Slushie
       `,
     });
 
@@ -247,7 +247,7 @@ Cool Slush Lemonade - Location de machines à granité
 export async function sendReminderEmail(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush <contact@coolslushlemonade.com>';
 
     const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -259,7 +259,7 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
     await transporter.sendMail({
       from: fromEmail,
       to: booking.customerEmail,
-      subject: `⏰ Rappel : Livraison demain - Cool Slush Lemonade`,
+      subject: `⏰ Rappel : Livraison demain - Cool Slush`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -285,7 +285,7 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
               
               <div class="reminder-box">
                 <h2 style="margin-top: 0; color: #D97706;">📦 Livraison demain !</h2>
-                <p>Votre machine à granité sera livrée <strong>${bookingDate}</strong> entre ${booking.startHour.toString().padStart(2, '0')}:00 et ${booking.endHour.toString().padStart(2, '0')}:00.</p>
+                <p>Votre machine à Slushie sera livrée <strong>${bookingDate}</strong> entre ${booking.startHour.toString().padStart(2, '0')}:00 et ${booking.endHour.toString().padStart(2, '0')}:00.</p>
               </div>
               
               <p><strong>✅ Checklist avant la livraison :</strong></p>
@@ -299,11 +299,11 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
               <p><strong>Réservation #${booking.id.slice(-8)}</strong></p>
               <p>📞 Questions ? Appelez-nous au 0690 12 34 56</p>
               
-              <p>À demain !<br><strong>L'équipe Cool Slush Lemonade</strong></p>
+              <p>À demain !<br><strong>L'équipe Cool Slush</strong></p>
             </div>
             
             <div class="footer">
-              <p>Cool Slush Lemonade</p>
+              <p>Cool Slush</p>
             </div>
           </div>
         </body>
@@ -319,7 +319,7 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
 export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush <contact@coolslushlemonade.com>';
 
     const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -412,11 +412,11 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
                 <li>📧 Email : <a href="mailto:contact@coolslushlemonade.com" style="color: #0EA5E9;">contact@coolslushlemonade.com</a></li>
               </ul>
               
-              <p style="margin-top: 30px;">À très bientôt,<br><strong>L'équipe Cool Slush Lemonade</strong></p>
+              <p style="margin-top: 30px;">À très bientôt,<br><strong>L'équipe Cool Slush</strong></p>
             </div>
             
             <div class="footer">
-              <p>Cool Slush Lemonade - Location de machines à granité professionnelles</p>
+              <p>Cool Slush - Location de machines à Slushie professionnelles</p>
               <p style="font-size: 0.8em; color: #94a3b8; margin-top: 10px;">
                 Vous recevez cet email car vous avez effectué une réservation sur coolslushlemonade.com
               </p>
@@ -426,7 +426,7 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
         </html>
       `,
       text: `
-Cool Slush Lemonade - Sécurisez votre réservation
+Cool Slush - Sécurisez votre réservation
 
 Bonjour ${booking.customerName},
 
@@ -463,9 +463,9 @@ Téléphone : 0690 12 34 56
 Email : contact@coolslushlemonade.com
 
 À très bientôt,
-L'équipe Cool Slush Lemonade
+L'équipe Cool Slush
 
-Cool Slush Lemonade - Location de machines à granité
+Cool Slush - Location de machines à Slushie
       `,
     });
 
@@ -477,7 +477,7 @@ Cool Slush Lemonade - Location de machines à granité
 export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: string, newStatus: string): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush <contact@coolslushlemonade.com>';
     
     const bookingDate = new Date(booking.startDate).toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -493,25 +493,25 @@ export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: 
 
     switch (newStatus) {
       case 'CONFIRMED':
-        subject = `✅ Réservation confirmée - Cool Slush Lemonade`;
+        subject = `✅ Réservation confirmée - Cool Slush`;
         statusMessage = 'Votre réservation est maintenant confirmée';
         statusColor = '#10B981';
         statusIcon = '✅';
         break;
       case 'CANCELLED':
-        subject = `❌ Réservation annulée - Cool Slush Lemonade`;
+        subject = `❌ Réservation annulée - Cool Slush`;
         statusMessage = 'Votre réservation a été annulée';
         statusColor = '#EF4444';
         statusIcon = '❌';
         break;
       case 'PENDING':
-        subject = `⏳ Statut de votre réservation - Cool Slush Lemonade`;
+        subject = `⏳ Statut de votre réservation - Cool Slush`;
         statusMessage = 'Votre réservation est en attente';
         statusColor = '#F59E0B';
         statusIcon = '⏳';
         break;
       default:
-        subject = `Mise à jour de votre réservation - Cool Slush Lemonade`;
+        subject = `Mise à jour de votre réservation - Cool Slush`;
         statusMessage = `Le statut de votre réservation a changé`;
         statusColor = '#0EA5E9';
         statusIcon = 'ℹ️';
@@ -599,11 +599,11 @@ export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: 
                 <li>📧 Email : <a href="mailto:contact@coolslushlemonade.com" style="color: #0EA5E9;">contact@coolslushlemonade.com</a></li>
               </ul>
               
-              <p style="margin-top: 30px;">À très bientôt,<br><strong>L'équipe Cool Slush Lemonade</strong></p>
+              <p style="margin-top: 30px;">À très bientôt,<br><strong>L'équipe Cool Slush</strong></p>
             </div>
             
             <div class="footer">
-              <p>Cool Slush Lemonade - Location de machines à granité professionnelles</p>
+              <p>Cool Slush - Location de machines à Slushie professionnelles</p>
               <p style="font-size: 0.8em; color: #94a3b8; margin-top: 10px;">
                 Vous recevez cet email car vous avez effectué une réservation sur coolslushlemonade.com
               </p>
@@ -613,7 +613,7 @@ export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: 
         </html>
       `,
       text: `
-Cool Slush Lemonade - Mise à jour de votre réservation
+Cool Slush - Mise à jour de votre réservation
 
 Bonjour ${booking.customerName},
 
@@ -648,9 +648,9 @@ Téléphone : 0690 12 34 56
 Email : contact@coolslushlemonade.com
 
 À très bientôt,
-L'équipe Cool Slush Lemonade
+L'équipe Cool Slush
 
-Cool Slush Lemonade - Location de machines à granité
+Cool Slush - Location de machines à Slushie
       `,
     });
 
@@ -662,12 +662,12 @@ Cool Slush Lemonade - Location de machines à granité
 export async function sendFollowUpEmail(booking: Booking): Promise<void> {
   try {
     const transporter = await getTransporter();
-    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush Lemonade <contact@coolslushlemonade.com>';
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush <contact@coolslushlemonade.com>';
 
     await transporter.sendMail({
       from: fromEmail,
       to: booking.customerEmail,
-      subject: `⭐ Merci pour votre confiance - Cool Slush Lemonade`,
+      subject: `⭐ Merci pour votre confiance - Cool Slush`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -688,10 +688,10 @@ export async function sendFollowUpEmail(booking: Booking): Promise<void> {
             </div>
             
             <div class="content">
-              <p>Nous espérons que votre événement s'est merveilleusement bien passé et que vos invités ont adoré les granités !</p>
+              <p>Nous espérons que votre événement s'est merveilleusement bien passé et que vos invités ont adoré les Slushies !</p>
               
               <p><strong>Votre avis compte :</strong></p>
-              <p>Prenez quelques secondes pour nous laisser un avis et aider d'autres personnes à découvrir Cool Slush Lemonade.</p>
+              <p>Prenez quelques secondes pour nous laisser un avis et aider d'autres personnes à découvrir Cool Slush.</p>
               
               <p><strong>💰 Caution Swikly :</strong></p>
               <p>Votre caution a été libérée automatiquement. Vous ne serez pas débité.</p>
@@ -699,7 +699,7 @@ export async function sendFollowUpEmail(booking: Booking): Promise<void> {
               <p><strong>🎉 Location future ?</strong></p>
               <p>Profitez de 10% de réduction sur votre prochaine réservation avec le code : <strong>COOLSLUSH10</strong></p>
               
-              <p>Au plaisir de vous revoir bientôt,<br><strong>L'équipe Cool Slush Lemonade</strong></p>
+              <p>Au plaisir de vous revoir bientôt,<br><strong>L'équipe Cool Slush</strong></p>
               
               <p style="text-align: center; margin-top: 30px;">
                 <a href="tel:+590690123456" style="color: #0EA5E9;">0690 12 34 56</a> • 
@@ -708,7 +708,7 @@ export async function sendFollowUpEmail(booking: Booking): Promise<void> {
             </div>
             
             <div class="footer">
-              <p>Cool Slush Lemonade</p>
+              <p>Cool Slush</p>
             </div>
           </div>
         </body>

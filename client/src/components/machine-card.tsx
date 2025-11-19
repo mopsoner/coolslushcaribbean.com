@@ -36,7 +36,7 @@ export default function MachineCard({ machine }: MachineCardProps) {
       <div className="relative">
         <img 
           src="https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400" 
-          alt="Machine à granité Ninja professionnelle" 
+          alt="Machine à Slushie Ninja professionnelle" 
           className={`w-full h-56 object-cover ${!isAvailable ? 'grayscale' : ''}`}
           data-testid={`img-machine-${machine.id}`}
         />

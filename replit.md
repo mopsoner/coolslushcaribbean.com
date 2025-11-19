@@ -1,13 +1,14 @@
-# Cool Slush Lemonade - Ninja Slushi Machine Rental Platform
+# Cool Slush - Ninja Slushi Machine Rental Platform
 
 ## Overview
 
-Cool Slush Lemonade is a web application for renting Ninja Slushi 2,5L professional machines. The platform features machines with 5 programs (Slushi, Milkshake, Frozen Drink, Smoothie, and Italian Ice Cream), allowing customers to browse available machines, make bookings, and complete secure payments via Stripe, with deposits of 150€ per machine managed through Swikly. The platform provides a complete booking workflow, including email notifications, a recipe page showcasing the machine's capabilities, and comprehensive administrative tools for managing bookings, machines, pricing, and syrups. The platform offers a seamless and secure booking experience with professional IONOS email service.
+Cool Slush is a web application for renting Ninja Slushi 2,5L professional machines. The platform features machines with 5 programs (Slushi, Milkshake, Frozen Drink, Smoothie, and Italian Ice Cream), allowing customers to browse available machines, make bookings, and complete secure payments via Stripe, with deposits of 150€ per machine managed through Swikly. The platform provides a complete booking workflow, including email notifications, a recipe page showcasing the machine's capabilities, and comprehensive administrative tools for managing bookings, machines, pricing, and syrups. The platform offers a seamless and secure booking experience with professional IONOS email service.
 
 ## Recent Changes (November 16, 2025)
 
-### Rebranding to Cool Slush Lemonade (Latest)
-- **Brand Name**: Updated from "Cool'Slush Guadeloupe" to "Cool Slush Lemonade"
+### Rebranding to Cool Slush (Latest - November 19, 2025)
+- **Brand Name**: Updated from "Cool Slush Lemonade" to "Cool Slush" (shorter, more impactful)
+- **Terminology**: Replaced all "machine à granité" references with "machine à Slushie"
 - **Domain & Email**: Configured for coolslushlemonade.com with contact@coolslushlemonade.com
 - **Email Service**: Integrated IONOS SMTP for professional email delivery
   - SMTP Host: smtp.ionos.fr

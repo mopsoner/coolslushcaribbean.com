@@ -14,15 +14,15 @@ export default function Mentions() {
             <CardContent className="p-8 prose prose-slate max-w-none">
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">1. Éditeur du site</h2>
               <p className="text-muted-foreground">
-                <strong>Cool Slush Lemonade</strong><br/>
-                Location de machines à granité professionnelles<br/>
+                <strong>Cool Slush</strong><br/>
+                Location de machines à Slushie professionnelles<br/>
                 Téléphone : <a href="tel:+590690123456" className="text-primary hover:underline">0690 12 34 56</a><br/>
                 Email : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a>
               </p>
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">2. Directeur de publication</h2>
               <p className="text-muted-foreground">
-                Le directeur de la publication est le représentant légal de Cool Slush Lemonade.
+                Le directeur de la publication est le représentant légal de Cool Slush.
               </p>
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">3. Hébergement</h2>
@@ -37,7 +37,7 @@ export default function Mentions() {
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">4. Propriété intellectuelle</h2>
               <p className="text-muted-foreground">
-                L'ensemble de ce site (structure, textes, logos, images) est la propriété exclusive de Cool Slush Lemonade,
+                L'ensemble de ce site (structure, textes, logos, images) est la propriété exclusive de Cool Slush,
                 sauf mentions contraires. Toute reproduction, même partielle, est interdite sans autorisation préalable.
               </p>
 
@@ -59,7 +59,7 @@ export default function Mentions() {
 
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">7. Limitation de responsabilité</h2>
               <p className="text-muted-foreground">
-                Cool Slush Lemonade s'efforce d'assurer l'exactitude des informations diffusées sur ce site,
+                Cool Slush s'efforce d'assurer l'exactitude des informations diffusées sur ce site,
                 mais ne peut garantir l'absence d'erreurs ou d'omissions. Les informations sont susceptibles d'être modifiées sans préavis.
               </p>
 

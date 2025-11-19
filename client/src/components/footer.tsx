@@ -11,10 +11,10 @@ export default function Footer() {
               <div className="w-8 h-8 gradient-tropical rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold">C</span>
               </div>
-              <span className="text-xl font-bold text-white">Cool Slush Lemonade</span>
+              <span className="text-xl font-bold text-white">Cool Slush</span>
             </div>
             <p className="text-sm text-slate-400">
-              Location de machines à granité professionnelles. Service tout inclus avec livraison.
+              Location de machines à Slushie professionnelles. Service tout inclus avec livraison.
             </p>
           </div>
 
@@ -55,7 +55,7 @@ export default function Footer() {
 
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-slate-500 mb-4 md:mb-0" data-testid="text-copyright">
-            © 2024 Cool Slush Lemonade. Tous droits réservés.
+            © 2024 Cool Slush. Tous droits réservés.
           </p>
           <div className="flex space-x-4" data-testid="social-links">
             <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary transition-colors">

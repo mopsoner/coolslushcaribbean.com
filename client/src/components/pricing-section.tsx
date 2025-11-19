@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Offer } from "@shared/schema";
 
-type OfferWithPrice = Offer & { amountCents: number };
+type OfferWithPrice = Offer & { amountCents: number; details?: string | null };
 
 const tierFeatures = {
   "1 Journée": [
@@ -64,7 +64,10 @@ export default function PricingSection() {
           ) : (
             offers?.map((offer, index) => {
               const popular = isPopular(offer.name);
-              const features = tierFeatures[offer.name as keyof typeof tierFeatures] || [];
+              // Si l'offre a des détails définis dans le BO, on les utilise, sinon on utilise les features par défaut
+              const hasCustomDetails = offer.details && offer.details.trim().length > 0;
+              const customFeatures = hasCustomDetails ? offer.details!.split('\n').filter(line => line.trim().length > 0) : [];
+              const features = hasCustomDetails ? customFeatures : (tierFeatures[offer.name as keyof typeof tierFeatures] || []);
               const period = tierPeriods[offer.name as keyof typeof tierPeriods] || "par machine";
               const isEventOffer = offer.name === "Événement";
               

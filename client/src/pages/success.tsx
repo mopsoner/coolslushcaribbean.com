@@ -113,7 +113,7 @@ export default function Success() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground mb-1">Profitez de votre événement !</h3>
-                    <p className="text-sm text-muted-foreground">Régalez vos invités avec de délicieux granités</p>
+                    <p className="text-sm text-muted-foreground">Régalez vos invités avec de délicieux Slushies</p>
                   </div>
                 </div>
               </div>
