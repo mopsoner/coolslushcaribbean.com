@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Snowflake, Zap, Droplets, ThermometerSnowflake } from "lucide-react";
 import { Machine } from "@shared/schema";
 import { Link } from "wouter";
+import ninjaSlushiImage from "@assets/stock_images/ninja_slushi_2.5l_fr_70a141d5.jpg";
 
 interface MachineCardProps {
   machine: Machine;
@@ -35,8 +36,8 @@ export default function MachineCard({ machine }: MachineCardProps) {
     <Card className={`rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105 ${!isAvailable ? 'opacity-75' : ''}`}>
       <div className="relative">
         <img 
-          src="https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400" 
-          alt="Machine à Slushie Ninja professionnelle" 
+          src={ninjaSlushiImage} 
+          alt="Machine à Slushie Ninja professionnelle 2,5L" 
           className={`w-full h-56 object-cover ${!isAvailable ? 'grayscale' : ''}`}
           data-testid={`img-machine-${machine.id}`}
         />
