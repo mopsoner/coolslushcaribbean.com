@@ -128,7 +128,7 @@ export default function Home() {
               Comment ça marche ?
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-how-it-works-subtitle">
-              4 étapes simples pour profiter de votre machine à granité
+              4 étapes simples pour profiter de votre machine à Slushie
             </p>
           </div>
 
@@ -195,7 +195,7 @@ export default function Home() {
               Ce que disent nos clients
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-testimonials-subtitle">
-              Ils ont fait confiance à Cool Slush Lemonade pour leurs événements
+              Ils ont fait confiance à Cool Slush pour leurs événements
             </p>
           </div>
 
@@ -267,7 +267,7 @@ export default function Home() {
             Prêt à rafraîchir votre événement ?
           </h2>
           <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto" data-testid="text-cta-subtitle">
-            Réservez dès maintenant votre machine à granité et profitez d'une livraison gratuite
+            Réservez dès maintenant votre machine à Slushie et profitez d'une livraison gratuite
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

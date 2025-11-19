@@ -4,9 +4,24 @@
 
 Cool Slush is a web application for renting Ninja Slushi 2,5L professional machines. The platform features machines with 5 programs (Slushi, Milkshake, Frozen Drink, Smoothie, and Italian Ice Cream), allowing customers to browse available machines, make bookings, and complete secure payments via Stripe, with deposits of 150€ per machine managed through Swikly. The platform provides a complete booking workflow, including email notifications, a recipe page showcasing the machine's capabilities, and comprehensive administrative tools for managing bookings, machines, pricing, and syrups. The platform offers a seamless and secure booking experience with professional IONOS email service.
 
-## Recent Changes (November 16, 2025)
+## Recent Changes (November 19, 2025)
 
-### Rebranding to Cool Slush (Latest - November 19, 2025)
+### Editable Pricing Details & Final Rebranding (Latest - November 19, 2025)
+- **Editable Pricing Details**: Added ability for admins to customize pricing details for each offer
+  - New `details` TEXT field in Offers table (nullable)
+  - Admin pricing page now includes textarea for editing pricing details
+  - Frontend automatically displays custom details when available, otherwise falls back to hardcoded features
+  - Details support multi-line format for creating feature lists
+- **Hero Image**: Added colorful slushie drink image to homepage hero section
+  - Generated professional slushie image using AI image generation
+  - Integrated into hero section with proper alt text and SEO optimization
+- **Final Rebranding Cleanup**: Fixed 3 missed occurrences in home.tsx
+  - Testimonials section: "Cool Slush Lemonade" → "Cool Slush"
+  - How It Works section: "machine à granité" → "machine à Slushie"
+  - CTA section: "machine à granité" → "machine à Slushie"
+  - Verified 0 occurrences of legacy terminology remain on the site
+
+### Rebranding to Cool Slush (November 19, 2025)
 - **Brand Name**: Updated from "Cool Slush Lemonade" to "Cool Slush" (shorter, more impactful)
 - **Terminology**: Replaced all "machine à granité" references with "machine à Slushie"
 - **Domain & Email**: Configured for coolslushlemonade.com with contact@coolslushlemonade.com
