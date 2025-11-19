@@ -70,6 +70,7 @@ export const bookings = pgTable("bookings", {
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   swiklyRequestId: text("swikly_request_id"),
   swiklyUrl: text("swikly_url"),
+  swiklyReturnToken: text("swikly_return_token"), // One-time token to validate Swikly return URL
   stripePaymentId: text("stripe_payment_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

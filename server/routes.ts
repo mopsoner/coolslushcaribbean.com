@@ -453,6 +453,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
       const baseUrl = `${protocol}://${host}`;
       
+      // Generate a secure one-time token for Swikly return URL validation
+      const crypto = await import('crypto');
+      const returnToken = crypto.randomBytes(32).toString('hex');
+      
+      // Store the token in the database
+      await storage.updateBooking(bookingId, { swiklyReturnToken: returnToken });
+      console.log('[confirm-payment] Generated return token for booking:', bookingId);
+      
       // Create Swikly deposit request via API
       let swiklyUrl = '';
       
@@ -463,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const swiklyClient = getSwiklyClient();
         console.log('[confirm-payment] Swikly client initialized');
         
-        const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
+        const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl, returnToken);
         console.log('[confirm-payment] Swikly API response:', JSON.stringify(swiklyResult, null, 2));
         
         if (swiklyResult.request?.link) {
@@ -579,6 +587,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('[swikly-callback] Error processing webhook:', error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Swikly return URL handler - called by Swikly after user validates deposit
+  // This provides automatic redirection without relying on webhooks
+  app.get("/api/swikly-return", async (req, res) => {
+    try {
+      const bookingId = req.query.booking as string;
+      const providedToken = req.query.token as string;
+      
+      console.log('[swikly-return] Return URL called by Swikly for booking:', bookingId);
+      console.log('[swikly-return] Token provided:', providedToken ? 'yes' : 'no');
+      
+      if (!bookingId) {
+        console.error('[swikly-return] Missing booking ID in return URL');
+        return res.status(400).send("Missing booking ID");
+      }
+      
+      // Verify the booking exists
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        console.error('[swikly-return] Booking not found:', bookingId);
+        return res.status(404).send("Booking not found");
+      }
+      
+      // CRITICAL SECURITY CHECK: Verify the token
+      // If booking has a token (new bookings), it MUST match
+      // If booking has no token (legacy bookings), require token in URL
+      if (booking.swiklyReturnToken) {
+        // New booking with token - validate it
+        if (!providedToken) {
+          console.error('[swikly-return] Missing required security token');
+          return res.status(400).send("Unauthorized: Missing security token");
+        }
+        if (booking.swiklyReturnToken !== providedToken) {
+          console.error('[swikly-return] Token mismatch - possible security breach attempt');
+          return res.status(403).send("Unauthorized: Invalid security token");
+        }
+      } else {
+        // Legacy booking without token - reject for security
+        // This prevents anyone from confirming old bookings via this endpoint
+        console.error('[swikly-return] Legacy booking without token - use webhook instead');
+        return res.status(400).send("Cette réservation doit être confirmée via le processus standard.");
+      }
+      
+      // Check if booking is already confirmed (prevent replay attacks)
+      if (booking.status === 'CONFIRMED') {
+        console.log('[swikly-return] Booking already confirmed, redirecting to success');
+        return res.redirect(`/success?booking=${bookingId}`);
+      }
+      
+      console.log('[swikly-return] Token validated, updating booking status to CONFIRMED');
+      
+      // Clear the one-time token and update booking status to CONFIRMED
+      await storage.updateBooking(bookingId, {
+        status: 'CONFIRMED',
+        swiklyReturnToken: null, // Clear token after use (one-time use only)
+      });
+      
+      console.log('[swikly-return] Booking confirmed, redirecting to success page');
+      
+      // Redirect to success page
+      res.redirect(`/success?booking=${bookingId}`);
+    } catch (error: any) {
+      console.error('[swikly-return] Error processing return:', error);
+      res.status(500).send("Une erreur est survenue. Veuillez contacter le support.");
     }
   });
 
@@ -817,6 +891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stripePaymentIntentId: null,
           swiklyRequestId: null,
           swiklyUrl: `http://localhost:5000/swikly-redirect?booking=test-123`,
+          swiklyReturnToken: null,
           stripePaymentId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
