@@ -24,13 +24,22 @@ Cool Slush is a web application for renting Ninja Slushi 2,5L professional machi
 ### Rebranding to Cool Slush (November 19, 2025)
 - **Brand Name**: Updated from "Cool Slush Lemonade" to "Cool Slush" (shorter, more impactful)
 - **Terminology**: Replaced all "machine à granité" references with "machine à Slushie"
-- **Domain & Email**: Configured for coolslushlemonade.com with contact@coolslushlemonade.com
+- **Domain & Email**: Configured for coolslushcaribbean.com with contact@coolslushlemonade.com
 - **Email Service**: Integrated IONOS SMTP for professional email delivery
   - SMTP Host: smtp.ionos.fr
   - Port: 587 (STARTTLS)
   - Email credentials stored in Replit secrets (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE, EMAIL_FROM)
 - **SEO Optimization**: Updated meta tags, Open Graph tags, and page titles for better search visibility
 - **Content Updates**: All pages, email templates, and legal documents updated with new brand name
+
+### Swikly Webhook Configuration (November 19, 2025)
+- **Webhook Endpoint**: Fixed webhook handler to properly extract booking ID from Swikly callbacks
+  - Webhook URL: `https://coolslushcaribbean.com/api/swikly-callback`
+  - Accepts `customId`, `reference`, or `request.customId` fields from Swikly
+  - Validates booking exists before updating status
+  - Status codes accepted: `completed`, `accepted`, `validated`
+- **Security**: Rejects webhooks without valid booking identifiers, preventing unauthorized status updates
+- **Configuration Required**: Webhook must be configured in Swikly production account settings for automatic redirection after deposit validation
 
 ### Admin Authentication & SEO Tracking System
 - **Admin Authentication**: Implemented password-based admin authentication using JWT tokens stored in Replit secrets
