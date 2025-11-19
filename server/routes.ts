@@ -535,16 +535,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Swikly callback handler - called by Swikly when deposit is completed
   app.post("/api/swikly-callback", async (req, res) => {
     try {
-      const { swikId, status } = req.body;
+      console.log('[swikly-callback] Webhook received from Swikly:', JSON.stringify(req.body, null, 2));
+      
+      const { customId, reference, status, request } = req.body;
+      
+      // Swikly should send the booking ID we provided as customId
+      // We accept customId, reference, or request.customId (documented Swikly fields)
+      // We do NOT accept swikId as it's the Swikly request ID, not our booking ID
+      const bookingId = customId || reference || request?.customId;
+      
+      if (!bookingId) {
+        console.error('[swikly-callback] No valid booking ID found in webhook payload. Expected customId, reference, or request.customId');
+        return res.status(400).json({ 
+          error: 'Missing booking identifier',
+          message: 'Expected customId field in webhook payload'
+        });
+      }
+      
+      console.log('[swikly-callback] Extracted booking ID:', bookingId);
+      console.log('[swikly-callback] Deposit status:', status);
+      
+      // Verify the booking exists before updating
+      const existingBooking = await storage.getBooking(bookingId);
+      if (!existingBooking) {
+        console.error('[swikly-callback] Booking not found with ID:', bookingId);
+        return res.status(404).json({ 
+          error: 'Booking not found',
+          bookingId: bookingId
+        });
+      }
       
       // Update booking status based on Swikly callback
-      if (status === 'completed' || status === 'accepted') {
-        await storage.updateBookingStatus(swikId, "CONFIRMED");
+      // Swikly may send different status values: 'completed', 'accepted', 'validated'
+      if (status === 'completed' || status === 'accepted' || status === 'validated') {
+        console.log('[swikly-callback] Updating booking status to CONFIRMED');
+        await storage.updateBookingStatus(bookingId, "CONFIRMED");
+        console.log('[swikly-callback] Booking successfully updated to CONFIRMED');
+      } else {
+        console.log('[swikly-callback] Status not actionable:', status);
       }
       
       res.json({ success: true });
     } catch (error: any) {
-      console.error('Swikly callback error:', error);
+      console.error('[swikly-callback] Error processing webhook:', error);
       res.status(500).json({ error: error.message });
     }
   });
