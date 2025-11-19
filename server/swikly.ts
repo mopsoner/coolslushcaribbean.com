@@ -179,7 +179,11 @@ export function getSwiklyClient(): SwiklyAPI {
       throw new Error('Swikly API credentials not configured. Please set SWIKLY_API_KEY and SWIKLY_ACCOUNT_ID.');
     }
 
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.SWIKLY_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.SWIKLY_ENVIRONMENT === 'production';
+
+    console.log('🔍 Swikly Configuration:');
+    console.log('  Environment:', isProduction ? 'production' : 'sandbox');
+    console.log('  API URL:', isProduction ? 'https://api.v2.swikly.com/v1' : 'https://api.sandbox.swikly.com/v1');
 
     swiklyClient = new SwiklyAPI({
       apiToken,
