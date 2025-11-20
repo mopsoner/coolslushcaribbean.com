@@ -32,15 +32,30 @@ Cool Slush is a web application for renting Ninja Slushi 2,5L professional machi
 - **SEO Optimization**: Updated meta tags, Open Graph tags, and page titles for better search visibility
 - **Content Updates**: All pages, email templates, and legal documents updated with new brand name
 
-### Swikly Webhook Configuration (November 19, 2025) ✅
-- **Webhook Endpoint**: Implemented and configured for automatic booking confirmation
+### Swikly Confirmation System (November 19, 2025) ✅
+- **Primary Method - returnUrl with Secure Token**: Immediate redirection after deposit validation
+  - When payment confirmed, generates cryptographically secure 32-byte random token
+  - Token stored in `booking.swiklyReturnToken` and sent to Swikly in `returnUrl` parameter
+  - Swikly redirects user to `/api/swikly-return?booking={id}&token={token}` after validation
+  - Server validates token (match + one-time use), updates booking to CONFIRMED, clears token, redirects to /success
+  - **Result**: Instant redirection (~1 second) - no polling needed
+  
+- **Backup Method - Webhook**: Redundant confirmation via backend webhook
   - Webhook URL: `https://coolslushcaribbean.com/api/swikly-callback`
   - Accepts `customId`, `reference`, or `request.customId` fields from Swikly
-  - Validates booking exists before updating status
   - Status codes accepted: `completed`, `accepted`, `validated`
   - **Status**: ✅ Configured in Swikly production account
-- **Security**: Rejects webhooks without valid booking identifiers, preventing unauthorized status updates
-- **Automatic Redirection**: When user validates Swikly deposit, webhook updates booking to CONFIRMED, frontend polling detects change within 3 seconds and redirects to /success page
+  - Automatically confirms booking if returnUrl fails for any reason
+  
+- **Triple Backup - Frontend Polling**: Frontend polls booking status every 3 seconds as final fallback
+  - Activates only when user chooses "Payer maintenant" option
+  - Detects booking confirmation within 3-6 seconds if both returnUrl and webhook fail
+  
+- **Security**: 
+  - Cryptographically secure random tokens (256-bit entropy)
+  - One-time use tokens (cleared after validation)
+  - Validates booking exists, payment completed, and token matches
+  - Protection against replay attacks, token guessing, and unauthorized confirmations
 
 ### Admin Authentication & SEO Tracking System
 - **Admin Authentication**: Implemented password-based admin authentication using JWT tokens stored in Replit secrets

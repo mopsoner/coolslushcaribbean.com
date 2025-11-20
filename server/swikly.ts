@@ -16,6 +16,7 @@ interface SwiklyDepositRequest {
   email?: string;
   phoneNumber?: string;
   callbackUrl?: string;
+  returnUrl?: string;
   endUser: {
     email: string;
     firstName: string;
@@ -55,7 +56,7 @@ class SwiklyAPI {
       : 'https://api.sandbox.swikly.com/v1';
   }
 
-  async createDeposit(booking: Booking, callbackBaseUrl?: string): Promise<SwiklyResponse> {
+  async createDeposit(booking: Booking, callbackBaseUrl?: string, returnToken?: string): Promise<SwiklyResponse> {
     try {
       const nameParts = booking.customerName.split(' ');
       const firstName = nameParts[0] || 'Client';
@@ -89,9 +90,18 @@ class SwiklyAPI {
         },
       };
 
+      // Add webhook callback (for backend notifications - backup confirmation)
+      // Only send to non-localhost for production/staging environments
       if (callbackBaseUrl && !callbackBaseUrl.includes('localhost')) {
-        // Add webhook callback (for backend notifications and automatic confirmation)
         requestBody.callbackUrl = `${callbackBaseUrl}/api/swikly-callback`;
+      }
+      
+      // Add return URL (for immediate user redirection after validation)
+      // Include secure token to prevent unauthorized confirmation
+      // Allow returnUrl in all environments (including localhost for testing)
+      if (callbackBaseUrl && returnToken) {
+        requestBody.returnUrl = `${callbackBaseUrl}/api/swikly-return?booking=${booking.id}&token=${returnToken}`;
+        console.log('[SwiklyAPI] returnUrl configured for immediate redirect:', requestBody.returnUrl);
       }
 
       const response = await fetch(

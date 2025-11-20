@@ -453,6 +453,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
       const baseUrl = `${protocol}://${host}`;
       
+      // Generate a secure one-time token for Swikly return URL validation
+      const crypto = await import('crypto');
+      const returnToken = crypto.randomBytes(32).toString('hex');
+      const tokenCreatedAt = new Date();
+      
+      // Store the token and timestamp in the database (will be validated when Swikly redirects user)
+      await storage.updateBooking(bookingId, { 
+        swiklyReturnToken: returnToken,
+        swiklyReturnTokenCreatedAt: tokenCreatedAt,
+      });
+      console.log('[confirm-payment] Generated secure return token for booking:', bookingId);
+      
       // Create Swikly deposit request via API
       let swiklyUrl = '';
       
@@ -463,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const swiklyClient = getSwiklyClient();
         console.log('[confirm-payment] Swikly client initialized');
         
-        const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl);
+        const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl, returnToken);
         console.log('[confirm-payment] Swikly API response:', JSON.stringify(swiklyResult, null, 2));
         
         if (swiklyResult.request?.link) {
@@ -532,7 +544,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Swikly callback handler - called by Swikly when deposit is completed
+  // Swikly return URL handler - called by Swikly after user validates deposit
+  // This provides immediate redirection without relying on webhooks or polling
+  app.get("/api/swikly-return", async (req, res) => {
+    try {
+      const bookingId = req.query.booking as string;
+      const providedToken = req.query.token as string;
+      
+      console.log('[swikly-return] Return URL called by Swikly for booking:', bookingId);
+      console.log('[swikly-return] Token provided:', providedToken ? 'yes' : 'no');
+      
+      // Validate required parameters
+      if (!bookingId || !providedToken) {
+        console.error('[swikly-return] Missing required parameters');
+        return res.status(400).send("Paramètres manquants");
+      }
+      
+      // Verify the booking exists
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        console.error('[swikly-return] Booking not found:', bookingId);
+        return res.status(404).send("Réservation introuvable");
+      }
+      
+      // CRITICAL SECURITY CHECK: Verify the token matches
+      if (!booking.swiklyReturnToken || !booking.swiklyReturnTokenCreatedAt) {
+        console.error('[swikly-return] No token stored for booking - may have already been used');
+        // If already confirmed, just redirect to success (idempotent)
+        if (booking.status === 'CONFIRMED') {
+          console.log('[swikly-return] Booking already confirmed, redirecting to success');
+          return res.redirect(`/success?booking=${bookingId}`);
+        }
+        return res.status(400).send("Token invalide ou déjà utilisé");
+      }
+      
+      if (booking.swiklyReturnToken !== providedToken) {
+        console.error('[swikly-return] Token mismatch - possible security breach attempt');
+        return res.status(403).send("Token de sécurité invalide");
+      }
+      
+      // Check token expiration (24 hours)
+      const tokenAge = Date.now() - booking.swiklyReturnTokenCreatedAt.getTime();
+      const MAX_TOKEN_AGE = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+      
+      if (tokenAge > MAX_TOKEN_AGE) {
+        console.error('[swikly-return] Token expired - created at:', booking.swiklyReturnTokenCreatedAt);
+        // Clear expired token
+        await storage.updateBooking(bookingId, {
+          swiklyReturnToken: null,
+          swiklyReturnTokenCreatedAt: null,
+        });
+        return res.status(400).send("Token expiré. Veuillez contacter le support.");
+      }
+      
+      // Verify payment was completed (additional security)
+      if (booking.paymentStatus !== 'COMPLETED') {
+        console.error('[swikly-return] Payment not completed for booking:', bookingId);
+        return res.status(400).send("Le paiement n'a pas été complété");
+      }
+      
+      console.log('[swikly-return] Token validated successfully, updating booking status');
+      
+      // Clear the one-time token and update booking status to CONFIRMED
+      await storage.updateBooking(bookingId, {
+        status: 'CONFIRMED',
+        depositStatus: 'COMPLETED', // Mark deposit as completed
+        swiklyReturnToken: null, // Clear token after use (one-time use only)
+        swiklyReturnTokenCreatedAt: null, // Clear timestamp
+      });
+      
+      console.log('[swikly-return] Booking confirmed successfully, redirecting to success page');
+      
+      // Redirect to success page
+      res.redirect(`/success?booking=${bookingId}`);
+    } catch (error: any) {
+      console.error('[swikly-return] Error processing return:', error);
+      res.status(500).send("Une erreur est survenue. Veuillez contacter le support.");
+    }
+  });
+
+  // Swikly callback handler - called by Swikly when deposit is completed (backup method)
   app.post("/api/swikly-callback", async (req, res) => {
     try {
       console.log('[swikly-callback] Webhook received from Swikly:', JSON.stringify(req.body, null, 2));
@@ -818,6 +909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           swiklyRequestId: null,
           swiklyUrl: `http://localhost:5000/swikly-redirect?booking=test-123`,
           swiklyReturnToken: null,
+          swiklyReturnTokenCreatedAt: null,
           stripePaymentId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
