@@ -2,6 +2,17 @@ import nodemailer from 'nodemailer';
 import type { Booking } from '@shared/schema';
 import { computeCautionAmount, formatEuro } from '@shared/utils';
 
+// HTML escape function to prevent injection attacks
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Create transporter with SMTP or fall back to ethereal for testing
 let transporter: nodemailer.Transporter;
 
@@ -138,6 +149,20 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
                   <span class="detail-value">#${booking.id.slice(-8)}</span>
                 </div>
                 <div class="detail-row">
+                  <span class="detail-label">Nom et prénom</span>
+                  <span class="detail-value">${escapeHtml(booking.customerName)}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Téléphone</span>
+                  <span class="detail-value">${escapeHtml(booking.customerPhone)}</span>
+                </div>
+                ${booking.customerAddress ? `
+                <div class="detail-row">
+                  <span class="detail-label">Adresse</span>
+                  <span class="detail-value">${escapeHtml(booking.customerAddress)}</span>
+                </div>
+                ` : ''}
+                <div class="detail-row">
                   <span class="detail-label">Date</span>
                   <span class="detail-value">${bookingDate}</span>
                 </div>
@@ -148,10 +173,6 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
                 <div class="detail-row">
                   <span class="detail-label">Nombre de machines</span>
                   <span class="detail-value">${booking.machines} machine${booking.machines > 1 ? 's' : ''} Ninja</span>
-                </div>
-                <div class="detail-row" style="border: none;">
-                  <span class="detail-label">Contact</span>
-                  <span class="detail-value">${booking.customerPhone}</span>
                 </div>
                 <div class="total">Total: ${(booking.totalCents / 100).toFixed(2)}€</div>
               </div>
@@ -214,10 +235,12 @@ Merci d'avoir réservé avec Cool Slush ! Votre réservation est confirmée.
 DÉTAILS DE VOTRE RÉSERVATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Numéro : #${booking.id.slice(-8)}
+Nom et prénom : ${booking.customerName}
+Téléphone : ${booking.customerPhone}${booking.customerAddress ? `
+Adresse : ${booking.customerAddress}` : ''}
 Date : ${bookingDate}
 Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00
 Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''} Ninja
-Contact : ${booking.customerPhone}
 Total : ${(booking.totalCents / 100).toFixed(2)}€
 
 PROCHAINES ÉTAPES
@@ -281,11 +304,12 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
             </div>
             
             <div class="content">
-              <p>Bonjour ${booking.customerName},</p>
+              <p>Bonjour ${escapeHtml(booking.customerName)},</p>
               
               <div class="reminder-box">
                 <h2 style="margin-top: 0; color: #D97706;">📦 Livraison demain !</h2>
                 <p>Votre machine à Slushie sera livrée <strong>${bookingDate}</strong> entre ${booking.startHour.toString().padStart(2, '0')}:00 et ${booking.endHour.toString().padStart(2, '0')}:00.</p>
+                ${booking.customerAddress ? `<p><strong>Adresse de livraison :</strong> ${escapeHtml(booking.customerAddress)}</p>` : ''}
               </div>
               
               <p><strong>✅ Checklist avant la livraison :</strong></p>
@@ -297,6 +321,12 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
               </ul>
               
               <p><strong>Réservation #${booking.id.slice(-8)}</strong></p>
+              <p><strong>Informations de contact :</strong></p>
+              <ul style="list-style: none; padding-left: 0;">
+                <li>👤 ${escapeHtml(booking.customerName)}</li>
+                <li>📞 ${escapeHtml(booking.customerPhone)}</li>
+                ${booking.customerAddress ? `<li>📍 ${escapeHtml(booking.customerAddress)}</li>` : ''}
+              </ul>
               <p>📞 Questions ? Appelez-nous au 0690 12 34 56</p>
               
               <p>À demain !<br><strong>L'équipe Cool Slush</strong></p>
@@ -308,6 +338,37 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
           </div>
         </body>
         </html>
+      `,
+      text: `
+Cool Slush - Rappel de livraison
+
+Bonjour ${booking.customerName},
+
+⏰ LIVRAISON DEMAIN !
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Votre machine à Slushie sera livrée ${bookingDate} entre ${booking.startHour.toString().padStart(2, '0')}:00 et ${booking.endHour.toString().padStart(2, '0')}:00.
+${booking.customerAddress ? `
+Adresse de livraison : ${booking.customerAddress}` : ''}
+
+INFORMATIONS DE CONTACT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Nom : ${booking.customerName}
+Téléphone : ${booking.customerPhone}${booking.customerAddress ? `
+Adresse : ${booking.customerAddress}` : ''}
+
+RÉSERVATION #${booking.id.slice(-8)}
+
+✅ CHECKLIST AVANT LA LIVRAISON
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Préparez un espace dégagé pour installer la machine
+- Vérifiez que vous avez une prise électrique à proximité
+- Ayez vos ingrédients prêts (sirops, fruits, etc.)
+- Assurez-vous d'être disponible pour réceptionner la machine
+
+Questions ? Appelez-nous au 0690 12 34 56
+
+À demain !
+L'équipe Cool Slush
       `,
     });
 
@@ -399,6 +460,9 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
 
               <p><strong>📋 Récapitulatif de votre réservation :</strong></p>
               <ul style="list-style: none; padding: 0;">
+                <li>👤 Nom : ${escapeHtml(booking.customerName)}</li>
+                <li>📞 Téléphone : ${escapeHtml(booking.customerPhone)}</li>
+                ${booking.customerAddress ? `<li>📍 Adresse : ${escapeHtml(booking.customerAddress)}</li>` : ''}
                 <li>📅 Date : ${bookingDate}</li>
                 <li>🕐 Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00</li>
                 <li>❄️ Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''}</li>
@@ -452,6 +516,9 @@ LE PROCESSUS COMPLET
 
 RÉCAPITULATIF DE VOTRE RÉSERVATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Nom : ${booking.customerName}
+Téléphone : ${booking.customerPhone}${booking.customerAddress ? `
+Adresse : ${booking.customerAddress}` : ''}
 Date : ${bookingDate}
 Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00
 Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''}
@@ -545,7 +612,7 @@ export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: 
             </div>
             
             <div class="content">
-              <p>Bonjour ${booking.customerName},</p>
+              <p>Bonjour ${escapeHtml(booking.customerName)},</p>
               
               <p>Nous vous informons que le statut de votre réservation a changé.</p>
               
@@ -559,6 +626,20 @@ export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: 
                   <span>Numéro de réservation</span>
                   <strong>#${booking.id.slice(-8)}</strong>
                 </div>
+                <div class="detail-row">
+                  <span>Nom et prénom</span>
+                  <strong>${escapeHtml(booking.customerName)}</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Téléphone</span>
+                  <strong>${escapeHtml(booking.customerPhone)}</strong>
+                </div>
+                ${booking.customerAddress ? `
+                <div class="detail-row">
+                  <span>Adresse</span>
+                  <strong>${escapeHtml(booking.customerAddress)}</strong>
+                </div>
+                ` : ''}
                 <div class="detail-row">
                   <span>Date</span>
                   <strong>${bookingDate}</strong>
@@ -624,6 +705,9 @@ NOUVEAU STATUT : ${newStatus === 'CONFIRMED' ? 'CONFIRMÉE' : newStatus === 'CAN
 DÉTAILS DE VOTRE RÉSERVATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Numéro : #${booking.id.slice(-8)}
+Nom et prénom : ${booking.customerName}
+Téléphone : ${booking.customerPhone}${booking.customerAddress ? `
+Adresse : ${booking.customerAddress}` : ''}
 Date : ${bookingDate}
 Horaires : ${booking.startHour.toString().padStart(2, '0')}:00 - ${booking.endHour.toString().padStart(2, '0')}:00
 Machines : ${booking.machines} machine${booking.machines > 1 ? 's' : ''}
@@ -684,11 +768,21 @@ export async function sendFollowUpEmail(booking: Booking): Promise<void> {
         <body>
           <div class="container">
             <div class="header">
-              <h1>⭐ Merci ${booking.customerName} !</h1>
+              <h1>⭐ Merci ${escapeHtml(booking.customerName)} !</h1>
             </div>
             
             <div class="content">
+              <p>Bonjour ${escapeHtml(booking.customerName)},</p>
+              
               <p>Nous espérons que votre événement s'est merveilleusement bien passé et que vos invités ont adoré les Slushies !</p>
+              
+              <p><strong>📋 Récapitulatif de votre réservation :</strong></p>
+              <ul style="list-style: none; padding-left: 0;">
+                <li>👤 Nom : ${escapeHtml(booking.customerName)}</li>
+                <li>📞 Téléphone : ${escapeHtml(booking.customerPhone)}</li>
+                ${booking.customerAddress ? `<li>📍 Adresse : ${escapeHtml(booking.customerAddress)}</li>` : ''}
+                <li>📅 Réservation #${booking.id.slice(-8)}</li>
+              </ul>
               
               <p><strong>Votre avis compte :</strong></p>
               <p>Prenez quelques secondes pour nous laisser un avis et aider d'autres personnes à découvrir Cool Slush.</p>
@@ -713,6 +807,40 @@ export async function sendFollowUpEmail(booking: Booking): Promise<void> {
           </div>
         </body>
         </html>
+      `,
+      text: `
+Cool Slush - Merci pour votre confiance
+
+Bonjour ${booking.customerName},
+
+Nous espérons que votre événement s'est merveilleusement bien passé et que vos invités ont adoré les Slushies !
+
+📋 RÉCAPITULATIF DE VOTRE RÉSERVATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Nom : ${booking.customerName}
+Téléphone : ${booking.customerPhone}${booking.customerAddress ? `
+Adresse : ${booking.customerAddress}` : ''}
+Réservation : #${booking.id.slice(-8)}
+
+VOTRE AVIS COMPTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Prenez quelques secondes pour nous laisser un avis et aider d'autres personnes à découvrir Cool Slush.
+
+💰 CAUTION SWIKLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Votre caution a été libérée automatiquement. Vous ne serez pas débité.
+
+🎉 LOCATION FUTURE ?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Profitez de 10% de réduction sur votre prochaine réservation avec le code : COOLSLUSH10
+
+CONTACT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Téléphone : 0690 12 34 56
+Email : contact@coolslushlemonade.com
+
+Au plaisir de vous revoir bientôt,
+L'équipe Cool Slush
       `,
     });
 

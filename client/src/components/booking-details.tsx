@@ -56,6 +56,27 @@ export default function BookingDetails({ booking, showTotal = true, className = 
       </div>
 
       <div className="p-6 space-y-4">
+        {/* Client Information Section */}
+        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800" data-testid="booking-detail-client">
+          <h4 className="text-sm font-semibold text-foreground mb-3">👤 Informations client</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center" data-testid="booking-detail-customer-name">
+              <span className="text-sm text-muted-foreground">Nom et prénom</span>
+              <span className="font-semibold text-foreground">{booking.customerName}</span>
+            </div>
+            <div className="flex justify-between items-center" data-testid="booking-detail-customer-phone">
+              <span className="text-sm text-muted-foreground">Téléphone</span>
+              <span className="font-semibold text-foreground">{booking.customerPhone}</span>
+            </div>
+            {booking.customerAddress && (
+              <div className="flex justify-between items-start" data-testid="booking-detail-customer-address">
+                <span className="text-sm text-muted-foreground">Adresse</span>
+                <span className="font-semibold text-foreground text-right max-w-[60%]">{booking.customerAddress}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Date & Time Section */}
         <div className="space-y-2">
           <div className="flex justify-between items-center" data-testid="booking-detail-date">
