@@ -848,3 +848,88 @@ L'équipe Cool Slush
     console.error('Error sending follow-up email:', error);
   }
 }
+
+// Send contact form email to admin
+export async function sendContactFormEmail(data: {
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+}) {
+  try {
+    const transport = await getTransporter();
+    const fromEmail = process.env.EMAIL_FROM || 'Cool Slush <contact@coolslushlemonade.com>';
+    const toEmail = 'contact@coolslushlemonade.com';
+
+    await transport.sendMail({
+      from: fromEmail,
+      to: toEmail,
+      replyTo: data.email,
+      subject: `[Contact] ${data.subject} - ${data.name}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #0EA5E9, #F97316); padding: 20px; text-align: center; color: white; border-radius: 8px 8px 0 0; }
+            .content { padding: 30px; background: #f9fafb; }
+            .field { margin-bottom: 15px; }
+            .label { font-weight: bold; color: #0EA5E9; }
+            .value { margin-top: 5px; padding: 10px; background: white; border-radius: 4px; }
+            .message { white-space: pre-wrap; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Nouveau message de contact</h1>
+            </div>
+            <div class="content">
+              <div class="field">
+                <div class="label">Nom</div>
+                <div class="value">${escapeHtml(data.name)}</div>
+              </div>
+              <div class="field">
+                <div class="label">Email</div>
+                <div class="value"><a href="mailto:${escapeHtml(data.email)}">${escapeHtml(data.email)}</a></div>
+              </div>
+              <div class="field">
+                <div class="label">Téléphone</div>
+                <div class="value">${escapeHtml(data.phone)}</div>
+              </div>
+              <div class="field">
+                <div class="label">Sujet</div>
+                <div class="value">${escapeHtml(data.subject)}</div>
+              </div>
+              <div class="field">
+                <div class="label">Message</div>
+                <div class="value message">${escapeHtml(data.message)}</div>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Nouveau message de contact - Cool Slush
+
+Nom: ${data.name}
+Email: ${data.email}
+Téléphone: ${data.phone}
+Sujet: ${data.subject}
+
+Message:
+${data.message}
+      `,
+    });
+
+    console.log('✅ Contact form email sent to', toEmail);
+  } catch (error) {
+    console.error('Error sending contact form email:', error);
+    throw error;
+  }
+}

@@ -1039,6 +1039,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= CONTACT FORM ROUTE =============
+  
+  const contactFormSchema = z.object({
+    name: z.string().min(2),
+    email: z.string().email(),
+    phone: z.string().optional(),
+    subject: z.string().min(1),
+    message: z.string().min(10),
+  });
+
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const parseResult = contactFormSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Données invalides. Veuillez vérifier les champs du formulaire.",
+          details: parseResult.error.errors 
+        });
+      }
+      
+      const data = parseResult.data;
+      
+      const subjectLabels: Record<string, string> = {
+        special_request: "Demande spéciale",
+        quote: "Demande de devis",
+        event: "Événement particulier",
+        question: "Question générale",
+        other: "Autre",
+      };
+      
+      const subjectLabel = subjectLabels[data.subject] || data.subject;
+      
+      // Send email using nodemailer
+      const { sendContactFormEmail } = await import("./email");
+      await sendContactFormEmail({
+        name: data.name,
+        email: data.email,
+        phone: data.phone || "Non fourni",
+        subject: subjectLabel,
+        message: data.message,
+      });
+      
+      res.json({ success: true, message: "Message envoyé avec succès" });
+    } catch (error: any) {
+      console.error("Contact form error:", error);
+      res.status(500).json({ error: "Erreur lors de l'envoi du message. Veuillez réessayer." });
+    }
+  });
+
   // Test email route (development only)
   if (process.env.NODE_ENV === 'development') {
     app.get("/api/test-email", async (req, res) => {
