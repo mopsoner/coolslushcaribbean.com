@@ -13,6 +13,7 @@ export const machines = pgTable("machines", {
   programs: json("programs").$type<string[]>(), // Array of program names
   features: json("features").$type<string[]>(), // Array of features
   includedServices: json("included_services").$type<string[]>(), // Array of services with icons
+  imageUrl: text("image_url"), // URL de l'image personnalisée de la machine
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -90,6 +91,7 @@ export const insertMachineSchema = createInsertSchema(machines).omit({
   programs: z.array(z.string()).optional(),
   features: z.array(z.string()).optional(),
   includedServices: z.array(z.string()).optional(),
+  imageUrl: z.string().optional(),
   status: z.string().default("AVAILABLE"),
 });
 

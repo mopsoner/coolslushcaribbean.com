@@ -10,9 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Settings, Edit, Trash, Plus, Snowflake } from "lucide-react";
+import { Settings, Edit, Trash, Plus, Snowflake, Upload, X, Image as ImageIcon } from "lucide-react";
 import type { Machine } from "@shared/schema";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 
 const statusOptions = [
@@ -35,6 +35,8 @@ export default function AdminMachines() {
   const [machinePrograms, setMachinePrograms] = useState<string>("Slushi, Milkshake, Frozen Drink, Smoothie, Glace italienne");
   const [machineFeatures, setMachineFeatures] = useState<string>("Refroidissement rapide et efficace, Facile à nettoyer");
   const [machineServices, setMachineServices] = useState<string>("✅ Livraison et installation incluses, 📖 Manuel d'utilisation fourni, 🎯 Support technique 7j/7");
+  const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: machines, isLoading } = useQuery<Machine[]>({
     queryKey: ['/api/machines'],
@@ -111,6 +113,65 @@ export default function AdminMachines() {
     },
   });
 
+  const uploadImageMutation = useMutation({
+    mutationFn: async ({ machineId, file }: { machineId: string; file: File }) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`/api/admin/machines/${machineId}/image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Erreur lors de l'upload");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/machines'] });
+      setUploadingImageFor(null);
+      toast({
+        title: "Image uploadée",
+        description: "L'image de la machine a été mise à jour.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'uploader l'image",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteImageMutation = useMutation({
+    mutationFn: async (machineId: string) => {
+      const response = await apiRequest('DELETE', `/api/admin/machines/${machineId}/image`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/machines'] });
+      toast({
+        title: "Image supprimée",
+        description: "L'image de la machine a été supprimée.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de supprimer l'image",
+        variant: "destructive",
+      });
+    },
+  });
+
   const resetForm = () => {
     setMachineName("");
     setMachineStatus("AVAILABLE");
@@ -175,6 +236,21 @@ export default function AdminMachines() {
     setMachineServices((machine.includedServices as string[] || []).join(', '));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, machineId: string) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadImageMutation.mutate({ machineId, file });
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const triggerFileInput = (machineId: string) => {
+    setUploadingImageFor(machineId);
+    fileInputRef.current?.click();
+  };
+
   const getStatusBadge = (status: string) => {
     const option = statusOptions.find(opt => opt.value === status);
     return option || statusOptions[0];
@@ -193,6 +269,15 @@ export default function AdminMachines() {
           </h1>
           <p className="text-muted-foreground">Gérez les machines disponibles pour les réservations</p>
         </div>
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          onChange={(e) => uploadingImageFor && handleFileChange(e, uploadingImageFor)}
+          data-testid="input-machine-image-file"
+        />
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Card className="rounded-2xl shadow-lg border border-border">
@@ -357,6 +442,7 @@ export default function AdminMachines() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-20">Image</TableHead>
                     <TableHead>Nom</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -367,6 +453,36 @@ export default function AdminMachines() {
                     const statusBadge = getStatusBadge(machine.status);
                     return (
                       <TableRow key={machine.id} data-testid={`row-machine-${machine.id}`}>
+                        <TableCell>
+                          <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                            {machine.imageUrl ? (
+                              <>
+                                <img
+                                  src={machine.imageUrl}
+                                  alt={machine.name}
+                                  className="w-full h-full object-cover"
+                                  data-testid={`img-machine-${machine.id}`}
+                                />
+                                <button
+                                  onClick={() => deleteImageMutation.mutate(machine.id)}
+                                  className="absolute top-0 right-0 bg-destructive text-destructive-foreground rounded-bl p-1 hover:bg-destructive/90"
+                                  data-testid={`button-delete-image-${machine.id}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => triggerFileInput(machine.id)}
+                                className="w-full h-full flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                                data-testid={`button-upload-image-${machine.id}`}
+                              >
+                                <ImageIcon className="w-6 h-6" />
+                                <span className="text-xs mt-1">Ajouter</span>
+                              </button>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="font-medium">{machine.name}</TableCell>
                         <TableCell>
                           <Badge
@@ -378,6 +494,15 @@ export default function AdminMachines() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => triggerFileInput(machine.id)}
+                              disabled={uploadImageMutation.isPending}
+                              data-testid={`button-change-image-${machine.id}`}
+                            >
+                              <Upload className="w-4 h-4" />
+                            </Button>
                             <Dialog open={editingMachine?.id === machine.id} onOpenChange={(open) => !open && setEditingMachine(null)}>
                               <DialogTrigger asChild>
                                 <Button
@@ -507,11 +632,11 @@ export default function AdminMachines() {
               </Table>
             ) : (
               <div className="text-center py-12">
-                <Settings className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <Snowflake className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground mb-4">Aucune machine configurée</p>
-                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-add-first-machine">
                   <Plus className="w-4 h-4 mr-2" />
-                  Ajouter la première machine
+                  Ajouter votre première machine
                 </Button>
               </div>
             )}

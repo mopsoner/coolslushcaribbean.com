@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { storage } from "./storage";
 import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema, insertSettingSchema } from "@shared/schema";
 import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
@@ -8,6 +11,34 @@ import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail, sendBookingStatusChangeEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
 import { requireAdmin, login as performLogin, logout as performLogout, validateToken } from "./auth-middleware";
+
+const uploadsDir = path.join(process.cwd(), 'uploads', 'machines');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const machineImageStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadMachineImage = multer({
+  storage: machineImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Type de fichier non autorisé. Utilisez JPEG, PNG, GIF ou WebP.'));
+    }
+  }
+});
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -173,6 +204,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Upload machine image (admin)
+  app.post("/api/admin/machines/:id/image", requireAdmin, uploadMachineImage.single('image'), async (req, res) => {
+    try {
+      const machineId = req.params.id;
+      const file = req.file;
+      
+      if (!file) {
+        return res.status(400).json({ error: "Aucune image fournie" });
+      }
+      
+      const machine = await storage.getMachine(machineId);
+      if (!machine) {
+        fs.unlinkSync(file.path);
+        return res.status(404).json({ error: "Machine non trouvée" });
+      }
+      
+      if (machine.imageUrl) {
+        const oldImagePath = path.join(process.cwd(), machine.imageUrl.replace(/^\//, ''));
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+      
+      const imageUrl = `/uploads/machines/${file.filename}`;
+      const updatedMachine = await storage.updateMachine(machineId, { imageUrl });
+      
+      res.json(updatedMachine);
+    } catch (error: any) {
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete machine image (admin)
+  app.delete("/api/admin/machines/:id/image", requireAdmin, async (req, res) => {
+    try {
+      const machineId = req.params.id;
+      
+      const machine = await storage.getMachine(machineId);
+      if (!machine) {
+        return res.status(404).json({ error: "Machine non trouvée" });
+      }
+      
+      if (machine.imageUrl) {
+        const imagePath = path.join(process.cwd(), machine.imageUrl.replace(/^\//, ''));
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      }
+      
+      const updatedMachine = await storage.updateMachine(machineId, { imageUrl: null });
+      res.json(updatedMachine);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Serve uploaded images
+  const express = await import('express');
+  app.use('/uploads', express.default.static(path.join(process.cwd(), 'uploads')));
 
   // Create a booking
   app.post("/api/bookings", async (req, res) => {
