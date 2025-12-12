@@ -337,6 +337,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update booking (admin - full edit)
+  app.patch("/api/admin/bookings/:id", requireAdmin, async (req, res) => {
+    try {
+      const bookingId = req.params.id;
+      
+      // Check if booking exists
+      const existingBooking = await storage.getBooking(bookingId);
+      if (!existingBooking) {
+        return res.status(404).json({ error: "Réservation non trouvée" });
+      }
+      
+      // Define allowed fields for editing (don't allow editing machines, totalCents, payment-related fields)
+      const allowedFields = [
+        'customerName', 'customerEmail', 'customerPhone', 'customerAddress',
+        'startDate', 'endDate', 'startHour', 'endHour', 'status'
+      ];
+      
+      // Build update object with only allowed fields
+      const updates: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          if (field === 'startDate' || field === 'endDate') {
+            updates[field] = new Date(req.body[field]);
+          } else {
+            updates[field] = req.body[field];
+          }
+        }
+      }
+      
+      // Validate hour ranges
+      if (updates.startHour !== undefined && (updates.startHour < 0 || updates.startHour > 23)) {
+        return res.status(400).json({ error: "L'heure de début doit être entre 0 et 23" });
+      }
+      if (updates.endHour !== undefined && (updates.endHour < 1 || updates.endHour > 24)) {
+        return res.status(400).json({ error: "L'heure de fin doit être entre 1 et 24" });
+      }
+      
+      // Validate date order
+      const startDate = updates.startDate || existingBooking.startDate;
+      const endDate = updates.endDate || existingBooking.endDate;
+      if (new Date(endDate) < new Date(startDate)) {
+        return res.status(400).json({ error: "La date de fin doit être après la date de début" });
+      }
+      
+      // Track if status changed for email notification
+      const oldStatus = existingBooking.status;
+      
+      // Update the booking
+      const booking = await storage.updateBooking(bookingId, updates);
+      if (!booking) {
+        return res.status(404).json({ error: "Réservation non trouvée" });
+      }
+      
+      // Send email notification if status changed
+      if (updates.status && oldStatus !== updates.status) {
+        sendBookingStatusChangeEmail(booking, oldStatus, updates.status).catch(error => {
+          console.error('Failed to send status change email:', error);
+        });
+      }
+      
+      res.json(booking);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Create payment intent for Stripe
   app.post("/api/create-payment-intent", async (req, res) => {
     try {

@@ -6,12 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, Edit, Calendar, Users, TrendingUp, MapPin, Coffee, Droplet, CreditCard, Shield, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Eye, Edit, Calendar, Users, TrendingUp, MapPin, Coffee, Droplet, CreditCard, Shield, ExternalLink, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AdminNav from "@/components/admin-nav";
 import { useState } from "react";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 const statusMap = {
   PENDING: { 
@@ -28,39 +39,95 @@ const statusMap = {
   }
 };
 
+const editBookingSchema = z.object({
+  customerName: z.string().min(1, "Nom requis"),
+  customerEmail: z.string().email("Email invalide"),
+  customerPhone: z.string().min(1, "Téléphone requis"),
+  customerAddress: z.string().min(1, "Adresse requise"),
+  startDate: z.date(),
+  endDate: z.date(),
+  startHour: z.number().int().min(10).max(22),
+  endHour: z.number().int().min(10).max(22),
+  status: z.enum(["PENDING", "CONFIRMED", "CANCELLED"]),
+});
+
+type EditBookingFormData = z.infer<typeof editBookingSchema>;
+
 export default function AdminBookings() {
   useAdminAuth();
 
   const { toast } = useToast();
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [editingStatusBooking, setEditingStatusBooking] = useState<Booking | null>(null);
-  const [newStatus, setNewStatus] = useState<string>("");
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
 
   const { data: bookings, isLoading } = useQuery<Booking[]>({
     queryKey: ['/api/bookings'],
   });
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async (data: { id: string; status: string }) => {
-      const response = await apiRequest('PATCH', `/api/bookings/${data.id}/status`, { status: data.status });
+  const form = useForm<EditBookingFormData>({
+    resolver: zodResolver(editBookingSchema),
+    defaultValues: {
+      customerName: "",
+      customerEmail: "",
+      customerPhone: "",
+      customerAddress: "",
+      startDate: new Date(),
+      endDate: new Date(),
+      startHour: 10,
+      endHour: 18,
+      status: "PENDING",
+    },
+  });
+
+  const updateBookingMutation = useMutation({
+    mutationFn: async (data: EditBookingFormData & { id: string }) => {
+      const { id, ...updateData } = data;
+      const response = await apiRequest('PATCH', `/api/admin/bookings/${id}`, {
+        ...updateData,
+        startDate: updateData.startDate.toISOString(),
+        endDate: updateData.endDate.toISOString(),
+      });
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-      setEditingStatusBooking(null);
+      setEditingBooking(null);
       toast({
-        title: "Statut mis à jour",
-        description: "Le statut de la réservation a été mis à jour avec succès.",
+        title: "Réservation mise à jour",
+        description: "La réservation a été mise à jour avec succès.",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Erreur",
-        description: error.message || "Impossible de mettre à jour le statut",
+        description: error.message || "Impossible de mettre à jour la réservation",
         variant: "destructive",
       });
     },
   });
+
+  const handleEditBooking = (booking: Booking) => {
+    setEditingBooking(booking);
+    form.reset({
+      customerName: booking.customerName,
+      customerEmail: booking.customerEmail,
+      customerPhone: booking.customerPhone,
+      customerAddress: booking.customerAddress || "",
+      startDate: new Date(booking.startDate),
+      endDate: new Date(booking.endDate),
+      startHour: booking.startHour,
+      endHour: booking.endHour,
+      status: booking.status as "PENDING" | "CONFIRMED" | "CANCELLED",
+    });
+  };
+
+  const onSubmit = (data: EditBookingFormData) => {
+    if (editingBooking) {
+      updateBookingMutation.mutate({ ...data, id: editingBooking.id });
+    }
+  };
+
+  const hourOptions = Array.from({ length: 13 }, (_, i) => i + 10);
 
   if (isLoading) {
     return (
@@ -335,52 +402,265 @@ export default function AdminBookings() {
                                 </DialogContent>
                               </Dialog>
 
-                              <Dialog open={editingStatusBooking?.id === booking.id} onOpenChange={(open) => !open && setEditingStatusBooking(null)}>
+                              <Dialog open={editingBooking?.id === booking.id} onOpenChange={(open) => !open && setEditingBooking(null)}>
                                 <DialogTrigger asChild>
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
                                     className="p-2 hover:bg-muted rounded-lg"
-                                    onClick={() => {
-                                      setEditingStatusBooking(booking);
-                                      setNewStatus(booking.status);
-                                    }}
+                                    onClick={() => handleEditBooking(booking)}
                                     data-testid={`button-edit-${booking.id}`}
                                   >
                                     <Edit className="w-4 h-4 text-foreground" />
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent>
+                                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                                   <DialogHeader>
-                                    <DialogTitle>Modifier le statut</DialogTitle>
+                                    <DialogTitle>Modifier la réservation</DialogTitle>
                                     <DialogDescription>
-                                      Réservation #{booking.id.slice(-8)} - {booking.customerName}
+                                      Réservation #{booking.id.slice(-8)} - Modifier les informations
                                     </DialogDescription>
                                   </DialogHeader>
-                                  <div className="space-y-4 py-4">
-                                    <div>
-                                      <label className="text-sm font-medium">Statut</label>
-                                      <Select value={newStatus} onValueChange={setNewStatus}>
-                                        <SelectTrigger className="mt-2" data-testid="select-booking-status">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="PENDING">En attente</SelectItem>
-                                          <SelectItem value="CONFIRMED">Confirmée</SelectItem>
-                                          <SelectItem value="CANCELLED">Annulée</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-                                  <DialogFooter>
-                                    <Button
-                                      onClick={() => updateStatusMutation.mutate({ id: booking.id, status: newStatus })}
-                                      disabled={updateStatusMutation.isPending || newStatus === booking.status}
-                                      data-testid="button-save-status"
-                                    >
-                                      {updateStatusMutation.isPending ? "Mise à jour..." : "Mettre à jour"}
-                                    </Button>
-                                  </DialogFooter>
+                                  <Form {...form}>
+                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                          control={form.control}
+                                          name="customerName"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Nom du client</FormLabel>
+                                              <FormControl>
+                                                <Input {...field} data-testid="input-customer-name" />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                        <FormField
+                                          control={form.control}
+                                          name="customerEmail"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Email</FormLabel>
+                                              <FormControl>
+                                                <Input type="email" {...field} data-testid="input-customer-email" />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                          control={form.control}
+                                          name="customerPhone"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Téléphone</FormLabel>
+                                              <FormControl>
+                                                <Input {...field} data-testid="input-customer-phone" />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                        <FormField
+                                          control={form.control}
+                                          name="status"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Statut</FormLabel>
+                                              <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                  <SelectTrigger data-testid="select-booking-status">
+                                                    <SelectValue />
+                                                  </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                  <SelectItem value="PENDING">En attente</SelectItem>
+                                                  <SelectItem value="CONFIRMED">Confirmée</SelectItem>
+                                                  <SelectItem value="CANCELLED">Annulée</SelectItem>
+                                                </SelectContent>
+                                              </Select>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                      </div>
+
+                                      <FormField
+                                        control={form.control}
+                                        name="customerAddress"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>Adresse de livraison</FormLabel>
+                                            <FormControl>
+                                              <Input {...field} data-testid="input-customer-address" />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                          control={form.control}
+                                          name="startDate"
+                                          render={({ field }) => (
+                                            <FormItem className="flex flex-col">
+                                              <FormLabel>Date de début</FormLabel>
+                                              <Popover>
+                                                <PopoverTrigger asChild>
+                                                  <FormControl>
+                                                    <Button
+                                                      variant="outline"
+                                                      className={cn(
+                                                        "w-full pl-3 text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                      )}
+                                                      data-testid="button-start-date"
+                                                    >
+                                                      {field.value ? (
+                                                        format(field.value, "P", { locale: fr })
+                                                      ) : (
+                                                        <span>Sélectionner une date</span>
+                                                      )}
+                                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                  </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                  <CalendarComponent
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    locale={fr}
+                                                  />
+                                                </PopoverContent>
+                                              </Popover>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                        <FormField
+                                          control={form.control}
+                                          name="endDate"
+                                          render={({ field }) => (
+                                            <FormItem className="flex flex-col">
+                                              <FormLabel>Date de fin</FormLabel>
+                                              <Popover>
+                                                <PopoverTrigger asChild>
+                                                  <FormControl>
+                                                    <Button
+                                                      variant="outline"
+                                                      className={cn(
+                                                        "w-full pl-3 text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                      )}
+                                                      data-testid="button-end-date"
+                                                    >
+                                                      {field.value ? (
+                                                        format(field.value, "P", { locale: fr })
+                                                      ) : (
+                                                        <span>Sélectionner une date</span>
+                                                      )}
+                                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                  </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                  <CalendarComponent
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    locale={fr}
+                                                  />
+                                                </PopoverContent>
+                                              </Popover>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                          control={form.control}
+                                          name="startHour"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Heure de début</FormLabel>
+                                              <Select 
+                                                onValueChange={(v) => field.onChange(parseInt(v))} 
+                                                value={field.value?.toString()}
+                                              >
+                                                <FormControl>
+                                                  <SelectTrigger data-testid="select-start-hour">
+                                                    <SelectValue />
+                                                  </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                  {hourOptions.map((hour) => (
+                                                    <SelectItem key={hour} value={hour.toString()}>
+                                                      {hour.toString().padStart(2, '0')}:00
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                        <FormField
+                                          control={form.control}
+                                          name="endHour"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Heure de fin</FormLabel>
+                                              <Select 
+                                                onValueChange={(v) => field.onChange(parseInt(v))} 
+                                                value={field.value?.toString()}
+                                              >
+                                                <FormControl>
+                                                  <SelectTrigger data-testid="select-end-hour">
+                                                    <SelectValue />
+                                                  </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                  {hourOptions.map((hour) => (
+                                                    <SelectItem key={hour} value={hour.toString()}>
+                                                      {hour.toString().padStart(2, '0')}:00
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                      </div>
+
+                                      <DialogFooter className="pt-4">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          onClick={() => setEditingBooking(null)}
+                                          data-testid="button-cancel-edit"
+                                        >
+                                          Annuler
+                                        </Button>
+                                        <Button
+                                          type="submit"
+                                          disabled={updateBookingMutation.isPending}
+                                          data-testid="button-save-booking"
+                                        >
+                                          {updateBookingMutation.isPending ? "Mise à jour..." : "Enregistrer"}
+                                        </Button>
+                                      </DialogFooter>
+                                    </form>
+                                  </Form>
                                 </DialogContent>
                               </Dialog>
                             </div>
