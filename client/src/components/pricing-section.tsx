@@ -156,7 +156,7 @@ export default function PricingSection() {
                   </ul>
 
                   <Link
-                    href="/booking"
+                    href="/contact"
                     className={`block w-full px-6 py-3 rounded-xl font-semibold transition-all ${
                       popular
                         ? "bg-white text-primary hover:scale-105"
