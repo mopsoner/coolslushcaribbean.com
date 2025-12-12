@@ -41,20 +41,18 @@ const bookingSchema = z.object({
   selectedSyrups: z.array(syrupSelectionSchema).optional().default([]),
   cupSize: z.enum(["petit", "moyen", "grand"]).default("moyen"),
   terms: z.boolean().refine(val => val, "Vous devez accepter les conditions"),
-}).refine((data) => {
-  // Pour les offres multi-jours, endDate est obligatoire
-  if (data.offer !== "1 Journée" && !data.endDate) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Date de fin requise pour cette offre",
-  path: ["endDate"],
 });
 
 type BookingFormData = z.infer<typeof bookingSchema>;
 
-type OfferWithPrice = Offer & { amountCents: number };
+type OfferWithPrice = Offer & { amountCents: number; durationType: string };
+
+const DURATION_MIN_DAYS: Record<string, number> = {
+  jour: 1,
+  weekend: 2,
+  semaine: 7,
+  mois: 30,
+};
 
 export default function BookingForm() {
   const [machines, setMachines] = useState(1);
@@ -103,6 +101,27 @@ export default function BookingForm() {
   const watchedEndDate = form.watch("endDate");
   const watchedCupSize = form.watch("cupSize");
 
+  // Get selected offer's durationType
+  const getSelectedOfferDurationType = () => {
+    if (!watchedOffer || !offers) return "jour";
+    const offer = offers.find(o => o.name === watchedOffer);
+    return offer?.durationType || "jour";
+  };
+
+  const selectedDurationType = getSelectedOfferDurationType();
+  const isSingleDay = selectedDurationType === "jour";
+  const minDays = DURATION_MIN_DAYS[selectedDurationType] || 1;
+
+  // Auto-calculate endDate based on durationType when startDate changes
+  const calculateAutoEndDate = (startDateStr: string, durationType: string) => {
+    if (!startDateStr) return "";
+    const startDate = new Date(startDateStr);
+    const daysToAdd = (DURATION_MIN_DAYS[durationType] || 1) - 1;
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + daysToAdd);
+    return endDate.toISOString().split('T')[0];
+  };
+
   const bookingMutation = useMutation({
     mutationFn: async (data: Omit<BookingFormData, "terms">) => {
       const response = await apiRequest("POST", "/api/bookings", data);
@@ -130,11 +149,50 @@ export default function BookingForm() {
 
   const onSubmit = (data: BookingFormData) => {
     const { terms, ...bookingData } = data;
-    // Pour "1 Journée", endDate = startDate
-    const endDate = data.offer === "1 Journée" ? data.startDate : data.endDate!;
+    
+    // Validate endDate for multi-day offers
+    if (!isSingleDay && !data.endDate) {
+      toast({
+        title: "Date de fin requise",
+        description: "Veuillez sélectionner une date de fin pour cette offre.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate minimum duration based on durationType
+    const startDate = new Date(data.startDate);
+    const endDateValue = isSingleDay ? startDate : new Date(data.endDate!);
+    
+    // Calculate days difference: inclusive count (end - start + 1 day)
+    const startMs = new Date(data.startDate).setHours(0, 0, 0, 0);
+    const endMs = isSingleDay ? startMs : new Date(data.endDate!).setHours(0, 0, 0, 0);
+    const daysDiff = Math.floor((endMs - startMs) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // For multi-day offers, ensure end date is after start date
+    if (!isSingleDay && endMs < startMs) {
+      toast({
+        title: "Dates invalides",
+        description: "La date de fin doit être après la date de début.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (daysDiff < minDays) {
+      toast({
+        title: "Durée insuffisante",
+        description: `Cette offre nécessite une durée minimum de ${minDays} jour${minDays > 1 ? 's' : ''}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Pour les offres "jour", endDate = startDate
+    const finalEndDate = isSingleDay ? data.startDate : data.endDate!;
     bookingMutation.mutate({ 
       ...bookingData, 
-      endDate,
+      endDate: finalEndDate,
       machines: data.machines,
       bookedMachines: data.bookedMachines
     });
@@ -224,15 +282,16 @@ export default function BookingForm() {
   };
 
   const calculateRentalDaysForForm = () => {
-    if (!watchedStartDate || watchedStartDate === "") return 1;
+    if (!watchedStartDate || watchedStartDate === "") return minDays;
     
     const startDate = new Date(watchedStartDate);
-    // Pour "1 Journée", endDate = startDate
-    const endDateValue = watchedOffer === "1 Journée" ? watchedStartDate : watchedEndDate;
-    if (!endDateValue || endDateValue === "") return 1;
+    // Pour les offres "jour", endDate = startDate
+    const endDateValue = isSingleDay ? watchedStartDate : watchedEndDate;
+    if (!endDateValue || endDateValue === "") return minDays;
     
     const endDate = new Date(endDateValue);
-    return calculateRentalDays(startDate, endDate);
+    const actualDays = calculateRentalDays(startDate, endDate);
+    return Math.max(actualDays, minDays);
   };
 
   const calculateTotalPrice = () => {
@@ -351,7 +410,7 @@ export default function BookingForm() {
                     <FormItem>
                       <FormLabel className="flex items-center text-sm font-semibold text-foreground">
                         <Calendar className="w-4 h-4 text-primary mr-2" />
-                        {selectedOffer === "1 Journée" ? "Date de location" : "Date de début"}
+                        {isSingleDay ? "Date de location" : "Date de début"}
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -359,6 +418,13 @@ export default function BookingForm() {
                           className="booking-form-input"
                           data-testid="input-start-date"
                           {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            if (!isSingleDay && e.target.value) {
+                              const suggestedEndDate = calculateAutoEndDate(e.target.value, selectedDurationType);
+                              form.setValue("endDate", suggestedEndDate);
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -366,7 +432,7 @@ export default function BookingForm() {
                   )}
                 />
 
-                {selectedOffer && selectedOffer !== "1 Journée" && (
+                {selectedOffer && !isSingleDay && (
                   <FormField
                     control={form.control}
                     name="endDate"
@@ -375,12 +441,16 @@ export default function BookingForm() {
                         <FormLabel className="flex items-center text-sm font-semibold text-foreground">
                           <Calendar className="w-4 h-4 text-primary mr-2" />
                           Date de fin
+                          <span className="ml-2 text-xs text-muted-foreground font-normal">
+                            (min. {minDays} jour{minDays > 1 ? 's' : ''})
+                          </span>
                         </FormLabel>
                         <FormControl>
                           <Input
                             type="date"
                             className="booking-form-input"
                             data-testid="input-end-date"
+                            min={watchedStartDate ? calculateAutoEndDate(watchedStartDate, selectedDurationType) : undefined}
                             {...field}
                           />
                         </FormControl>
@@ -776,7 +846,7 @@ export default function BookingForm() {
                     id: "temp-preview",
                     offer: watchedOffer,
                     startDate: new Date(watchedStartDate),
-                    endDate: watchedOffer === "1 Journée" ? new Date(watchedStartDate) : (watchedEndDate ? new Date(watchedEndDate) : new Date(watchedStartDate)),
+                    endDate: isSingleDay ? new Date(watchedStartDate) : (watchedEndDate ? new Date(watchedEndDate) : new Date(watchedStartDate)),
                     startHour: watchedStartHour,
                     endHour: watchedEndHour,
                     customerName: watchedCustomerName || "À compléter",
