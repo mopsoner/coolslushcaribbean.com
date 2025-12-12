@@ -47,11 +47,30 @@ type BookingFormData = z.infer<typeof bookingSchema>;
 
 type OfferWithPrice = Offer & { amountCents: number; durationType: string };
 
-const DURATION_MIN_DAYS: Record<string, number> = {
-  jour: 1,
-  weekend: 2,
-  semaine: 7,
-  mois: 30,
+const DURATION_CONFIG: Record<string, { min: number; max: number; fixed: boolean }> = {
+  jour: { min: 1, max: 1, fixed: true },
+  weekend: { min: 3, max: 3, fixed: true },
+  semaine: { min: 7, max: 7, fixed: true },
+  mois: { min: 1, max: 30, fixed: false },
+};
+
+// Helper to check if a date is a Friday
+const isFriday = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.getDay() === 5; // 5 = Friday
+};
+
+// Helper to get next Friday from a date
+const getNextFriday = (dateStr: string) => {
+  const date = new Date(dateStr);
+  const day = date.getDay();
+  const daysUntilFriday = (5 - day + 7) % 7;
+  if (daysUntilFriday === 0 && day !== 5) {
+    date.setDate(date.getDate() + 7);
+  } else if (daysUntilFriday > 0) {
+    date.setDate(date.getDate() + daysUntilFriday);
+  }
+  return date.toISOString().split('T')[0];
 };
 
 export default function BookingForm() {
@@ -109,14 +128,19 @@ export default function BookingForm() {
   };
 
   const selectedDurationType = getSelectedOfferDurationType();
+  const durationConfig = DURATION_CONFIG[selectedDurationType] || { min: 1, max: 30, fixed: false };
   const isSingleDay = selectedDurationType === "jour";
-  const minDays = DURATION_MIN_DAYS[selectedDurationType] || 1;
+  const isWeekend = selectedDurationType === "weekend";
+  const isFixedDuration = durationConfig.fixed;
+  const minDays = durationConfig.min;
+  const maxDays = durationConfig.max;
 
   // Auto-calculate endDate based on durationType when startDate changes
   const calculateAutoEndDate = (startDateStr: string, durationType: string) => {
     if (!startDateStr) return "";
+    const config = DURATION_CONFIG[durationType] || { min: 1, max: 30, fixed: false };
     const startDate = new Date(startDateStr);
-    const daysToAdd = (DURATION_MIN_DAYS[durationType] || 1) - 1;
+    const daysToAdd = config.min - 1;
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + daysToAdd);
     return endDate.toISOString().split('T')[0];
@@ -160,6 +184,16 @@ export default function BookingForm() {
       return;
     }
 
+    // Weekend validation: must start on Friday
+    if (isWeekend && !isFriday(data.startDate)) {
+      toast({
+        title: "Date invalide",
+        description: "L'offre weekend doit commencer un vendredi.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate minimum duration based on durationType
     const startDate = new Date(data.startDate);
     const endDateValue = isSingleDay ? startDate : new Date(data.endDate!);
@@ -183,6 +217,16 @@ export default function BookingForm() {
       toast({
         title: "Durée insuffisante",
         description: `Cette offre nécessite une durée minimum de ${minDays} jour${minDays > 1 ? 's' : ''}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Max days validation (for mois offer)
+    if (daysDiff > maxDays) {
+      toast({
+        title: "Durée trop longue",
+        description: `Cette offre est limitée à ${maxDays} jours maximum.`,
         variant: "destructive",
       });
       return;
@@ -411,6 +455,11 @@ export default function BookingForm() {
                       <FormLabel className="flex items-center text-sm font-semibold text-foreground">
                         <Calendar className="w-4 h-4 text-primary mr-2" />
                         {isSingleDay ? "Date de location" : "Date de début"}
+                        {isWeekend && (
+                          <span className="ml-2 text-xs text-orange-600 font-normal">
+                            (vendredi uniquement)
+                          </span>
+                        )}
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -427,6 +476,11 @@ export default function BookingForm() {
                           }}
                         />
                       </FormControl>
+                      {isWeekend && watchedStartDate && !isFriday(watchedStartDate) && (
+                        <p className="text-xs text-orange-600 mt-1">
+                          Attention: La date sélectionnée n'est pas un vendredi
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -441,9 +495,15 @@ export default function BookingForm() {
                         <FormLabel className="flex items-center text-sm font-semibold text-foreground">
                           <Calendar className="w-4 h-4 text-primary mr-2" />
                           Date de fin
-                          <span className="ml-2 text-xs text-muted-foreground font-normal">
-                            (min. {minDays} jour{minDays > 1 ? 's' : ''})
-                          </span>
+                          {isFixedDuration ? (
+                            <span className="ml-2 text-xs text-muted-foreground font-normal">
+                              (fixée à {minDays} jour{minDays > 1 ? 's' : ''})
+                            </span>
+                          ) : (
+                            <span className="ml-2 text-xs text-muted-foreground font-normal">
+                              (max. {maxDays} jours)
+                            </span>
+                          )}
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -451,6 +511,12 @@ export default function BookingForm() {
                             className="booking-form-input"
                             data-testid="input-end-date"
                             min={watchedStartDate ? calculateAutoEndDate(watchedStartDate, selectedDurationType) : undefined}
+                            max={watchedStartDate && !isFixedDuration ? (() => {
+                              const maxDate = new Date(watchedStartDate);
+                              maxDate.setDate(maxDate.getDate() + maxDays - 1);
+                              return maxDate.toISOString().split('T')[0];
+                            })() : undefined}
+                            disabled={isFixedDuration}
                             {...field}
                           />
                         </FormControl>
