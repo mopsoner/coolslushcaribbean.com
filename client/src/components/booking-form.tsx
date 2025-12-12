@@ -705,7 +705,7 @@ export default function BookingForm() {
                     <FormControl>
                       <Input
                         type="tel"
-                        placeholder="Ex: 0690 12 34 56"
+                        placeholder="Ex: 0691 24 32 46"
                         className="booking-form-input"
                         data-testid="input-customer-phone"
                         {...field}
@@ -864,7 +864,7 @@ export default function BookingForm() {
       <div className="mt-8 text-center">
         <p className="text-muted-foreground">
           <Phone className="inline w-4 h-4 text-primary mr-2" />
-          Besoin d'aide ? Contactez-nous au <a href="tel:+590690123456" className="text-primary font-semibold hover:underline">0690 12 34 56</a>
+          Besoin d'aide ? Contactez-nous au <a href="tel:+590691243246" className="text-primary font-semibold hover:underline">0691 24 32 46</a>
         </p>
       </div>
     </div>

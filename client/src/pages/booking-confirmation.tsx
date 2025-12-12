@@ -211,8 +211,8 @@ export default function BookingConfirmation() {
           <div className="text-center text-sm text-muted-foreground">
             <p>
               Besoin d'aide ? Contactez-nous au{" "}
-              <a href="tel:+590690123456" className="text-primary font-semibold hover:underline">
-                0690 12 34 56
+              <a href="tel:+590691243246" className="text-primary font-semibold hover:underline">
+                0691 24 32 46
               </a>
               {" "}ou par email à{" "}
               <a href="mailto:contact@coolslush.gp" className="text-primary font-semibold hover:underline">

@@ -69,7 +69,7 @@ export default function Terms() {
               <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">7. Contact</h2>
               <p className="text-muted-foreground">
                 Pour toute question concernant ces conditions, contactez-nous :<br/>
-                Téléphone : <a href="tel:+590690123456" className="text-primary hover:underline">0690 12 34 56</a><br/>
+                Téléphone : <a href="tel:+590691243246" className="text-primary hover:underline">0691 24 32 46</a><br/>
                 Email : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a>
               </p>
             </CardContent>

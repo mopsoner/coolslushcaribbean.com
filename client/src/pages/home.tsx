@@ -277,12 +277,12 @@ export default function Home() {
               </Button>
             </Link>
             <a 
-              href="tel:+590690123456" 
+              href="tel:+590691243246" 
               className="inline-flex items-center px-8 py-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white font-semibold text-lg border-2 border-white/30 hover:bg-white/20 transition-all"
               data-testid="link-cta-phone"
             >
               <Phone className="mr-3 w-5 h-5" />
-              0690 12 34 56
+              0691 24 32 46
             </a>
           </div>
 

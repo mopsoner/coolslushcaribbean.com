@@ -208,7 +208,7 @@ export async function sendBookingConfirmation(booking: Booking): Promise<void> {
               <p><strong>📞 Besoin d'aide ?</strong></p>
               <p>Notre équipe est disponible 7j/7 :</p>
               <ul>
-                <li>Téléphone : <a href="tel:+590690123456">0690 12 34 56</a></li>
+                <li>Téléphone : <a href="tel:+590691243246">0691 24 32 46</a></li>
                 <li>Email : <a href="mailto:contact@coolslushlemonade.com">contact@coolslushlemonade.com</a></li>
               </ul>
               
@@ -252,7 +252,7 @@ PROCHAINES ÉTAPES
 
 BESOIN D'AIDE ?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Téléphone : 0690 12 34 56
+Téléphone : 0691 24 32 46
 Email : contact@coolslushlemonade.com
 
 À très bientôt,
@@ -327,7 +327,7 @@ export async function sendReminderEmail(booking: Booking): Promise<void> {
                 <li>📞 ${escapeHtml(booking.customerPhone)}</li>
                 ${booking.customerAddress ? `<li>📍 ${escapeHtml(booking.customerAddress)}</li>` : ''}
               </ul>
-              <p>📞 Questions ? Appelez-nous au 0690 12 34 56</p>
+              <p>📞 Questions ? Appelez-nous au 0691 24 32 46</p>
               
               <p>À demain !<br><strong>L'équipe Cool Slush</strong></p>
             </div>
@@ -365,7 +365,7 @@ RÉSERVATION #${booking.id.slice(-8)}
 - Ayez vos ingrédients prêts (sirops, fruits, etc.)
 - Assurez-vous d'être disponible pour réceptionner la machine
 
-Questions ? Appelez-nous au 0690 12 34 56
+Questions ? Appelez-nous au 0691 24 32 46
 
 À demain !
 L'équipe Cool Slush
@@ -472,7 +472,7 @@ export async function sendSwiklyDepositEmail(booking: Booking): Promise<void> {
               <p style="margin-top: 25px;"><strong>Besoin d'aide ?</strong></p>
               <p>Notre équipe est disponible :</p>
               <ul>
-                <li>📞 Téléphone : <a href="tel:+590690123456" style="color: #0EA5E9;">0690 12 34 56</a></li>
+                <li>📞 Téléphone : <a href="tel:+590691243246" style="color: #0EA5E9;">0691 24 32 46</a></li>
                 <li>📧 Email : <a href="mailto:contact@coolslushlemonade.com" style="color: #0EA5E9;">contact@coolslushlemonade.com</a></li>
               </ul>
               
@@ -526,7 +526,7 @@ Total : ${formatEuro(booking.totalCents)}
 
 BESOIN D'AIDE ?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Téléphone : 0690 12 34 56
+Téléphone : 0691 24 32 46
 Email : contact@coolslushlemonade.com
 
 À très bientôt,
@@ -676,7 +676,7 @@ export async function sendBookingStatusChangeEmail(booking: Booking, oldStatus: 
               <p><strong>Besoin d'aide ?</strong></p>
               <p>Notre équipe est disponible :</p>
               <ul>
-                <li>📞 Téléphone : <a href="tel:+590690123456" style="color: #0EA5E9;">0690 12 34 56</a></li>
+                <li>📞 Téléphone : <a href="tel:+590691243246" style="color: #0EA5E9;">0691 24 32 46</a></li>
                 <li>📧 Email : <a href="mailto:contact@coolslushlemonade.com" style="color: #0EA5E9;">contact@coolslushlemonade.com</a></li>
               </ul>
               
@@ -728,7 +728,7 @@ INFORMATIONS IMPORTANTES
 
 BESOIN D'AIDE ?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Téléphone : 0690 12 34 56
+Téléphone : 0691 24 32 46
 Email : contact@coolslushlemonade.com
 
 À très bientôt,
@@ -796,7 +796,7 @@ export async function sendFollowUpEmail(booking: Booking): Promise<void> {
               <p>Au plaisir de vous revoir bientôt,<br><strong>L'équipe Cool Slush</strong></p>
               
               <p style="text-align: center; margin-top: 30px;">
-                <a href="tel:+590690123456" style="color: #0EA5E9;">0690 12 34 56</a> • 
+                <a href="tel:+590691243246" style="color: #0EA5E9;">0691 24 32 46</a> • 
                 <a href="mailto:contact@coolslushlemonade.com" style="color: #0EA5E9;">contact@coolslushlemonade.com</a>
               </p>
             </div>
@@ -836,7 +836,7 @@ Profitez de 10% de réduction sur votre prochaine réservation avec le code : CO
 
 CONTACT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Téléphone : 0690 12 34 56
+Téléphone : 0691 24 32 46
 Email : contact@coolslushlemonade.com
 
 Au plaisir de vous revoir bientôt,

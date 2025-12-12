@@ -16,7 +16,7 @@ export default function Mentions() {
               <p className="text-muted-foreground">
                 <strong>Cool Slush</strong><br/>
                 Location de machines à Slushie professionnelles<br/>
-                Téléphone : <a href="tel:+590690123456" className="text-primary hover:underline">0690 12 34 56</a><br/>
+                Téléphone : <a href="tel:+590691243246" className="text-primary hover:underline">0691 24 32 46</a><br/>
                 Email : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a>
               </p>
 
@@ -72,7 +72,7 @@ export default function Mentions() {
               <p className="text-muted-foreground">
                 Pour toute question concernant ces mentions légales :<br/>
                 Email : <a href="mailto:contact@coolslushlemonade.com" className="text-primary hover:underline">contact@coolslushlemonade.com</a><br/>
-                Téléphone : <a href="tel:+590690123456" className="text-primary hover:underline">0690 12 34 56</a>
+                Téléphone : <a href="tel:+590691243246" className="text-primary hover:underline">0691 24 32 46</a>
               </p>
             </CardContent>
           </Card>

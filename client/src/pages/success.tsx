@@ -127,7 +127,7 @@ export default function Success() {
                 Retour à l'accueil
               </Button>
             </Link>
-            <a href="tel:+590690123456">
+            <a href="tel:+590691243246">
               <Button variant="outline" className="inline-flex items-center px-6 py-3 rounded-xl font-semibold hover:bg-muted transition-colors" data-testid="button-contact">
                 <Phone className="mr-2 w-4 h-4" />
                 Nous contacter

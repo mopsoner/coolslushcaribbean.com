@@ -29,7 +29,7 @@ export default function HeroSection() {
                 Réserver maintenant
               </Link>
               <a 
-                href="#comment-ca-marche" 
+                href="/#comment-ca-marche" 
                 className="inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white font-semibold text-lg border-2 border-white/30 hover:bg-white/20 transition-all"
                 data-testid="link-how-it-works"
               >
@@ -63,7 +63,7 @@ export default function HeroSection() {
             />
             <div className="absolute -bottom-6 -right-6 bg-accent text-accent-foreground px-6 py-4 rounded-2xl shadow-2xl" data-testid="price-badge">
               <div className="text-sm font-semibold">À partir de</div>
-              <div className="text-3xl font-bold">90€/jour</div>
+              <div className="text-3xl font-bold">50€/jour</div>
             </div>
           </div>
         </div>
