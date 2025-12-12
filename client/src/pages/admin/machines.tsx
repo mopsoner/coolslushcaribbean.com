@@ -458,7 +458,7 @@ export default function AdminMachines() {
                             {machine.imageUrl ? (
                               <>
                                 <img
-                                  src={machine.imageUrl}
+                                  src={`${machine.imageUrl}?t=${new Date(machine.updatedAt || Date.now()).getTime()}`}
                                   alt={machine.name}
                                   className="w-full h-full object-cover"
                                   data-testid={`img-machine-${machine.id}`}

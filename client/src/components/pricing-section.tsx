@@ -27,7 +27,7 @@ const tierFeatures = {
 
 const tierPeriods = {
   "1 Journée": "par machine",
-  "Week-end": "par machine",
+  "Week-end": "par jour/machine",
   Événement: "location longue durée",
 };
 
