@@ -1047,6 +1047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     phone: z.string().optional(),
     subject: z.string().min(1),
     message: z.string().min(10),
+    website: z.string().optional(),
   });
 
   app.post("/api/contact", async (req, res) => {
@@ -1060,6 +1061,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const data = parseResult.data;
+      
+      // Honeypot check - if website field is filled, it's likely a bot
+      if (data.website && data.website.trim() !== '') {
+        console.log('Honeypot triggered - bot detected');
+        // Return success to not alert the bot, but don't send email
+        return res.json({ success: true, message: "Message envoyé avec succès" });
+      }
       
       const subjectLabels: Record<string, string> = {
         special_request: "Demande spéciale",

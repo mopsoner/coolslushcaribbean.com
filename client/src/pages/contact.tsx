@@ -21,6 +21,7 @@ const contactSchema = z.object({
   phone: z.string().optional(),
   subject: z.string().min(1, "Veuillez sélectionner un sujet"),
   message: z.string().min(10, "Message requis (min. 10 caractères)"),
+  website: z.string().optional(),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
@@ -37,6 +38,7 @@ export default function Contact() {
       phone: "",
       subject: "",
       message: "",
+      website: "",
     },
   });
 
@@ -216,6 +218,24 @@ export default function Contact() {
                         )}
                       />
 
+                      <FormField
+                        control={form.control}
+                        name="website"
+                        render={({ field }) => (
+                          <FormItem className="absolute -left-[9999px] opacity-0 h-0 overflow-hidden" aria-hidden="true">
+                            <FormLabel>Website</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="text"
+                                tabIndex={-1}
+                                autoComplete="off"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
                       <Button
                         type="submit"
                         className="w-full gradient-tropical text-white py-6 text-lg font-semibold"
@@ -283,7 +303,7 @@ export default function Contact() {
                       <div>
                         <h4 className="font-semibold text-slate-900 dark:text-white">Zone de service</h4>
                         <p className="text-slate-600 dark:text-slate-300">
-                          Guadeloupe & Martinique
+                          Guadeloupe
                         </p>
                       </div>
                     </div>
