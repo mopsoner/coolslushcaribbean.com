@@ -215,8 +215,8 @@ export default function BookingConfirmation() {
                 0691 24 32 46
               </a>
               {" "}ou par email à{" "}
-              <a href="mailto:contact@coolslush.gp" className="text-primary font-semibold hover:underline">
-                contact@coolslush.gp
+              <a href="mailto:contact@coolslushlemonade.com" className="text-primary font-semibold hover:underline">
+                contact@coolslushlemonade.com
               </a>
             </p>
           </div>
