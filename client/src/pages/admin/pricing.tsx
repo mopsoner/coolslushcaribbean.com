@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { DollarSign, Edit, Trash, Plus, X } from "lucide-react";
+import { DollarSign, Edit, Trash, Plus, X, Clock } from "lucide-react";
 import type { Machine } from "@shared/schema";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +22,7 @@ type OfferWithPricing = {
   name: string;
   description: string | null;
   details: string | null;
+  durationType: string;
   basePriceCents: number;
   active: boolean;
   createdAt: string;
@@ -35,6 +36,13 @@ type OfferWithPricing = {
     updatedAt: string;
   }>;
 };
+
+const DURATION_TYPES = [
+  { value: "jour", label: "1 Jour" },
+  { value: "weekend", label: "Week-end (2-3 jours)" },
+  { value: "semaine", label: "Semaine (7 jours)" },
+  { value: "mois", label: "Mois (30 jours)" },
+];
 
 type MachinePriceOverride = {
   machineId: string;
@@ -52,6 +60,7 @@ export default function AdminPricing() {
   const [offerName, setOfferName] = useState("");
   const [offerDescription, setOfferDescription] = useState("");
   const [offerDetails, setOfferDetails] = useState("");
+  const [durationType, setDurationType] = useState("jour");
   const [basePriceEuros, setBasePriceEuros] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [machinePriceOverrides, setMachinePriceOverrides] = useState<MachinePriceOverride[]>([]);
@@ -69,6 +78,7 @@ export default function AdminPricing() {
       name: string;
       description?: string;
       details?: string;
+      durationType?: string;
       basePriceCents: number;
       active: boolean;
       machinePriceOverrides?: MachinePriceOverride[];
@@ -101,6 +111,7 @@ export default function AdminPricing() {
       name?: string;
       description?: string;
       details?: string;
+      durationType?: string;
       basePriceCents?: number;
       active?: boolean;
       machinePriceOverrides?: MachinePriceOverride[];
@@ -177,6 +188,7 @@ export default function AdminPricing() {
     setOfferName("");
     setOfferDescription("");
     setOfferDetails("");
+    setDurationType("jour");
     setBasePriceEuros("");
     setIsActive(true);
     setMachinePriceOverrides([]);
@@ -193,6 +205,7 @@ export default function AdminPricing() {
     setOfferName(offer.name);
     setOfferDescription(offer.description || "");
     setOfferDetails(offer.details || "");
+    setDurationType(offer.durationType || "jour");
     setBasePriceEuros((offer.basePriceCents / 100).toString());
     setIsActive(offer.active);
     setMachinePriceOverrides(
@@ -222,6 +235,7 @@ export default function AdminPricing() {
       name: offerName.trim(),
       description: offerDescription.trim() || undefined,
       details: offerDetails.trim() || undefined,
+      durationType,
       basePriceCents,
       active: isActive,
       machinePriceOverrides: machinePriceOverrides.filter(o => o.machineId && o.amountCents >= 0),
@@ -333,6 +347,25 @@ export default function AdminPricing() {
                     />
                     <p className="text-sm text-muted-foreground mt-1">
                       Utilisez des sauts de ligne pour créer une liste
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="durationType">Type de durée *</Label>
+                    <Select value={durationType} onValueChange={setDurationType}>
+                      <SelectTrigger id="durationType" data-testid="select-duration-type">
+                        <SelectValue placeholder="Sélectionner une durée" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DURATION_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Détermine la durée minimum de location pour cette offre
                     </p>
                   </div>
 
@@ -457,6 +490,7 @@ export default function AdminPricing() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Offre</TableHead>
+                  <TableHead>Durée</TableHead>
                   <TableHead>Prix de base</TableHead>
                   <TableHead>Surcharges machines</TableHead>
                   <TableHead>Statut</TableHead>
@@ -474,6 +508,14 @@ export default function AdminPricing() {
                         {offer.description && (
                           <p className="text-sm text-muted-foreground">{offer.description}</p>
                         )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <span data-testid={`text-duration-${offer.id}`}>
+                          {DURATION_TYPES.find(d => d.value === offer.durationType)?.label || offer.durationType}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -539,7 +581,7 @@ export default function AdminPricing() {
                 ))}
                 {(!offers || offers.length === 0) && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       Aucune offre configurée. Créez votre première offre pour commencer.
                     </TableCell>
                   </TableRow>

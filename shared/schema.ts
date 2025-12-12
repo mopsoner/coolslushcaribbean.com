@@ -22,6 +22,7 @@ export const offers = pgTable("offers", {
   name: text("name").notNull().unique(),
   description: text("description"),
   details: text("details"), // Détails/contenu de l'offre (ex: ce qui est inclus dans le prix)
+  durationType: text("duration_type").notNull().default("jour"), // Type de durée: "jour", "weekend", "semaine", "mois"
   basePriceCents: integer("base_price_cents").notNull(), // Prix par machine par jour (daily price per machine)
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
