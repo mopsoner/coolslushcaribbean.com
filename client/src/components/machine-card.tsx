@@ -36,7 +36,7 @@ export default function MachineCard({ machine }: MachineCardProps) {
     <Card className={`rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105 ${!isAvailable ? 'opacity-75' : ''}`}>
       <div className="relative">
         <img 
-          src={ninjaSlushiImage} 
+          src={machine.imageUrl ? `${machine.imageUrl}?t=${new Date(machine.updatedAt || Date.now()).getTime()}` : ninjaSlushiImage} 
           alt="Machine à Slushie Ninja professionnelle 2,5L" 
           className={`w-full h-56 object-cover ${!isAvailable ? 'grayscale' : ''}`}
           data-testid={`img-machine-${machine.id}`}
