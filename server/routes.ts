@@ -11,24 +11,10 @@ import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail, sendBookingStatusChangeEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
 import { requireAdmin, login as performLogin, logout as performLogout, validateToken } from "./auth-middleware";
-
-const uploadsDir = path.join(process.cwd(), 'uploads', 'machines');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const machineImageStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+import { ObjectStorageService } from "./objectStorage";
 
 const uploadMachineImage = multer({
-  storage: machineImageStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -205,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload machine image (admin)
+  // Upload machine image (admin) - uses Object Storage for persistence
   app.post("/api/admin/machines/:id/image", requireAdmin, uploadMachineImage.single('image'), async (req, res) => {
     try {
       const machineId = req.params.id;
@@ -217,25 +203,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const machine = await storage.getMachine(machineId);
       if (!machine) {
-        fs.unlinkSync(file.path);
         return res.status(404).json({ error: "Machine non trouvée" });
       }
       
-      if (machine.imageUrl) {
-        const oldImagePath = path.join(process.cwd(), machine.imageUrl.replace(/^\//, ''));
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
+      const objectStorageService = new ObjectStorageService();
+      
+      if (machine.imageUrl && machine.imageUrl.startsWith('/')) {
+        await objectStorageService.deleteFile(machine.imageUrl);
       }
       
-      const imageUrl = `/uploads/machines/${file.filename}`;
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      const fileName = `${uniqueSuffix}${ext}`;
+      
+      const imageUrl = await objectStorageService.uploadFile(file.buffer, fileName, file.mimetype);
       const updatedMachine = await storage.updateMachine(machineId, { imageUrl });
       
       res.json(updatedMachine);
     } catch (error: any) {
-      if (req.file) {
-        fs.unlinkSync(req.file.path);
-      }
+      console.error("Error uploading machine image:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -250,11 +236,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Machine non trouvée" });
       }
       
-      if (machine.imageUrl) {
-        const imagePath = path.join(process.cwd(), machine.imageUrl.replace(/^\//, ''));
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
-        }
+      if (machine.imageUrl && machine.imageUrl.startsWith('/')) {
+        const objectStorageService = new ObjectStorageService();
+        await objectStorageService.deleteFile(machine.imageUrl);
       }
       
       const updatedMachine = await storage.updateMachine(machineId, { imageUrl: null });
@@ -264,9 +248,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve uploaded images
-  const express = await import('express');
-  app.use('/uploads', express.default.static(path.join(process.cwd(), 'uploads')));
+  // Serve machine images from Object Storage
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   // Create a booking
   app.post("/api/bookings", async (req, res) => {

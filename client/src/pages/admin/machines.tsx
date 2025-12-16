@@ -21,6 +21,16 @@ const statusOptions = [
   { value: "MAINTENANCE", label: "Maintenance", variant: "destructive" as const },
 ];
 
+function getMachineImageUrl(machine: Machine): string {
+  if (!machine.imageUrl) return '';
+  const timestamp = new Date(machine.updatedAt || Date.now()).getTime();
+  if (machine.imageUrl.startsWith('/replit-objstore-')) {
+    const pathWithoutBucket = machine.imageUrl.split('/').slice(2).join('/');
+    return `/public-objects/${pathWithoutBucket}?t=${timestamp}`;
+  }
+  return `${machine.imageUrl}?t=${timestamp}`;
+}
+
 export default function AdminMachines() {
   useAdminAuth();
 
@@ -458,7 +468,7 @@ export default function AdminMachines() {
                             {machine.imageUrl ? (
                               <>
                                 <img
-                                  src={`${machine.imageUrl}?t=${new Date(machine.updatedAt || Date.now()).getTime()}`}
+                                  src={getMachineImageUrl(machine)}
                                   alt={machine.name}
                                   className="w-full h-full object-cover"
                                   data-testid={`img-machine-${machine.id}`}

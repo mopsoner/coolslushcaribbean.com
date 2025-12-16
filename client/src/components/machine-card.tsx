@@ -28,6 +28,16 @@ const statusMap = {
   }
 };
 
+function getMachineImageUrl(machine: Machine): string {
+  if (!machine.imageUrl) return ninjaSlushiImage;
+  const timestamp = new Date(machine.updatedAt || Date.now()).getTime();
+  if (machine.imageUrl.startsWith('/replit-objstore-')) {
+    const pathWithoutBucket = machine.imageUrl.split('/').slice(2).join('/');
+    return `/public-objects/${pathWithoutBucket}?t=${timestamp}`;
+  }
+  return `${machine.imageUrl}?t=${timestamp}`;
+}
+
 export default function MachineCard({ machine }: MachineCardProps) {
   const status = statusMap[machine.status as keyof typeof statusMap];
   const isAvailable = machine.status === "AVAILABLE";
@@ -36,7 +46,7 @@ export default function MachineCard({ machine }: MachineCardProps) {
     <Card className={`rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105 ${!isAvailable ? 'opacity-75' : ''}`}>
       <div className="relative">
         <img 
-          src={machine.imageUrl ? `${machine.imageUrl}?t=${new Date(machine.updatedAt || Date.now()).getTime()}` : ninjaSlushiImage} 
+          src={getMachineImageUrl(machine)} 
           alt="Machine à Slushie Ninja professionnelle 2,5L" 
           className={`w-full h-56 object-cover ${!isAvailable ? 'grayscale' : ''}`}
           data-testid={`img-machine-${machine.id}`}
