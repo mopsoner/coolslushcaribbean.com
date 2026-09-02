@@ -2,10 +2,6 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    // If unauthorized, clear the admin token
-    if (res.status === 401) {
-      localStorage.removeItem("adminToken");
-    }
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
@@ -18,12 +14,6 @@ export async function apiRequest(
 ): Promise<Response> {
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   
-  // Add auth token if available
-  const token = localStorage.getItem("adminToken");
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
   const res = await fetch(url, {
     method,
     headers,
@@ -41,22 +31,11 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const headers: Record<string, string> = {};
-    
-    // Add auth token if available
-    const token = localStorage.getItem("adminToken");
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     const res = await fetch(queryKey.join("/") as string, {
-      headers,
       credentials: "include",
     });
 
     if (res.status === 401) {
-      // Clear admin token on unauthorized
-      localStorage.removeItem("adminToken");
       if (unauthorizedBehavior === "returnNull") {
         return null;
       }

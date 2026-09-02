@@ -55,22 +55,11 @@ export default function AdminSettings() {
   const [, setLocation] = useLocation();
   const [localSettings, setLocalSettings] = useState<Record<string, { value: string; active: boolean }>>({});
 
-  // Check authentication
-  useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    if (!token) {
-      setLocation("/admin/login");
-    }
-  }, [setLocation]);
-
   const { data: settings, isLoading } = useQuery<Setting[]>({
     queryKey: ["/api/admin/settings"],
     queryFn: async () => {
-      const token = localStorage.getItem("adminToken");
       const response = await fetch("/api/admin/settings", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
       if (response.status === 401) {
         setLocation("/admin/login");

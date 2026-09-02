@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import express from "express";
 import type { Booking, BookingStatus } from "@shared/schema";
-import { login, requireAdmin } from "./auth-middleware";
+import { authLogin, initializeAuth, requireAdmin } from "./auth-middleware";
 import { registerAdminBookingStatusRoute } from "./admin-booking-status";
 import {
   assertBookingStatusTransition,
@@ -10,6 +10,11 @@ import {
   transitionBookingStatus,
   type BookingStatusStore,
 } from "./booking-status";
+
+initializeAuth({
+  password: "correct horse battery staple",
+  sessionSecret: "a-session-secret-that-is-at-least-32-bytes",
+});
 
 function booking(overrides: Partial<Booking> = {}): Booking {
   return {
@@ -31,6 +36,7 @@ async function withStatusServer(
 ) {
   const app = express();
   app.use(express.json());
+  app.post("/api/auth/login", authLogin);
   registerAdminBookingStatusRoute(app, store, requireAdmin);
   const server = app.listen(0);
   await new Promise<void>(resolve => server.once("listening", resolve));
@@ -58,12 +64,17 @@ test("status endpoint validates an unknown status before storage access", () => 
     getBooking: async () => { throw new Error("must not be called"); },
     updateBookingStatus: async () => { throw new Error("must not be called"); },
   };
-  const token = login(process.env.ADMIN_PASSWORD || "admin123");
-  assert(token);
+  const password = "correct horse battery staple";
+  initializeAuth({ password, sessionSecret: "a-session-secret-that-is-at-least-32-bytes" });
   return withStatusServer(store, async origin => {
+    const loginResponse = await fetch(`${origin}/api/auth/login`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password }),
+    });
+    const cookie = loginResponse.headers.get("set-cookie")?.split(";", 1)[0];
+    assert(cookie);
     const response = await fetch(`${origin}/api/admin/bookings/booking-1/status`, {
       method: "PATCH",
-      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      headers: { "content-type": "application/json", cookie },
       body: JSON.stringify({ status: "UNKNOWN" }),
     });
     assert.equal(response.status, 400);
