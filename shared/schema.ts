@@ -3,6 +3,25 @@ import { pgTable, text, varchar, timestamp, integer, boolean, json, unique } fro
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const bookingStatusSchema = z.enum(["PENDING", "CONFIRMED", "CANCELLED"]);
+
+export const bookingStatusUpdateSchema = z.object({
+  status: bookingStatusSchema,
+  override: z.boolean().optional().default(false),
+  overrideReason: z.string().trim().min(10, "Le motif de dérogation doit contenir au moins 10 caractères").optional(),
+}).superRefine((data, context) => {
+  if (data.override && !data.overrideReason) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["overrideReason"],
+      message: "Un motif est requis pour toute dérogation",
+    });
+  }
+});
+
+export type BookingStatus = z.infer<typeof bookingStatusSchema>;
+export type BookingStatusUpdate = z.infer<typeof bookingStatusUpdateSchema>;
+
 export const machines = pgTable("machines", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().default("Ninja Slushi"),

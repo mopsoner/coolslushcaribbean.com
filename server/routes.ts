@@ -14,6 +14,7 @@ import { getSwiklyClient } from "./swikly";
 import { requireAdmin, login as performLogin, logout as performLogout, validateToken } from "./auth-middleware";
 import { ObjectStorageService } from "./objectStorage";
 import { hashAccessToken, hasBookingAccess, registerBookingReadRoutes } from "./booking-access";
+import { registerAdminBookingStatusRoute } from "./admin-booking-status";
 
 const uploadMachineImage = multer({
   storage: multer.memoryStorage(),
@@ -37,6 +38,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   registerBookingReadRoutes(app, storage);
+  registerAdminBookingStatusRoute(app, storage, requireAdmin, (booking, oldStatus, newStatus) => {
+    sendBookingStatusChangeEmail(booking, oldStatus, newStatus).catch(error => {
+      console.error("Failed to send status change email:", error);
+    });
+  });
   
   // ============= AUTH ROUTES =============
   
@@ -379,37 +385,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update booking status
-  app.patch("/api/admin/bookings/:id/status", requireAdmin, async (req, res) => {
-    try {
-      const { status } = req.body;
-      
-      // Get old booking status before update
-      const oldBooking = await storage.getBooking(req.params.id);
-      if (!oldBooking) {
-        return res.status(404).json({ error: "Réservation non trouvée" });
-      }
-      const oldStatus = oldBooking.status;
-      
-      // Update the status
-      const booking = await storage.updateBookingStatus(req.params.id, status);
-      if (!booking) {
-        return res.status(404).json({ error: "Réservation non trouvée" });
-      }
-      
-      // Send email notification if status changed
-      if (oldStatus !== status) {
-        sendBookingStatusChangeEmail(booking, oldStatus, status).catch(error => {
-          console.error('Failed to send status change email:', error);
-        });
-      }
-      
-      res.json(booking);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Update booking (admin - full edit)
   app.patch("/api/admin/bookings/:id", requireAdmin, async (req, res) => {
     try {
@@ -424,7 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Define allowed fields for editing (don't allow editing machines, totalCents, payment-related fields)
       const allowedFields = [
         'customerName', 'customerEmail', 'customerPhone', 'customerAddress',
-        'startDate', 'endDate', 'startHour', 'endHour', 'status'
+        'startDate', 'endDate', 'startHour', 'endHour'
       ];
       
       // Build update object with only allowed fields

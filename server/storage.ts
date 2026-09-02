@@ -1,4 +1,4 @@
-import { type Machine, type InsertMachine, type Booking, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, type InsertOfferWithPricing, type OfferWithPricing, type Setting, type InsertSetting, machines, bookings, offers, offerMachinePrices, syrups, settings } from "@shared/schema";
+import { type Machine, type InsertMachine, type Booking, type BookingStatus, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, type InsertOfferWithPricing, type OfferWithPricing, type Setting, type InsertSetting, machines, bookings, offers, offerMachinePrices, syrups, settings } from "@shared/schema";
 import { db } from "../db";
 import { eq, gte, lte, and, or, isNull, inArray } from "drizzle-orm";
 
@@ -17,7 +17,7 @@ export interface IStorage {
   getAllBookings(): Promise<Booking[]>;
   createBooking(booking: InsertBooking & { accessTokenHash: string }): Promise<Booking>;
   updateBooking(id: string, updates: Partial<Booking>): Promise<Booking | undefined>;
-  updateBookingStatus(id: string, status: string): Promise<Booking | undefined>;
+  updateBookingStatus(id: string, status: BookingStatus): Promise<Booking | undefined>;
   getBookingsByDate(date: Date): Promise<Booking[]>;
   getOverlappingBookings(startDate: Date, endDate: Date): Promise<Booking[]>;
 
@@ -122,7 +122,7 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async updateBookingStatus(id: string, status: string): Promise<Booking | undefined> {
+  async updateBookingStatus(id: string, status: BookingStatus): Promise<Booking | undefined> {
     return this.updateBooking(id, { status });
   }
 
