@@ -1,4 +1,4 @@
-import { type Machine, type InsertMachine, type Booking, type BookingStatus, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, type InsertOfferWithPricing, type OfferWithPricing, type Setting, type InsertSetting, machines, bookings, bookingMachines, offers, offerMachinePrices, syrups, settings } from "@shared/schema";
+import { type Machine, type InsertMachine, type MachineMutation, type MachineStatus, type Booking, type BookingMutation, type BookingStatus, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type OfferMachinePriceMutation, type InsertOfferMachinePrice, type Syrup, type SyrupMutation, type InsertSyrup, type InsertOfferWithPricing, type OfferMutation, type OfferWithPricing, type Setting, type InsertSetting, machines, bookings, bookingMachines, offers, offerMachinePrices, syrups, settings } from "@shared/schema";
 import { db } from "../db";
 import { eq, gte, lte, and, or, isNull, inArray, ne, sql } from "drizzle-orm";
 import { getBookingPeriod, reserveBooking } from "./booking-reservation";
@@ -9,15 +9,15 @@ export interface IStorage {
   getAllMachines(): Promise<Machine[]>;
   getAvailableMachines(): Promise<Machine[]>;
   createMachine(machine: InsertMachine): Promise<Machine>;
-  updateMachine(id: string, updates: Partial<Machine>): Promise<Machine | undefined>;
-  updateMachineStatus(id: string, status: string): Promise<Machine | undefined>;
+  updateMachine(id: string, updates: MachineMutation): Promise<Machine | undefined>;
+  updateMachineStatus(id: string, status: MachineStatus): Promise<Machine | undefined>;
   deleteMachine(id: string): Promise<void>;
 
   // Booking methods
   getBooking(id: string): Promise<Booking | undefined>;
   getAllBookings(): Promise<Booking[]>;
   createBooking(booking: InsertBooking & { accessTokenHash: string }): Promise<Booking>;
-  updateBooking(id: string, updates: Partial<Booking>): Promise<Booking | undefined>;
+  updateBooking(id: string, updates: BookingMutation): Promise<Booking | undefined>;
   updateBookingStatus(id: string, status: BookingStatus): Promise<Booking | undefined>;
   applySwiklyEvent(id: string, swiklyRequestId: string, eventId: string): Promise<Booking | undefined>;
   getBookingsByDate(date: Date): Promise<Booking[]>;
@@ -37,14 +37,14 @@ export interface IStorage {
   getOfferWithPricing(id: string): Promise<OfferWithPricing | undefined>;
   getAllOffersWithPricing(): Promise<OfferWithPricing[]>;
   createOfferWithPricing(data: InsertOfferWithPricing): Promise<OfferWithPricing>;
-  updateOfferWithPricing(id: string, data: Partial<InsertOfferWithPricing>): Promise<OfferWithPricing | undefined>;
+  updateOfferWithPricing(id: string, data: OfferMutation): Promise<OfferWithPricing | undefined>;
 
   // Offer machine price methods
   getOfferMachinePrice(id: string): Promise<OfferMachinePrice | undefined>;
   getAllOfferMachinePrices(): Promise<OfferMachinePrice[]>;
   getOfferMachinePricesByOffer(offerId: string): Promise<OfferMachinePrice[]>;
   createOfferMachinePrice(config: InsertOfferMachinePrice): Promise<OfferMachinePrice>;
-  updateOfferMachinePrice(id: string, updates: Partial<OfferMachinePrice>): Promise<OfferMachinePrice | undefined>;
+  updateOfferMachinePrice(id: string, updates: OfferMachinePriceMutation): Promise<OfferMachinePrice | undefined>;
   deleteOfferMachinePrice(id: string): Promise<void>;
   getEffectivePrice(offerId: string, machineId?: string): Promise<{ amountCents: number } | null>;
 
@@ -53,7 +53,7 @@ export interface IStorage {
   getAllSyrups(): Promise<Syrup[]>;
   getActiveSyrups(): Promise<Syrup[]>;
   createSyrup(syrup: InsertSyrup): Promise<Syrup>;
-  updateSyrup(id: string, updates: Partial<Syrup>): Promise<Syrup | undefined>;
+  updateSyrup(id: string, updates: SyrupMutation): Promise<Syrup | undefined>;
   deleteSyrup(id: string): Promise<void>;
 
   // Setting methods
@@ -85,7 +85,7 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async updateMachine(id: string, updates: Partial<Machine>): Promise<Machine | undefined> {
+  async updateMachine(id: string, updates: MachineMutation): Promise<Machine | undefined> {
     const result = await db
       .update(machines)
       .set({ ...updates, updatedAt: new Date() })
@@ -94,7 +94,7 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async updateMachineStatus(id: string, status: string): Promise<Machine | undefined> {
+  async updateMachineStatus(id: string, status: MachineStatus): Promise<Machine | undefined> {
     return this.updateMachine(id, { status });
   }
 
@@ -153,7 +153,7 @@ export class DbStorage implements IStorage {
     }, insertBooking));
   }
 
-  async updateBooking(id: string, updates: Partial<Booking>): Promise<Booking | undefined> {
+  async updateBooking(id: string, updates: BookingMutation): Promise<Booking | undefined> {
     return db.transaction(async (transaction) => {
       const result = await transaction
         .update(bookings)
@@ -316,7 +316,7 @@ export class DbStorage implements IStorage {
     });
   }
 
-  async updateOfferWithPricing(id: string, data: Partial<InsertOfferWithPricing>): Promise<OfferWithPricing | undefined> {
+  async updateOfferWithPricing(id: string, data: OfferMutation): Promise<OfferWithPricing | undefined> {
     const { machinePriceOverrides, ...offerUpdates } = data;
 
     return await db.transaction(async (tx) => {
@@ -379,7 +379,7 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async updateOfferMachinePrice(id: string, updates: Partial<OfferMachinePrice>): Promise<OfferMachinePrice | undefined> {
+  async updateOfferMachinePrice(id: string, updates: OfferMachinePriceMutation): Promise<OfferMachinePrice | undefined> {
     const result = await db
       .update(offerMachinePrices)
       .set({ ...updates, updatedAt: new Date() })
@@ -434,7 +434,7 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async updateSyrup(id: string, updates: Partial<Syrup>): Promise<Syrup | undefined> {
+  async updateSyrup(id: string, updates: SyrupMutation): Promise<Syrup | undefined> {
     const result = await db
       .update(syrups)
       .set({ ...updates, updatedAt: new Date() })

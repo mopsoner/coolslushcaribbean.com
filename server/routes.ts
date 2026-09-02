@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { randomBytes } from "crypto";
 import { storage } from "./storage";
-import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema, insertSettingSchema } from "@shared/schema";
+import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema, insertSettingSchema, updateBookingSchema, updateMachineSchema, updateOfferMachinePriceSchema, updateOfferWithPricingSchema, updateSyrupSchema } from "@shared/schema";
 import { calculateRentalDays } from "@shared/utils";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail, sendBookingStatusChangeEmail } from "./email";
@@ -158,13 +158,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update a machine (admin)
   app.patch("/api/admin/machines/:id", requireAdmin, async (req, res) => {
     try {
-      const machine = await storage.updateMachine(req.params.id, req.body);
+      const updates = updateMachineSchema.parse(req.body);
+      const machine = await storage.updateMachine(req.params.id, updates);
       if (!machine) {
         return res.status(404).json({ error: "Machine non trouvée" });
       }
       res.json(machine);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   });
 
@@ -318,37 +323,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/admin/bookings/:id", requireAdmin, async (req, res) => {
     try {
       const bookingId = req.params.id;
+      const updates = updateBookingSchema.parse(req.body);
       
       // Check if booking exists
       const existingBooking = await storage.getBooking(bookingId);
       if (!existingBooking) {
         return res.status(404).json({ error: "Réservation non trouvée" });
-      }
-      
-      // Define allowed fields for editing (don't allow editing machines, totalCents, payment-related fields)
-      const allowedFields = [
-        'customerName', 'customerEmail', 'customerPhone', 'customerAddress',
-        'startDate', 'endDate', 'startHour', 'endHour'
-      ];
-      
-      // Build update object with only allowed fields
-      const updates: Record<string, any> = {};
-      for (const field of allowedFields) {
-        if (req.body[field] !== undefined) {
-          if (field === 'startDate' || field === 'endDate') {
-            updates[field] = new Date(req.body[field]);
-          } else {
-            updates[field] = req.body[field];
-          }
-        }
-      }
-      
-      // Validate hour ranges
-      if (updates.startHour !== undefined && (updates.startHour < 0 || updates.startHour > 23)) {
-        return res.status(400).json({ error: "L'heure de début doit être entre 0 et 23" });
-      }
-      if (updates.endHour !== undefined && (updates.endHour < 1 || updates.endHour > 24)) {
-        return res.status(400).json({ error: "L'heure de fin doit être entre 1 et 24" });
       }
       
       // Validate date order
@@ -358,25 +338,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "La date de fin doit être après la date de début" });
       }
       
-      // Track if status changed for email notification
-      const oldStatus = existingBooking.status;
-      
       // Update the booking
       const booking = await storage.updateBooking(bookingId, updates);
       if (!booking) {
         return res.status(404).json({ error: "Réservation non trouvée" });
       }
       
-      // Send email notification if status changed
-      if (updates.status && oldStatus !== updates.status) {
-        sendBookingStatusChangeEmail(booking, oldStatus, updates.status).catch(error => {
-          console.error('Failed to send status change email:', error);
-        });
-      }
-      
       res.json(booking);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   });
 
@@ -741,7 +715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update an offer with pricing (admin)
   app.patch("/api/admin/offers/:id", requireAdmin, async (req, res) => {
     try {
-      const validatedData = insertOfferWithPricingSchema.partial().parse(req.body);
+      const validatedData = updateOfferWithPricingSchema.parse(req.body);
       const offer = await storage.updateOfferWithPricing(req.params.id, validatedData);
       if (!offer) {
         return res.status(404).json({ error: "Offre non trouvée" });
@@ -806,13 +780,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update an offer machine price (admin)
   app.patch("/api/admin/offer-machine-prices/:id", requireAdmin, async (req, res) => {
     try {
-      const price = await storage.updateOfferMachinePrice(req.params.id, req.body);
+      const updates = updateOfferMachinePriceSchema.parse(req.body);
+      const price = await storage.updateOfferMachinePrice(req.params.id, updates);
       if (!price) {
         return res.status(404).json({ error: "Prix machine non trouvé" });
       }
       res.json(price);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   });
 
@@ -864,13 +843,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update a syrup (admin)
   app.patch("/api/admin/syrups/:id", requireAdmin, async (req, res) => {
     try {
-      const syrup = await storage.updateSyrup(req.params.id, req.body);
+      const updates = updateSyrupSchema.parse(req.body);
+      const syrup = await storage.updateSyrup(req.params.id, updates);
       if (!syrup) {
         return res.status(404).json({ error: "Sirop non trouvé" });
       }
       res.json(syrup);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   });
 

@@ -4,12 +4,13 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const bookingStatusSchema = z.enum(["PENDING", "CONFIRMED", "CANCELLED"]);
+export const machineStatusSchema = z.enum(["AVAILABLE", "UNAVAILABLE", "MAINTENANCE"]);
 
 export const bookingStatusUpdateSchema = z.object({
   status: bookingStatusSchema,
   override: z.boolean().optional().default(false),
   overrideReason: z.string().trim().min(10, "Le motif de dérogation doit contenir au moins 10 caractères").optional(),
-}).superRefine((data, context) => {
+}).strict().superRefine((data, context) => {
   if (data.override && !data.overrideReason) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
@@ -20,6 +21,7 @@ export const bookingStatusUpdateSchema = z.object({
 });
 
 export type BookingStatus = z.infer<typeof bookingStatusSchema>;
+export type MachineStatus = z.infer<typeof machineStatusSchema>;
 export type BookingStatusUpdate = z.infer<typeof bookingStatusUpdateSchema>;
 
 export const machines = pgTable("machines", {
@@ -149,7 +151,7 @@ export const insertMachineSchema = createInsertSchema(machines).omit({
   features: z.array(z.string()).optional(),
   includedServices: z.array(z.string()).optional(),
   imageUrl: z.string().optional(),
-  status: z.string().default("AVAILABLE"),
+  status: machineStatusSchema.default("AVAILABLE"),
 });
 
 const syrupSelectionSchema = z.object({
@@ -226,30 +228,70 @@ export const insertOfferSchema = createInsertSchema(offers).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  basePriceCents: z.number().int().min(0, "Le prix doit être positif"),
 });
 
 export const insertOfferMachinePriceSchema = createInsertSchema(offerMachinePrices).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  amountCents: z.number().int().min(0, "Le prix doit être positif"),
 });
 
 export const insertSyrupSchema = createInsertSchema(syrups).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  amountCents: z.number().int().min(0, "Le prix doit être positif").default(0),
 });
 
 // Schema for machine price override (without offerId since it's provided by parent)
 export const machinePriceOverrideSchema = z.object({
   machineId: z.string().min(1, "Machine ID requis"),
   amountCents: z.number().int().min(0, "Le prix doit être positif"),
-});
+}).strict();
 
 // Schema for creating/updating offer with pricing
 export const insertOfferWithPricingSchema = insertOfferSchema.extend({
   machinePriceOverrides: z.array(machinePriceOverrideSchema).optional().default([]),
 });
+
+const nonEmptyUpdate = <T extends z.ZodTypeAny>(schema: T) => schema.refine(
+  (data) => Object.keys(data as object).length > 0,
+  { message: "Au moins une propriété doit être fournie" },
+);
+
+const updateDateSchema = z.preprocess(
+  (value) => typeof value === "string" ? new Date(value) : value,
+  z.date(),
+);
+
+/** Strict, allow-listed payloads accepted by PATCH endpoints. */
+export const updateMachineSchema = nonEmptyUpdate(insertMachineSchema.partial().strict());
+
+export const updateBookingSchema = nonEmptyUpdate(z.object({
+  customerName: z.string().min(1),
+  customerEmail: z.string().email(),
+  customerPhone: z.string().min(1),
+  customerAddress: z.string().min(5),
+  startDate: updateDateSchema,
+  endDate: updateDateSchema,
+  startHour: z.number().int().min(0).max(23),
+  endHour: z.number().int().min(1).max(24),
+}).partial().strict());
+
+export const updateOfferWithPricingSchema = nonEmptyUpdate(
+  insertOfferWithPricingSchema.partial().strict(),
+);
+
+export const updateOfferMachinePriceSchema = nonEmptyUpdate(z.object({
+  amountCents: insertOfferMachinePriceSchema.shape.amountCents,
+}).partial().strict());
+
+export const updateSyrupSchema = nonEmptyUpdate(insertSyrupSchema.partial().strict());
 
 export type InsertMachine = z.infer<typeof insertMachineSchema>;
 export type Machine = typeof machines.$inferSelect;
@@ -272,6 +314,11 @@ export type Syrup = typeof syrups.$inferSelect;
 export type SyrupSelection = z.infer<typeof syrupSelectionSchema>;
 export type MachinePriceOverride = z.infer<typeof machinePriceOverrideSchema>;
 export type InsertOfferWithPricing = z.infer<typeof insertOfferWithPricingSchema>;
+export type MachineMutation = z.infer<typeof updateMachineSchema>;
+export type BookingMutation = z.infer<typeof updateBookingSchema>;
+export type OfferMutation = z.infer<typeof updateOfferWithPricingSchema>;
+export type OfferMachinePriceMutation = z.infer<typeof updateOfferMachinePriceSchema>;
+export type SyrupMutation = z.infer<typeof updateSyrupSchema>;
 
 // Type for offer with its machine price overrides (for GET requests)
 export type OfferWithPricing = Offer & {
