@@ -17,6 +17,18 @@ import { hashAccessToken, hasBookingAccess, registerBookingReadRoutes } from "./
 import { registerAdminBookingStatusRoute } from "./admin-booking-status";
 import { registerSwiklyWebhookRoute } from "./swikly-webhook";
 import { BookingAvailabilityError } from "./booking-reservation";
+import { getPublicAppOrigin } from "./config";
+import type { Booking } from "@shared/schema";
+
+type SwiklyDepositClient = Pick<ReturnType<typeof getSwiklyClient>, "createDeposit">;
+
+export function createSwiklyDeposit(
+  client: SwiklyDepositClient,
+  booking: Booking,
+  returnToken: string,
+) {
+  return client.createDeposit(booking, getPublicAppOrigin(), returnToken);
+}
 
 const uploadMachineImage = multer({
   storage: multer.memoryStorage(),
@@ -492,10 +504,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stripePaymentIntentId: paymentIntent.id,
       });
 
-      // Detect the base URL for callbacks
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:5000';
-      const baseUrl = `${protocol}://${host}`;
+      // Security-sensitive external URLs must never depend on client-controlled headers.
+      const baseUrl = getPublicAppOrigin();
       
       // Generate a secure one-time token for Swikly return URL validation
       const crypto = await import('crypto');
@@ -519,7 +529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const swiklyClient = getSwiklyClient();
         console.log('[confirm-payment] Swikly client initialized');
         
-        const swiklyResult = await swiklyClient.createDeposit(booking, baseUrl, returnToken);
+        const swiklyResult = await createSwiklyDeposit(swiklyClient, booking, returnToken);
         console.log('[confirm-payment] Swikly API response:', JSON.stringify(swiklyResult, null, 2));
         
         if (swiklyResult.request?.link && swiklyResult.request.id) {
@@ -968,7 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stripePaymentIntentId: null,
           swiklyRequestId: null,
           lastSwiklyEventId: null,
-          swiklyUrl: `http://localhost:5000/swikly-redirect?booking=test-123`,
+          swiklyUrl: `${getPublicAppOrigin()}/swikly-redirect?booking=test-123`,
           swiklyReturnToken: null,
           swiklyReturnTokenCreatedAt: null,
           stripePaymentId: null,

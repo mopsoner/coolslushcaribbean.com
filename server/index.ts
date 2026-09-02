@@ -2,8 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeAuth } from "./auth-middleware";
+import { getPublicAppUrl } from "./config";
 
-// Fail before binding a port when authentication secrets are absent or weak.
+// Fail before binding a port when required configuration is absent or invalid.
+getPublicAppUrl();
 initializeAuth();
 
 const app = express();
