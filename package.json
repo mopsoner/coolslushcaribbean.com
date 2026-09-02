@@ -7,8 +7,11 @@
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
-    "check": "tsc",
-    "test": "tsx --test server/*.test.ts",
+    "typecheck": "tsc",
+    "check": "npm run typecheck",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "tsx --test server/booking-pricing.test.ts server/booking-reservation.test.ts server/booking-status.test.ts server/stripe-payment.test.ts server/update-schemas.test.ts",
+    "test:integration": "tsx --test server/app-errors.test.ts server/auth-middleware.test.ts server/booking-access.test.ts server/public-app-url.test.ts server/swikly-webhook.test.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {

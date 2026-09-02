@@ -6,26 +6,23 @@ async function seedOffersAndPrices() {
   const offers = [
     {
       name: "1 Journée",
+      basePriceCents: 15000,
       description: "Location pour une journée complète",
       active: true,
     },
     {
       name: "Week-end",
+      basePriceCents: 25000,
       description: "Location pour un week-end (2-3 jours)",
       active: true,
     },
     {
       name: "Événement",
+      basePriceCents: 35000,
       description: "Location pour un événement spécial",
       active: true,
     },
   ];
-
-  const defaultPrices = {
-    "1 Journée": 15000, // 150€
-    "Week-end": 25000,  // 250€
-    "Événement": 35000, // 350€
-  };
 
   for (const offerData of offers) {
     const existingOffer = await storage.getOfferByName(offerData.name);
@@ -34,15 +31,7 @@ async function seedOffersAndPrices() {
       console.log(`  Creating offer: ${offerData.name}`);
       const offer = await storage.createOffer(offerData);
       
-      const priceInCents = defaultPrices[offerData.name as keyof typeof defaultPrices];
-      console.log(`  Setting default price for ${offerData.name}: ${priceInCents / 100}€`);
-      
-      await storage.createPriceConfiguration({
-        offerId: offer.id,
-        machineId: null,
-        amountCents: priceInCents,
-        currency: "EUR",
-      });
+      console.log(`  Default price for ${offerData.name}: ${offer.basePriceCents / 100}€`);
     } else {
       console.log(`  Offer already exists: ${offerData.name}`);
     }

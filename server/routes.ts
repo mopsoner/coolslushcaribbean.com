@@ -21,16 +21,8 @@ import { getPublicAppOrigin } from "./config";
 import { BookingPricingError, calculateBookingQuote } from "./booking-pricing";
 import type { Booking } from "@shared/schema";
 import { sendErrorResponse } from "./app-errors";
-
-type SwiklyDepositClient = Pick<ReturnType<typeof getSwiklyClient>, "createDeposit">;
-
-export function createSwiklyDeposit(
-  client: SwiklyDepositClient,
-  booking: Booking,
-  returnToken: string,
-) {
-  return client.createDeposit(booking, getPublicAppOrigin(), returnToken);
-}
+import { validateStripePayment } from "./stripe-payment";
+import { createSwiklyDeposit } from "./swikly-deposit";
 
 const uploadMachineImage = multer({
   storage: multer.memoryStorage(),
@@ -433,30 +425,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Payment Intent introuvable" });
       }
 
-      if (paymentIntent.status !== 'succeeded') {
-        return res.status(400).json({ 
-          error: `Le paiement n'a pas abouti (statut: ${paymentIntent.status})` 
-        });
-      }
-
-      // CRITICAL: Verify the payment belongs to this booking and matches amount
-      if (paymentIntent.metadata.bookingId !== bookingId) {
-        return res.status(400).json({ 
-          error: "Le paiement ne correspond pas à cette réservation" 
-        });
-      }
-
-      if (paymentIntent.amount !== booking.totalCents) {
-        return res.status(400).json({ 
-          error: "Le montant du paiement ne correspond pas au total de la réservation" 
-        });
-      }
-
-      if (paymentIntent.currency !== 'eur') {
-        return res.status(400).json({ 
-          error: "La devise du paiement n'est pas correcte" 
-        });
-      }
+      // Keep provider I/O outside the deterministic business rule.
+      validateStripePayment(booking, paymentIntent);
 
       // Payment verified! Update payment status
       await storage.updateBooking(bookingId, {
