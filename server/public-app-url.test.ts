@@ -8,7 +8,7 @@ import { getPublicAppUrl } from "./config";
 process.env.PUBLIC_APP_URL = "https://reservations.example.com/application/path";
 process.env.STRIPE_SECRET_KEY ||= "sk_test_placeholder";
 
-test("PUBLIC_APP_URL is required and parsed as an HTTP(S) URL", () => {
+test("public app URL configuration is required and parsed as an HTTP(S) URL", () => {
   assert.throws(() => getPublicAppUrl({}), /PUBLIC_APP_URL/);
   assert.throws(() => getPublicAppUrl({ PUBLIC_APP_URL: "not a URL" }), /Invalid URL/);
   assert.throws(
@@ -18,6 +18,27 @@ test("PUBLIC_APP_URL is required and parsed as an HTTP(S) URL", () => {
   assert.equal(
     getPublicAppUrl({ PUBLIC_APP_URL: "https://reservations.example.com" }).origin,
     "https://reservations.example.com",
+  );
+});
+
+test("Replit domains provide a public URL when PUBLIC_APP_URL is not set", () => {
+  assert.equal(
+    getPublicAppUrl({ REPLIT_DOMAINS: "booking.example.replit.app, legacy.example.repl.co" }).origin,
+    "https://booking.example.replit.app",
+  );
+  assert.equal(
+    getPublicAppUrl({ REPLIT_DEV_DOMAIN: "booking-dev.example.repl.co" }).origin,
+    "https://booking-dev.example.repl.co",
+  );
+});
+
+test("PUBLIC_APP_URL takes priority over Replit-provided domains", () => {
+  assert.equal(
+    getPublicAppUrl({
+      PUBLIC_APP_URL: "https://coolslushcaribbean.com",
+      REPLIT_DOMAINS: "booking.example.replit.app",
+    }).origin,
+    "https://coolslushcaribbean.com",
   );
 });
 
