@@ -22,7 +22,7 @@ test("PUBLIC_APP_URL is required and parsed as an HTTP(S) URL", () => {
 });
 
 test("a forged Host header cannot change the URL sent to Swikly", async () => {
-  const { createSwiklyDeposit } = await import("./routes");
+  const { createSwiklyDeposit } = await import("./swikly-deposit");
   let callbackBaseUrl: string | undefined;
   const fakeSwikly = {
     async createDeposit(_booking: Booking, baseUrl?: string) {
