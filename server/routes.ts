@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { randomBytes } from "crypto";
 import { storage } from "./storage";
 import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema, insertSettingSchema } from "@shared/schema";
 import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
@@ -12,6 +13,7 @@ import { sendBookingConfirmation, sendSwiklyDepositEmail, sendBookingStatusChang
 import { getSwiklyClient } from "./swikly";
 import { requireAdmin, login as performLogin, logout as performLogout, validateToken } from "./auth-middleware";
 import { ObjectStorageService } from "./objectStorage";
+import { hashAccessToken, hasBookingAccess, registerBookingReadRoutes } from "./booking-access";
 
 const uploadMachineImage = multer({
   storage: multer.memoryStorage(),
@@ -34,6 +36,7 @@ console.log('[Stripe Init] Using key starting with:', process.env.STRIPE_SECRET_
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  registerBookingReadRoutes(app, storage);
   
   // ============= AUTH ROUTES =============
   
@@ -351,9 +354,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         syrupTotalCents
       );
       
+      const accessToken = randomBytes(32).toString("base64url");
       const booking = await storage.createBooking({
         ...validatedData,
         totalCents,
+        accessTokenHash: hashAccessToken(accessToken),
       });
 
       // Send confirmation email
@@ -362,6 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         bookingId: booking.id,
+        accessToken,
         totalCents,
       });
     } catch (error: any) {
@@ -373,31 +379,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all bookings (admin)
-  app.get("/api/bookings", async (req, res) => {
-    try {
-      const bookings = await storage.getAllBookings();
-      res.json(bookings);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Get booking by ID
-  app.get("/api/bookings/:id", async (req, res) => {
-    try {
-      const booking = await storage.getBooking(req.params.id);
-      if (!booking) {
-        return res.status(404).json({ error: "Réservation non trouvée" });
-      }
-      res.json(booking);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Update booking status
-  app.patch("/api/bookings/:id/status", async (req, res) => {
+  app.patch("/api/admin/bookings/:id/status", requireAdmin, async (req, res) => {
     try {
       const { status } = req.body;
       
@@ -496,7 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create payment intent for Stripe
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
-      const { bookingId } = req.body;
+      const { bookingId, accessToken } = req.body;
       
       console.log("[create-payment-intent] Request received for booking:", bookingId);
       console.log("[create-payment-intent] STRIPE_SECRET_KEY starts with:", process.env.STRIPE_SECRET_KEY?.substring(0, 7));
@@ -511,6 +494,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!booking) {
         console.error("[create-payment-intent] Booking not found:", bookingId);
         return res.status(404).json({ error: "Booking not found" });
+      }
+      if (!hasBookingAccess(booking, accessToken)) {
+        return res.status(403).json({ error: "Jeton d'accès invalide" });
       }
 
       console.log("[create-payment-intent] Creating PaymentIntent for:", {
@@ -545,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/bookings/:id/confirm-payment", async (req, res) => {
     try {
       const bookingId = req.params.id;
-      const { stripePaymentIntentId } = req.body;
+      const { stripePaymentIntentId, accessToken } = req.body;
 
       if (!stripePaymentIntentId) {
         return res.status(400).json({ error: "Payment Intent ID requis" });
@@ -555,6 +541,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const booking = await storage.getBooking(bookingId);
       if (!booking) {
         return res.status(404).json({ error: "Réservation non trouvée" });
+      }
+      if (!hasBookingAccess(booking, accessToken)) {
+        return res.status(403).json({ error: "Jeton d'accès invalide" });
       }
 
       // Check if payment already confirmed (idempotence)
@@ -646,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stack: swiklyError.stack,
           cause: swiklyError.cause
         });
-        swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}`;
+        swiklyUrl = `${baseUrl}/swikly-redirect?booking=${booking.id}&token=${encodeURIComponent(accessToken)}`;
         console.log('[confirm-payment] Using fallback URL:', swiklyUrl);
       }
       
@@ -680,6 +669,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const booking = await storage.getBooking(bookingId);
       if (!booking) {
         return res.status(404).json({ error: "Réservation non trouvée" });
+      }
+      if (!hasBookingAccess(booking, req.body?.accessToken)) {
+        return res.status(403).json({ error: "Jeton d'accès invalide" });
       }
 
       // Check if booking already has a Swikly URL
@@ -832,13 +824,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Swikly redirect handler (fallback for non-API flow)
   app.get("/swikly-redirect", async (req, res) => {
     const bookingId = req.query.booking as string;
-    if (!bookingId) {
-      return res.status(400).send("Missing booking ID");
+    const accessToken = req.query.token as string;
+    if (!bookingId || !accessToken) {
+      return res.status(400).send("Missing booking credentials");
     }
-    
+
+    const booking = await storage.getBooking(bookingId);
+    if (!booking || !hasBookingAccess(booking, accessToken)) {
+      return res.status(403).send("Jeton d'accès invalide");
+    }
+
     // Fallback: simulate successful caution and redirect to payment
     await storage.updateBookingStatus(bookingId, "CONFIRMED");
-    res.redirect(`/checkout?booking=${bookingId}`);
+    res.redirect(`/success?booking=${bookingId}&token=${encodeURIComponent(accessToken)}`);
   });
 
   // ============= OFFERS ROUTES (PUBLIC) =============
@@ -1107,6 +1105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customerPhone: "0691243246",
           customerEmail: req.query.email as string || "test@example.com",
           customerAddress: "123 Rue de Test, Pointe-à-Pitre",
+          accessTokenHash: hashAccessToken("test-access-token"),
           machines: 2,
           bookedMachines: [
             { machineId: "test-machine-1", machineName: "Ninja Slushi #1", quantity: 1 },

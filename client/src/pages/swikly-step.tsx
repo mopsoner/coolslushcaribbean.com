@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Shield, Loader2, ExternalLink, Clock, CreditCard, Mail } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import Navbar from "@/components/navbar";
-import type { Booking } from "@shared/schema";
+import type { PublicBooking } from "@shared/schema";
 import { computeCautionAmount, formatEuro } from "@shared/utils";
 
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
@@ -18,6 +18,7 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 export default function SwiklyStep() {
   const [, setLocation] = useLocation();
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [paymentIntentClientSecret, setPaymentIntentClientSecret] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -31,6 +32,7 @@ export default function SwiklyStep() {
     const id = params.get("booking");
     const piId = params.get("payment_intent");
     const piClientSecret = params.get("payment_intent_client_secret");
+    setAccessToken(params.get("token"));
     
     console.log('[swikly-step] URL params:', {
       booking: id,
@@ -54,9 +56,9 @@ export default function SwiklyStep() {
     }
   }, []);
 
-  const { data: booking } = useQuery<Booking>({
-    queryKey: ["/api/bookings", bookingId],
-    enabled: !!bookingId,
+  const { data: booking } = useQuery<PublicBooking>({
+    queryKey: [`/api/bookings/${bookingId}?token=${encodeURIComponent(accessToken ?? "")}`],
+    enabled: !!bookingId && !!accessToken,
   });
 
   useEffect(() => {
@@ -85,6 +87,7 @@ export default function SwiklyStep() {
 
         const response = await apiRequest("POST", `/api/bookings/${bookingId}/confirm-payment`, {
           stripePaymentIntentId: paymentIntent.id,
+          accessToken,
         });
 
         const data = await response.json();
@@ -134,7 +137,7 @@ export default function SwiklyStep() {
           return;
         }
 
-        const response = await fetch(`/api/bookings/${bookingId}`);
+        const response = await fetch(`/api/bookings/${bookingId}?token=${encodeURIComponent(accessToken ?? "")}`);
         const data = await response.json();
         
         console.log('[swikly-step] Polling check #', pollCount, '- Booking status:', data.status);
@@ -142,7 +145,7 @@ export default function SwiklyStep() {
         if (data.status === 'CONFIRMED') {
           console.log('[swikly-step] Booking confirmed! Redirecting to success page');
           clearInterval(interval);
-          setLocation(`/success?booking=${bookingId}`);
+          setLocation(`/success?booking=${bookingId}&token=${encodeURIComponent(accessToken ?? "")}`);
         }
       } catch (err) {
         console.error('[swikly-step] Error checking booking status:', err);
@@ -188,7 +191,7 @@ export default function SwiklyStep() {
                     </p>
                   </div>
                   <button
-                    onClick={() => setLocation(`/success?booking=${bookingId}`)}
+                    onClick={() => setLocation(`/success?booking=${bookingId}&token=${encodeURIComponent(accessToken ?? "")}`)}
                     className="text-primary hover:underline"
                     data-testid="link-skip-swikly"
                   >
@@ -251,8 +254,8 @@ export default function SwiklyStep() {
                           onClick={async () => {
                             try {
                               setIsProcessing(true);
-                              await apiRequest("POST", `/api/bookings/${bookingId}/skip-caution`);
-                              setLocation(`/success?booking=${bookingId}`);
+                              await apiRequest("POST", `/api/bookings/${bookingId}/skip-caution`, { accessToken });
+                              setLocation(`/success?booking=${bookingId}&token=${encodeURIComponent(accessToken ?? "")}`);
                             } catch (err) {
                               setError("Impossible de finaliser la réservation");
                               setIsProcessing(false);

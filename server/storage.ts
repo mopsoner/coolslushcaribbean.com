@@ -15,7 +15,7 @@ export interface IStorage {
   // Booking methods
   getBooking(id: string): Promise<Booking | undefined>;
   getAllBookings(): Promise<Booking[]>;
-  createBooking(booking: InsertBooking): Promise<Booking>;
+  createBooking(booking: InsertBooking & { accessTokenHash: string }): Promise<Booking>;
   updateBooking(id: string, updates: Partial<Booking>): Promise<Booking | undefined>;
   updateBookingStatus(id: string, status: string): Promise<Booking | undefined>;
   getBookingsByDate(date: Date): Promise<Booking[]>;
@@ -108,7 +108,7 @@ export class DbStorage implements IStorage {
     return await db.select().from(bookings);
   }
 
-  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
+  async createBooking(insertBooking: InsertBooking & { accessTokenHash: string }): Promise<Booking> {
     const result = await db.insert(bookings).values(insertBooking).returning();
     return result[0];
   }

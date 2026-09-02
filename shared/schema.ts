@@ -61,6 +61,7 @@ export const bookings = pgTable("bookings", {
   customerPhone: text("customer_phone").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerAddress: text("customer_address"),
+  accessTokenHash: text("access_token_hash").notNull(),
   machines: integer("machines").notNull().default(1), // Legacy: nombre total de machines
   bookedMachines: json("booked_machines").$type<Array<{machineId: string, machineName: string, quantity: number}>>(), // Détail des machines réservées
   selectedSyrups: json("selected_syrups").default([]), // Array of { syrupId: string, quantity: number }
@@ -110,6 +111,7 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  accessTokenHash: true,
   machines: true, // Omit to redefine with strict validation
   selectedSyrups: true,
   bookedMachines: true,
@@ -190,6 +192,13 @@ export type InsertMachine = z.infer<typeof insertMachineSchema>;
 export type Machine = typeof machines.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
+export type PublicBooking = Pick<Booking,
+  "id" | "offer" | "startDate" | "endDate" | "startHour" | "endHour" |
+  "customerName" | "customerEmail" | "machines" | "cupSize" | "totalCents" |
+  "status" | "paymentStatus" | "depositStatus" | "createdAt" | "updatedAt"
+> & {
+  bookedMachines: Array<{ machineName: string; quantity: number }>;
+};
 export type InsertOffer = z.infer<typeof insertOfferSchema>;
 export type Offer = typeof offers.$inferSelect;
 export type InsertOfferMachinePrice = z.infer<typeof insertOfferMachinePriceSchema>;
