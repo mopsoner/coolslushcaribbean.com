@@ -82,7 +82,17 @@ export const bookings = pgTable("bookings", {
   customerAddress: text("customer_address"),
   accessTokenHash: text("access_token_hash").notNull(),
   machines: integer("machines").notNull().default(1), // Legacy: nombre total de machines
-  bookedMachines: json("booked_machines").$type<Array<{machineId: string, machineName: string, quantity: number}>>(), // Détail des machines réservées
+  bookedMachines: json("booked_machines").$type<Array<{
+    machineId: string;
+    machineName: string;
+    quantity: number;
+    model?: string | null;
+    capacity?: string | null;
+    programs?: string[] | null;
+    features?: string[] | null;
+    includedServices?: string[] | null;
+    imageUrl?: string | null;
+  }>>(), // Snapshot serveur des machines réservées
   selectedSyrups: json("selected_syrups").default([]), // Array of { syrupId: string, quantity: number }
   cupSize: text("cup_size").default("moyen"), // "petit", "moyen", "grand"
   totalCents: integer("total_cents").notNull().default(0),

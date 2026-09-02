@@ -26,6 +26,7 @@ export interface IStorage {
   // Offer methods
   getOffer(id: string): Promise<Offer | undefined>;
   getOfferByName(name: string): Promise<Offer | undefined>;
+  getActiveOfferByName(name: string): Promise<Offer | undefined>;
   getAllOffers(): Promise<Offer[]>;
   getActiveOffers(): Promise<Offer[]>;
   createOffer(offer: InsertOffer): Promise<Offer>;
@@ -231,6 +232,15 @@ export class DbStorage implements IStorage {
 
   async getOfferByName(name: string): Promise<Offer | undefined> {
     const result = await db.select().from(offers).where(eq(offers.name, name)).limit(1);
+    return result[0];
+  }
+
+  async getActiveOfferByName(name: string): Promise<Offer | undefined> {
+    const result = await db
+      .select()
+      .from(offers)
+      .where(and(eq(offers.name, name), eq(offers.active, true)))
+      .limit(1);
     return result[0];
   }
 

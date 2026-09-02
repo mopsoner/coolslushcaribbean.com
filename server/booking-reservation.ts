@@ -66,17 +66,17 @@ export async function reserveBooking(
   for (const requested of booking.bookedMachines) {
     const machine = machinesById.get(requested.machineId);
     if (!machine) {
-      throw new BookingAvailabilityError(`Machine "${requested.machineName}" non trouvée`);
+      throw new BookingAvailabilityError(`Machine inconnue : ${requested.machineId}`);
     }
     if (machine.status !== "AVAILABLE") {
-      throw new BookingAvailabilityError(`Machine "${requested.machineName}" n'est pas disponible`);
+      throw new BookingAvailabilityError(`Machine "${machine.name}" n'est pas disponible`);
     }
 
     const alreadyReserved = reserved.get(machine.id) ?? 0;
     const remaining = machine.quantity - alreadyReserved;
     if (requested.quantity > remaining) {
       throw new BookingAvailabilityError(
-        `Quantité demandée (${requested.quantity}) dépasse la disponibilité restante (${remaining}/${machine.quantity}) pour "${requested.machineName}" pendant cette période`,
+        `Quantité demandée (${requested.quantity}) dépasse la disponibilité restante (${remaining}/${machine.quantity}) pour "${machine.name}" pendant cette période`,
       );
     }
   }
@@ -85,7 +85,7 @@ export async function reserveBooking(
   await tx.insertReservationLines(booking.bookedMachines.map((line) => ({
     bookingId: created.id,
     machineId: line.machineId,
-    machineName: line.machineName,
+    machineName: machinesById.get(line.machineId)!.name,
     quantity: line.quantity,
     startAt,
     endAt,

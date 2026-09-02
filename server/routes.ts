@@ -7,7 +7,7 @@ import fs from "fs";
 import { randomBytes } from "crypto";
 import { storage } from "./storage";
 import { insertBookingSchema, insertMachineSchema, insertOfferSchema, insertOfferMachinePriceSchema, insertSyrupSchema, insertOfferWithPricingSchema, insertSettingSchema } from "@shared/schema";
-import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
+import { calculateRentalDays } from "@shared/utils";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail, sendBookingStatusChangeEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
@@ -18,6 +18,7 @@ import { registerAdminBookingStatusRoute } from "./admin-booking-status";
 import { registerSwiklyWebhookRoute } from "./swikly-webhook";
 import { BookingAvailabilityError } from "./booking-reservation";
 import { getPublicAppOrigin } from "./config";
+import { BookingPricingError, calculateBookingQuote } from "./booking-pricing";
 import type { Booking } from "@shared/schema";
 
 type SwiklyDepositClient = Pick<ReturnType<typeof getSwiklyClient>, "createDeposit">;
@@ -255,19 +256,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertBookingSchema.parse(req.body);
       
-      // Get price from database based on offer
-      const offer = await storage.getOfferByName(validatedData.offer);
+      // Only offers currently available in the public catalogue can be booked.
+      const offer = await storage.getActiveOfferByName(validatedData.offer);
       if (!offer) {
-        return res.status(400).json({ error: "Offre invalide" });
+        return res.status(400).json({ error: "Offre invalide ou inactive" });
       }
-
-      const priceData = await storage.getEffectivePrice(offer.id);
-      if (!priceData) {
-        return res.status(400).json({ error: "Prix non configuré pour cette offre" });
-      }
-
-      // Calculate total machine count from bookedMachines
-      const machineCount = validatedData.bookedMachines.reduce((sum, m) => sum + m.quantity, 0);
       
       // Calculate number of rental days
       const rentalDays = calculateRentalDays(
@@ -275,28 +268,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.endDate instanceof Date ? validatedData.endDate : new Date(validatedData.endDate)
       );
       
-      // Calculate syrup total
-      let syrupTotalCents = 0;
-      if (validatedData.selectedSyrups && validatedData.selectedSyrups.length > 0) {
-        for (const syrupSelection of validatedData.selectedSyrups) {
-          const syrup = await storage.getSyrup(syrupSelection.syrupId);
-          if (syrup && syrup.amountCents > 0) {
-            syrupTotalCents += syrup.amountCents * syrupSelection.quantity;
-          }
-        }
-      }
-      
-      // Calculate total: (daily price × machines × days) + syrups
-      const totalCents = calculateBookingTotal(
-        priceData.amountCents, // This is the daily price per machine
-        machineCount,
-        rentalDays,
-        syrupTotalCents
-      );
+      const [machineInputs, syrupInputs] = await Promise.all([
+        Promise.all(validatedData.bookedMachines.map(async (request) => {
+          const [machine, price] = await Promise.all([
+            storage.getMachine(request.machineId),
+            storage.getEffectivePrice(offer.id, request.machineId),
+          ]);
+          return { request, machine, amountCents: price?.amountCents ?? null };
+        })),
+        Promise.all(validatedData.selectedSyrups.map(async (request) => ({
+          request,
+          syrup: await storage.getSyrup(request.syrupId),
+        }))),
+      ]);
+
+      const quote = calculateBookingQuote({ offer, rentalDays, machines: machineInputs, syrups: syrupInputs });
+      const totalCents = quote.totalCents;
       
       const accessToken = randomBytes(32).toString("base64url");
       const booking = await storage.createBooking({
         ...validatedData,
+        // Never persist client-provided machine labels or catalogue attributes.
+        bookedMachines: quote.bookedMachines,
         totalCents,
         accessTokenHash: hashAccessToken(accessToken),
       });
@@ -313,7 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
-      } else if (error instanceof BookingAvailabilityError) {
+      } else if (error instanceof BookingAvailabilityError || error instanceof BookingPricingError) {
         res.status(error.statusCode).json({ error: error.message });
       } else {
         res.status(500).json({ error: error.message });
