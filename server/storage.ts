@@ -1,6 +1,6 @@
 import { type Machine, type InsertMachine, type Booking, type BookingStatus, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, type InsertOfferWithPricing, type OfferWithPricing, type Setting, type InsertSetting, machines, bookings, offers, offerMachinePrices, syrups, settings } from "@shared/schema";
 import { db } from "../db";
-import { eq, gte, lte, and, or, isNull, inArray } from "drizzle-orm";
+import { eq, gte, lte, and, or, isNull, inArray, ne, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Machine methods
@@ -18,6 +18,7 @@ export interface IStorage {
   createBooking(booking: InsertBooking & { accessTokenHash: string }): Promise<Booking>;
   updateBooking(id: string, updates: Partial<Booking>): Promise<Booking | undefined>;
   updateBookingStatus(id: string, status: BookingStatus): Promise<Booking | undefined>;
+  applySwiklyEvent(id: string, swiklyRequestId: string, eventId: string): Promise<Booking | undefined>;
   getBookingsByDate(date: Date): Promise<Booking[]>;
   getOverlappingBookings(startDate: Date, endDate: Date): Promise<Booking[]>;
 
@@ -124,6 +125,25 @@ export class DbStorage implements IStorage {
 
   async updateBookingStatus(id: string, status: BookingStatus): Promise<Booking | undefined> {
     return this.updateBooking(id, { status });
+  }
+
+  async applySwiklyEvent(id: string, swiklyRequestId: string, eventId: string): Promise<Booking | undefined> {
+    const result = await db
+      .update(bookings)
+      .set({
+        depositStatus: "COMPLETED",
+        // Confirmation requires both a successful card payment and a pending order.
+        status: sql`case when ${bookings.paymentStatus} = 'COMPLETED' and ${bookings.status} = 'PENDING' then 'CONFIRMED' else ${bookings.status} end`,
+        lastSwiklyEventId: eventId,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(bookings.id, id),
+        eq(bookings.swiklyRequestId, swiklyRequestId),
+        or(isNull(bookings.lastSwiklyEventId), ne(bookings.lastSwiklyEventId, eventId)),
+      ))
+      .returning();
+    return result[0];
   }
 
   async getBookingsByDate(date: Date): Promise<Booking[]> {

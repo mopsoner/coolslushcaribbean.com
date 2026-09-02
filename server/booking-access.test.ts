@@ -14,6 +14,7 @@ const booking: Booking = {
   totalCents: 10000, status: "PENDING", paymentStatus: "PENDING", depositStatus: "PENDING",
   accessTokenHash: hashAccessToken(accessToken), stripePaymentIntentId: "pi_secret",
   swiklyRequestId: "swikly-secret", swiklyUrl: "https://secret.invalid",
+  lastSwiklyEventId: null,
   swiklyReturnToken: "return-secret", swiklyReturnTokenCreatedAt: new Date(),
   stripePaymentId: "stripe-secret", createdAt: new Date(), updatedAt: new Date(),
 };

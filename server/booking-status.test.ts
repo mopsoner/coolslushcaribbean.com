@@ -19,6 +19,7 @@ function booking(overrides: Partial<Booking> = {}): Booking {
     machines: 1, bookedMachines: [], selectedSyrups: [], cupSize: "moyen", totalCents: 10000,
     status: "PENDING", paymentStatus: "PENDING", depositStatus: "PENDING",
     stripePaymentIntentId: null, swiklyRequestId: null, swiklyUrl: null,
+    lastSwiklyEventId: null,
     swiklyReturnToken: null, swiklyReturnTokenCreatedAt: null, stripePaymentId: null,
     createdAt: new Date(), updatedAt: new Date(), ...overrides,
   };
