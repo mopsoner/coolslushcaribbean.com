@@ -4,6 +4,16 @@
 
 Cool Slush is a web application for renting Ninja Slushi 2,5L professional machines. The platform features machines with 5 programs (Slushi, Milkshake, Frozen Drink, Smoothie, and Italian Ice Cream), allowing customers to browse available machines, make bookings, and complete secure payments via Stripe, with deposits of 150€ per machine managed through Swikly. The platform provides a complete booking workflow, including email notifications, a recipe page showcasing the machine's capabilities, and comprehensive administrative tools for managing bookings, machines, pricing, and syrups. The platform offers a seamless and secure booking experience with professional IONOS email service.
 
+## Deployment configuration
+
+- `PUBLIC_APP_URL` is an optional explicit public URL override (for example,
+  `https://coolslushcaribbean.com`) used for payment redirects and webhooks.
+- On Replit, the server automatically uses the first domain in
+  `REPLIT_DOMAINS`, so a deployment can boot without duplicating its Replit URL
+  in Secrets. Development workspaces fall back to `REPLIT_DEV_DOMAIN`.
+- Outside Replit, set `PUBLIC_APP_URL` to an HTTP(S) URL before starting the
+  production server.
+
 ## Recent Changes (November 19, 2025)
 
 ### Editable Pricing Details & Final Rebranding (Latest - November 19, 2025)
