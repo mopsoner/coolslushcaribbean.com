@@ -20,6 +20,7 @@ import { BookingAvailabilityError } from "./booking-reservation";
 import { getPublicAppOrigin } from "./config";
 import { BookingPricingError, calculateBookingQuote } from "./booking-pricing";
 import type { Booking } from "@shared/schema";
+import { sendErrorResponse } from "./app-errors";
 
 type SwiklyDepositClient = Pick<ReturnType<typeof getSwiklyClient>, "createDeposit">;
 
@@ -55,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerBookingReadRoutes(app, storage);
   registerAdminBookingStatusRoute(app, storage, requireAdmin, (booking, oldStatus, newStatus) => {
     sendBookingStatusChangeEmail(booking, oldStatus, newStatus).catch(error => {
-      console.error("Failed to send status change email:", error);
+      console.error(JSON.stringify({ event: "status_email_error", errorType: error instanceof Error ? error.name : "UnknownError" }));
     });
   });
   registerSwiklyWebhookRoute(app, storage);
@@ -79,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.getActiveSettings();
       res.json(settings);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
   
@@ -89,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.getAllSettings();
       res.json(settings);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
   
@@ -103,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -114,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteSetting(req.params.key);
       res.json({ success: true });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
   
@@ -124,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const machines = await storage.getAllMachines();
       res.json(machines);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -134,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const machines = await storage.getAvailableMachines();
       res.json(machines);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -150,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -168,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -179,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteMachine(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -213,8 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedMachine);
     } catch (error: any) {
-      console.error("Error uploading machine image:", error);
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -236,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedMachine = await storage.updateMachine(machineId, { imageUrl: null });
       res.json(updatedMachine);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -251,8 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       objectStorageService.downloadObject(file, res);
     } catch (error) {
-      console.error("Error searching for public object:", error);
-      return res.status(500).json({ error: "Internal server error" });
+      return sendErrorResponse(req, res, error);
     }
   });
 
@@ -314,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (error instanceof BookingAvailabilityError || error instanceof BookingPricingError) {
         res.status(error.statusCode).json({ error: error.message });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -349,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -395,13 +394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[create-payment-intent] PaymentIntent created successfully:", paymentIntent.id);
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error: any) {
-      console.error("[create-payment-intent] Error creating PaymentIntent:", {
-        message: error.message,
-        type: error.type,
-        code: error.code,
-        stack: error.stack
-      });
-      res.status(500).json({ error: "Error creating payment intent: " + error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -532,8 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         swiklyUrl,
       });
     } catch (error: any) {
-      console.error('Error confirming payment:', error);
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -561,8 +553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true });
     } catch (error: any) {
-      console.error('Error skipping caution:', error);
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -636,8 +627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.redirect(`/success?booking=${bookingId}`);
     } catch (error: any) {
-      console.error('[swikly-return] Error processing return:', error);
-      res.status(500).send("Une erreur est survenue. Veuillez contacter le support.");
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -681,7 +671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.json(offersWithPrices);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -693,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offers = await storage.getAllOffersWithPricing();
       res.json(offers);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -707,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -725,7 +715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -736,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteOffer(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -748,7 +738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const prices = await storage.getAllOfferMachinePrices();
       res.json(prices);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -758,7 +748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const prices = await storage.getOfferMachinePricesByOffer(req.params.offerId);
       res.json(prices);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -772,7 +762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -790,7 +780,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -801,7 +791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteOfferMachinePrice(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -811,7 +801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const syrups = await storage.getActiveSyrups();
       res.json(syrups);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -821,7 +811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const syrups = await storage.getAllSyrups();
       res.json(syrups);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -835,7 +825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -853,7 +843,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     }
   });
@@ -864,7 +854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteSyrup(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -920,8 +910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ success: true, message: "Message envoyé avec succès" });
     } catch (error: any) {
-      console.error("Contact form error:", error);
-      res.status(500).json({ error: "Erreur lors de l'envoi du message. Veuillez réessayer." });
+      sendErrorResponse(req, res, error);
     }
   });
 
@@ -972,7 +961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: testBooking.customerEmail
         });
       } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        sendErrorResponse(req, res, error);
       }
     });
   }
