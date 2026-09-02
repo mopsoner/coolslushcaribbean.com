@@ -10,7 +10,7 @@
     "typecheck": "tsc",
     "check": "npm run typecheck",
     "test": "npm run test:unit && npm run test:integration",
-    "test:unit": "tsx --test server/booking-pricing.test.ts server/booking-reservation.test.ts server/booking-status.test.ts server/stripe-payment.test.ts server/update-schemas.test.ts",
+    "test:unit": "tsx --test db/schema-health.test.ts server/booking-pricing.test.ts server/booking-reservation.test.ts server/booking-status.test.ts server/stripe-payment.test.ts server/update-schemas.test.ts",
     "test:integration": "tsx --test server/app-errors.test.ts server/auth-middleware.test.ts server/booking-access.test.ts server/public-app-url.test.ts server/swikly-webhook.test.ts",
     "db:push": "drizzle-kit push"
   },
