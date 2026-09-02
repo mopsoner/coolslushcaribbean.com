@@ -80,14 +80,19 @@ export default function AdminBookings() {
   });
 
   const updateBookingMutation = useMutation({
-    mutationFn: async (data: EditBookingFormData & { id: string }) => {
-      const { id, ...updateData } = data;
+    mutationFn: async (data: EditBookingFormData & { id: string; previousStatus: string }) => {
+      const { id, status, previousStatus, ...updateData } = data;
       const response = await apiRequest('PATCH', `/api/admin/bookings/${id}`, {
         ...updateData,
         startDate: updateData.startDate.toISOString(),
         endDate: updateData.endDate.toISOString(),
       });
-      return response.json();
+      const updatedBooking = await response.json();
+      if (status !== previousStatus) {
+        const statusResponse = await apiRequest('PATCH', `/api/admin/bookings/${id}/status`, { status });
+        return statusResponse.json();
+      }
+      return updatedBooking;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/bookings'] });
@@ -123,7 +128,11 @@ export default function AdminBookings() {
 
   const onSubmit = (data: EditBookingFormData) => {
     if (editingBooking) {
-      updateBookingMutation.mutate({ ...data, id: editingBooking.id });
+      updateBookingMutation.mutate({
+        ...data,
+        id: editingBooking.id,
+        previousStatus: editingBooking.status,
+      });
     }
   };
 
