@@ -1,14 +1,16 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeAuth } from "./auth-middleware";
 import { getPublicAppUrl } from "./config";
+import { correlationIdMiddleware, errorHandler } from "./app-errors";
 
 // Fail before binding a port when required configuration is absent or invalid.
 getPublicAppUrl();
 initializeAuth();
 
 const app = express();
+app.use(correlationIdMiddleware);
 
 declare module 'http' {
   interface IncomingMessage {
@@ -55,13 +57,7 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
+  app.use(errorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
