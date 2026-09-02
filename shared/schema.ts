@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, json, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, json, unique, check, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -98,7 +98,33 @@ export const bookings = pgTable("bookings", {
   stripePaymentId: text("stripe_payment_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  validHours: check("bookings_valid_hours", sql`${table.startHour} between 0 and 23 and ${table.endHour} between 1 and 24`),
+}));
+
+/**
+ * Inventory lines are deliberately normalized. `bookings.bookedMachines` remains
+ * a compatibility snapshot for existing API consumers, but availability must be
+ * calculated from this table.
+ *
+ * Periods use half-open bounds: [startAt, endAt). Consequently a rental ending
+ * at 10:00 does not conflict with one beginning at 10:00.
+ */
+export const bookingMachines = pgTable("booking_machines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").notNull().references(() => bookings.id, { onDelete: "cascade" }),
+  machineId: varchar("machine_id").notNull().references(() => machines.id, { onDelete: "restrict" }),
+  machineName: text("machine_name").notNull(),
+  quantity: integer("quantity").notNull(),
+  startAt: timestamp("start_at").notNull(),
+  endAt: timestamp("end_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueBookingMachine: unique().on(table.bookingId, table.machineId),
+  positiveQuantity: check("booking_machines_positive_quantity", sql`${table.quantity} > 0`),
+  validPeriod: check("booking_machines_valid_period", sql`${table.startAt} < ${table.endAt}`),
+  availabilityLookup: index("booking_machines_availability_idx").on(table.machineId, table.startAt, table.endAt),
+}));
 
 export const insertMachineSchema = createInsertSchema(machines).omit({
   id: true,
@@ -162,6 +188,8 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   bookedMachines: z.array(bookedMachineSchema).min(1, "Au moins une machine doit être sélectionnée"),
   selectedSyrups: z.array(syrupSelectionSchema).optional().default([]),
   cupSize: z.enum(["petit", "moyen", "grand"]).default("moyen"),
+  startHour: z.number().int().min(0).max(23),
+  endHour: z.number().int().min(1).max(24),
 }).refine((data) => {
   // Pour les offres multi-jours, s'assurer que endDate >= startDate
   const start = data.startDate instanceof Date ? data.startDate : new Date(data.startDate);
@@ -177,6 +205,11 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
 }, {
   message: "Le nombre total de machines ne correspond pas aux machines sélectionnées",
   path: ["machines"],
+}).refine((data) => {
+  return new Set(data.bookedMachines.map((machine) => machine.machineId)).size === data.bookedMachines.length;
+}, {
+  message: "Une machine ne peut apparaître qu'une fois",
+  path: ["bookedMachines"],
 });
 
 export const insertOfferSchema = createInsertSchema(offers).omit({
@@ -212,6 +245,7 @@ export type InsertMachine = z.infer<typeof insertMachineSchema>;
 export type Machine = typeof machines.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
+export type BookingMachine = typeof bookingMachines.$inferSelect;
 export type PublicBooking = Pick<Booking,
   "id" | "offer" | "startDate" | "endDate" | "startHour" | "endHour" |
   "customerName" | "customerEmail" | "machines" | "cupSize" | "totalCents" |

@@ -16,6 +16,7 @@ import { ObjectStorageService } from "./objectStorage";
 import { hashAccessToken, hasBookingAccess, registerBookingReadRoutes } from "./booking-access";
 import { registerAdminBookingStatusRoute } from "./admin-booking-status";
 import { registerSwiklyWebhookRoute } from "./swikly-webhook";
+import { BookingAvailabilityError } from "./booking-reservation";
 
 const uploadMachineImage = multer({
   storage: multer.memoryStorage(),
@@ -242,49 +243,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertBookingSchema.parse(req.body);
       
-      const startDate = validatedData.startDate instanceof Date ? validatedData.startDate : new Date(validatedData.startDate);
-      const endDate = validatedData.endDate instanceof Date ? validatedData.endDate : new Date(validatedData.endDate);
-      
-      // Get overlapping bookings for the requested period
-      const overlappingBookings = await storage.getOverlappingBookings(startDate, endDate);
-      
-      // Validate machine availability and quantities
-      for (const bookedMachine of validatedData.bookedMachines) {
-        const machine = await storage.getMachine(bookedMachine.machineId);
-        if (!machine) {
-          return res.status(400).json({ 
-            error: `Machine "${bookedMachine.machineName}" non trouvée` 
-          });
-        }
-        
-        if (machine.status !== "AVAILABLE") {
-          return res.status(400).json({ 
-            error: `Machine "${bookedMachine.machineName}" n'est pas disponible` 
-          });
-        }
-        
-        // Calculate total quantity already booked for this machine during overlapping period
-        let bookedQuantity = 0;
-        for (const existingBooking of overlappingBookings) {
-          if (existingBooking.bookedMachines) {
-            const bookedMachinesArray = existingBooking.bookedMachines as Array<{machineId: string, machineName: string, quantity: number}>;
-            const existingMachineBooking = bookedMachinesArray.find(m => m.machineId === bookedMachine.machineId);
-            if (existingMachineBooking) {
-              bookedQuantity += existingMachineBooking.quantity;
-            }
-          }
-        }
-        
-        const availableQuantity = machine.quantity || 1;
-        const remainingQuantity = availableQuantity - bookedQuantity;
-        
-        if (bookedMachine.quantity > remainingQuantity) {
-          return res.status(400).json({ 
-            error: `Quantité demandée (${bookedMachine.quantity}) dépasse la disponibilité restante (${remainingQuantity}/${availableQuantity}) pour "${bookedMachine.machineName}" pendant cette période` 
-          });
-        }
-      }
-      
       // Get price from database based on offer
       const offer = await storage.getOfferByName(validatedData.offer);
       if (!offer) {
@@ -343,6 +301,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Données invalides", details: error.errors });
+      } else if (error instanceof BookingAvailabilityError) {
+        res.status(error.statusCode).json({ error: error.message });
       } else {
         res.status(500).json({ error: error.message });
       }
