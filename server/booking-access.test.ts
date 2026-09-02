@@ -3,6 +3,12 @@ import test from "node:test";
 import express from "express";
 import type { Booking } from "@shared/schema";
 import { hashAccessToken, registerBookingReadRoutes } from "./booking-access";
+import { initializeAuth } from "./auth-middleware";
+
+initializeAuth({
+  password: "correct horse battery staple",
+  sessionSecret: "a-session-secret-that-is-at-least-32-bytes",
+});
 
 const accessToken = "owner-secret-token";
 const booking: Booking = {

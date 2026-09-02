@@ -22,10 +22,7 @@ export default function AdminLogin() {
       const response = await apiRequest("POST", "/api/auth/login", { password });
       const data = await response.json();
 
-      if (response.ok && data.token) {
-        // Store token in localStorage
-        localStorage.setItem("adminToken", data.token);
-        
+      if (response.ok && data.authenticated) {
         toast({
           title: "Connexion réussie",
           description: "Bienvenue dans l'espace admin",

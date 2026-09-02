@@ -11,7 +11,7 @@ import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
 import { z } from "zod";
 import { sendBookingConfirmation, sendSwiklyDepositEmail, sendBookingStatusChangeEmail } from "./email";
 import { getSwiklyClient } from "./swikly";
-import { requireAdmin, login as performLogin, logout as performLogout, validateToken } from "./auth-middleware";
+import { authCheck, authLogin, authLogout, requireAdmin } from "./auth-middleware";
 import { ObjectStorageService } from "./objectStorage";
 import { hashAccessToken, hasBookingAccess, registerBookingReadRoutes } from "./booking-access";
 import { registerAdminBookingStatusRoute } from "./admin-booking-status";
@@ -49,51 +49,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============= AUTH ROUTES =============
   
   // Login
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { password } = req.body;
-      if (!password) {
-        return res.status(400).json({ error: "Mot de passe requis" });
-      }
-      
-      const token = performLogin(password);
-      if (!token) {
-        return res.status(401).json({ error: "Mot de passe incorrect" });
-      }
-      
-      res.json({ token });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+  app.post("/api/auth/login", authLogin);
   
   // Logout
-  app.post("/api/auth/logout", async (req, res) => {
-    try {
-      const token = req.headers.authorization?.replace("Bearer ", "");
-      if (token) {
-        performLogout(token);
-      }
-      res.json({ success: true });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+  app.post("/api/auth/logout", authLogout);
   
   // Check auth status
-  app.get("/api/auth/check", async (req, res) => {
-    try {
-      const token = req.headers.authorization?.replace("Bearer ", "");
-      if (!token) {
-        return res.status(401).json({ authenticated: false });
-      }
-      
-      const isValid = validateToken(token);
-      res.json({ authenticated: isValid });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+  app.get("/api/auth/check", authCheck);
   
   // ============= SETTINGS ROUTES =============
   

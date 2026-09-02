@@ -1,6 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeAuth } from "./auth-middleware";
+
+// Fail before binding a port when authentication secrets are absent or weak.
+initializeAuth();
 
 const app = express();
 
