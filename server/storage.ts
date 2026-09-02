@@ -1,6 +1,7 @@
-import { type Machine, type InsertMachine, type Booking, type BookingStatus, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, type InsertOfferWithPricing, type OfferWithPricing, type Setting, type InsertSetting, machines, bookings, offers, offerMachinePrices, syrups, settings } from "@shared/schema";
+import { type Machine, type InsertMachine, type Booking, type BookingStatus, type InsertBooking, type Offer, type InsertOffer, type OfferMachinePrice, type InsertOfferMachinePrice, type Syrup, type InsertSyrup, type InsertOfferWithPricing, type OfferWithPricing, type Setting, type InsertSetting, machines, bookings, bookingMachines, offers, offerMachinePrices, syrups, settings } from "@shared/schema";
 import { db } from "../db";
 import { eq, gte, lte, and, or, isNull, inArray, ne, sql } from "drizzle-orm";
+import { getBookingPeriod, reserveBooking } from "./booking-reservation";
 
 export interface IStorage {
   // Machine methods
@@ -110,17 +111,65 @@ export class DbStorage implements IStorage {
   }
 
   async createBooking(insertBooking: InsertBooking & { accessTokenHash: string }): Promise<Booking> {
-    const result = await db.insert(bookings).values(insertBooking).returning();
-    return result[0];
+    return db.transaction(async (transaction) => reserveBooking({
+      lockMachines: async (machineIds) => {
+        // One transaction-level advisory lock per inventory item. Sorting in
+        // reserveBooking gives concurrent multi-machine requests a stable lock
+        // order and avoids deadlocks. The lock is released on commit/rollback.
+        for (const machineId of machineIds) {
+          await transaction.execute(sql`select pg_advisory_xact_lock(hashtextextended(${machineId}, 0))`);
+        }
+      },
+      getMachines: async (machineIds) => transaction
+        .select()
+        .from(machines)
+        .where(inArray(machines.id, machineIds)),
+      getReservedQuantities: async (machineIds, startAt, endAt) => {
+        const rows = await transaction
+          .select({
+            machineId: bookingMachines.machineId,
+            quantity: sql<number>`sum(${bookingMachines.quantity})::integer`,
+          })
+          .from(bookingMachines)
+          .innerJoin(bookings, eq(bookings.id, bookingMachines.bookingId))
+          .where(and(
+            inArray(bookingMachines.machineId, machineIds),
+            // Half-open ranges overlap exactly when startA < endB && endA > startB.
+            sql`${bookingMachines.startAt} < ${endAt}`,
+            sql`${bookingMachines.endAt} > ${startAt}`,
+            inArray(bookings.status, ["PENDING", "CONFIRMED"]),
+          ))
+          .groupBy(bookingMachines.machineId);
+        return new Map(rows.map((row) => [row.machineId, row.quantity]));
+      },
+      insertBooking: async (booking) => {
+        const result = await transaction.insert(bookings).values(booking).returning();
+        return result[0];
+      },
+      insertReservationLines: async (lines) => {
+        await transaction.insert(bookingMachines).values(lines);
+      },
+    }, insertBooking));
   }
 
   async updateBooking(id: string, updates: Partial<Booking>): Promise<Booking | undefined> {
-    const result = await db
-      .update(bookings)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(bookings.id, id))
-      .returning();
-    return result[0];
+    return db.transaction(async (transaction) => {
+      const result = await transaction
+        .update(bookings)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(bookings.id, id))
+        .returning();
+      const updated = result[0];
+
+      if (updated && ["startDate", "endDate", "startHour", "endHour"].some((field) => field in updates)) {
+        const { startAt, endAt } = getBookingPeriod(updated);
+        await transaction
+          .update(bookingMachines)
+          .set({ startAt, endAt })
+          .where(eq(bookingMachines.bookingId, id));
+      }
+      return updated;
+    });
   }
 
   async updateBookingStatus(id: string, status: BookingStatus): Promise<Booking | undefined> {
@@ -159,20 +208,20 @@ export class DbStorage implements IStorage {
   }
 
   async getOverlappingBookings(startDate: Date, endDate: Date): Promise<Booking[]> {
-    // Find bookings where the date ranges overlap
-    // Two bookings overlap if:
-    // - booking.startDate <= endDate AND booking.endDate >= startDate
+    // The supplied timestamps and stored periods are half-open [start, end).
     return await db
-      .select()
+      .selectDistinct({ booking: bookings })
       .from(bookings)
+      .innerJoin(bookingMachines, eq(bookingMachines.bookingId, bookings.id))
       .where(
         and(
-          lte(bookings.startDate, endDate),
-          gte(bookings.endDate, startDate),
+          sql`${bookingMachines.startAt} < ${endDate}`,
+          sql`${bookingMachines.endAt} > ${startDate}`,
           // Only consider confirmed or pending bookings (not cancelled)
           or(eq(bookings.status, "CONFIRMED"), eq(bookings.status, "PENDING"))
         )
-      );
+      )
+      .then((rows) => rows.map(({ booking }) => booking));
   }
 
   async getOffer(id: string): Promise<Offer | undefined> {
