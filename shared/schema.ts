@@ -91,6 +91,7 @@ export const bookings = pgTable("bookings", {
   depositStatus: text("deposit_status").notNull().default("PENDING"), // PENDING, COMPLETED, FAILED
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   swiklyRequestId: text("swikly_request_id"),
+  lastSwiklyEventId: text("last_swikly_event_id"),
   swiklyUrl: text("swikly_url"),
   swiklyReturnToken: text("swikly_return_token"), // One-time token to validate Swikly return URL
   swiklyReturnTokenCreatedAt: timestamp("swikly_return_token_created_at"), // Timestamp for token expiration (24h)
