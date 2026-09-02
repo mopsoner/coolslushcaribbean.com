@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, Phone, Mail, MapPin, Snowflake, Lock, Shield, CheckCircle, Droplet, Coffee, Plus, X } from "lucide-react";
-import type { Offer, Syrup, Machine, Booking } from "@shared/schema";
+import type { Offer, Syrup, Machine, PublicBooking } from "@shared/schema";
 import { calculateRentalDays, calculateBookingTotal } from "@shared/utils";
 import BookingDetails from "@/components/booking-details";
 
@@ -158,8 +158,8 @@ export default function BookingForm() {
       });
       
       // Redirect to confirmation page with Swikly step
-      if (data.bookingId) {
-        window.location.href = `/booking-confirmation?booking=${data.bookingId}`;
+      if (data.bookingId && data.accessToken) {
+        window.location.href = `/booking-confirmation?booking=${data.bookingId}&token=${encodeURIComponent(data.accessToken)}`;
       }
     },
     onError: (error: any) => {
@@ -908,7 +908,7 @@ export default function BookingForm() {
                   const watchedCustomerEmail = form.watch("customerEmail");
                   const watchedCustomerAddress = form.watch("customerAddress");
                   
-                  const tempBooking: Booking = {
+                  const tempBooking: PublicBooking = {
                     id: "temp-preview",
                     offer: watchedOffer,
                     startDate: new Date(watchedStartDate),
@@ -916,21 +916,14 @@ export default function BookingForm() {
                     startHour: watchedStartHour,
                     endHour: watchedEndHour,
                     customerName: watchedCustomerName || "À compléter",
-                    customerPhone: watchedCustomerPhone || "À compléter",
                     customerEmail: watchedCustomerEmail || "À compléter",
-                    customerAddress: watchedCustomerAddress || "À compléter",
                     machines: watchedMachines,
                     bookedMachines: selectedMachines,
-                    selectedSyrups: watchedSyrups || [],
                     cupSize: watchedCupSize || "moyen",
                     totalCents: Math.round(totalPrice * 100),
                     status: "PENDING",
                     paymentStatus: "PENDING",
                     depositStatus: "PENDING",
-                    stripePaymentIntentId: null,
-                    swiklyRequestId: null,
-                    swiklyUrl: null,
-                    stripePaymentId: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                   };

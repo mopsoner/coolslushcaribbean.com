@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Booking, Syrup, Offer } from "@shared/schema";
+import type { PublicBooking, Syrup, Offer } from "@shared/schema";
 import { formatEuro } from "@shared/utils";
 
 interface BookingDetailsProps {
-  booking: Booking;
+  booking: PublicBooking;
   showTotal?: boolean;
   className?: string;
 }
@@ -24,7 +24,7 @@ export default function BookingDetails({ booking, showTotal = true, className = 
     ? `${startDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - ${endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
     : startDate.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  const selectedSyrups = (booking.selectedSyrups as Array<{ syrupId: string; quantity: number }>) || [];
+  const selectedSyrups: Array<{ syrupId: string; quantity: number }> = [];
   
   // Map selected syrups to their details
   const selectedSyrupsDetails = selectedSyrups
@@ -64,16 +64,6 @@ export default function BookingDetails({ booking, showTotal = true, className = 
               <span className="text-sm text-muted-foreground">Nom et prénom</span>
               <span className="font-semibold text-foreground">{booking.customerName}</span>
             </div>
-            <div className="flex justify-between items-center" data-testid="booking-detail-customer-phone">
-              <span className="text-sm text-muted-foreground">Téléphone</span>
-              <span className="font-semibold text-foreground">{booking.customerPhone}</span>
-            </div>
-            {booking.customerAddress && (
-              <div className="flex justify-between items-start" data-testid="booking-detail-customer-address">
-                <span className="text-sm text-muted-foreground">Adresse</span>
-                <span className="font-semibold text-foreground text-right max-w-[60%]">{booking.customerAddress}</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -102,10 +92,10 @@ export default function BookingDetails({ booking, showTotal = true, className = 
               {booking.machines} machine{booking.machines > 1 ? 's' : ''}
             </span>
           </div>
-          {booking.bookedMachines && (booking.bookedMachines as Array<{ machineId: string; machineName: string; quantity: number }>).length > 0 ? (
+          {booking.bookedMachines.length > 0 ? (
             <div className="space-y-2 bg-muted/50 dark:bg-muted/20 rounded-lg p-3">
-              {(booking.bookedMachines as Array<{ machineId: string; machineName: string; quantity: number }>).map((machine, index) => (
-                <div key={machine.machineId || index} className="flex justify-between items-center" data-testid={`machine-${machine.machineId}`}>
+              {booking.bookedMachines.map((machine, index) => (
+                <div key={`${machine.machineName}-${index}`} className="flex justify-between items-center" data-testid={`machine-${index}`}>
                   <span className="text-sm text-foreground font-medium">• {machine.machineName}</span>
                   <span className="text-sm text-muted-foreground font-semibold">× {machine.quantity}</span>
                 </div>

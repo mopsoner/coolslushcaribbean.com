@@ -18,7 +18,7 @@ function generateSessionToken(): string {
 // Clean up expired sessions
 function cleanupSessions() {
   const now = Date.now();
-  for (const [token, session] of sessions.entries()) {
+  for (const [token, session] of Array.from(sessions.entries())) {
     if (now - session.createdAt > SESSION_TIMEOUT) {
       sessions.delete(token);
     }
@@ -26,7 +26,8 @@ function cleanupSessions() {
 }
 
 // Run cleanup every hour
-setInterval(cleanupSessions, 60 * 60 * 1000);
+const cleanupTimer = setInterval(cleanupSessions, 60 * 60 * 1000);
+cleanupTimer.unref();
 
 // Middleware to check if user is authenticated as admin
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {

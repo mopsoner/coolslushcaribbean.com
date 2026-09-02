@@ -61,7 +61,7 @@ export default function AdminBookings() {
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
 
   const { data: bookings, isLoading } = useQuery<Booking[]>({
-    queryKey: ['/api/bookings'],
+    queryKey: ['/api/admin/bookings'],
   });
 
   const form = useForm<EditBookingFormData>({
@@ -90,7 +90,7 @@ export default function AdminBookings() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/bookings'] });
       setEditingBooking(null);
       toast({
         title: "Réservation mise à jour",

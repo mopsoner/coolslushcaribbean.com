@@ -6,24 +6,26 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, Mail, Shield, ArrowRight, Clock, CreditCard } from "lucide-react";
 import Navbar from "@/components/navbar";
 import BookingDetails from "@/components/booking-details";
-import type { Booking } from "@shared/schema";
+import type { PublicBooking } from "@shared/schema";
 import { computeCautionAmount, formatEuro } from "@shared/utils";
 
 export default function BookingConfirmation() {
   const [, setLocation] = useLocation();
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("booking");
+    setAccessToken(params.get("token"));
     if (id) {
       setBookingId(id);
     }
   }, []);
 
-  const { data: booking, isLoading } = useQuery<Booking>({
-    queryKey: ["/api/bookings", bookingId],
-    enabled: !!bookingId,
+  const { data: booking, isLoading } = useQuery<PublicBooking>({
+    queryKey: [`/api/bookings/${bookingId}?token=${encodeURIComponent(accessToken ?? "")}`],
+    enabled: !!bookingId && !!accessToken,
   });
 
   if (isLoading) {
@@ -78,7 +80,7 @@ export default function BookingConfirmation() {
     : bookingDate;
 
   const handleContinueToCheckout = () => {
-    setLocation(`/checkout?booking=${booking.id}`);
+    setLocation(`/checkout?booking=${booking.id}&token=${encodeURIComponent(accessToken!)}`);
   };
 
   return (

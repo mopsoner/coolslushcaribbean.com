@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { CheckCircle, Home, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Booking } from "@shared/schema";
+import { PublicBooking } from "@shared/schema";
 import Navbar from "@/components/navbar";
 import BookingDetails from "@/components/booking-details";
 import { formatEuro } from "@shared/utils";
@@ -11,10 +11,11 @@ import { formatEuro } from "@shared/utils";
 export default function Success() {
   const searchParams = new URLSearchParams(window.location.search);
   const bookingId = searchParams.get('booking');
+  const accessToken = searchParams.get('token');
 
-  const { data: booking, isLoading } = useQuery<Booking>({
-    queryKey: ['/api/bookings', bookingId],
-    enabled: !!bookingId,
+  const { data: booking, isLoading } = useQuery<PublicBooking>({
+    queryKey: [`/api/bookings/${bookingId}?token=${encodeURIComponent(accessToken ?? "")}`],
+    enabled: !!bookingId && !!accessToken,
   });
 
   if (isLoading) {

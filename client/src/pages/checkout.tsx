@@ -7,7 +7,7 @@ import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Booking } from "@shared/schema";
+import { PublicBooking } from "@shared/schema";
 import Navbar from "@/components/navbar";
 import BookingDetails from "@/components/booking-details";
 import { CreditCard, Shield, Lock } from "lucide-react";
@@ -20,7 +20,7 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
 }
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
-const CheckoutForm = ({ booking }: { booking: Booking }) => {
+const CheckoutForm = ({ booking, accessToken }: { booking: PublicBooking; accessToken: string }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -36,7 +36,7 @@ const CheckoutForm = ({ booking }: { booking: Booking }) => {
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/swikly-step?booking=${booking.id}`,
+        return_url: `${window.location.origin}/swikly-step?booking=${booking.id}&token=${encodeURIComponent(accessToken)}`,
       },
       redirect: 'if_required', // Only redirect if SCA is required
     });
@@ -50,7 +50,7 @@ const CheckoutForm = ({ booking }: { booking: Booking }) => {
     } else if (paymentIntent && paymentIntent.status === 'succeeded') {
       // Payment succeeded without redirect (no SCA required), navigate to swikly-step
       // Pass both ID and client secret for verification
-      setLocation(`/swikly-step?booking=${booking.id}&payment_intent=${paymentIntent.id}&payment_intent_client_secret=${encodeURIComponent(paymentIntent.client_secret!)}`);
+      setLocation(`/swikly-step?booking=${booking.id}&token=${encodeURIComponent(accessToken)}&payment_intent=${paymentIntent.id}&payment_intent_client_secret=${encodeURIComponent(paymentIntent.client_secret!)}`);
     }
   };
 
@@ -77,10 +77,11 @@ export default function Checkout() {
   // Get booking ID from URL params
   const searchParams = new URLSearchParams(window.location.search);
   const bookingId = searchParams.get('booking');
+  const accessToken = searchParams.get('token');
 
-  const { data: booking, isLoading } = useQuery<Booking>({
-    queryKey: ['/api/bookings', bookingId],
-    enabled: !!bookingId,
+  const { data: booking, isLoading } = useQuery<PublicBooking>({
+    queryKey: [`/api/bookings/${bookingId}?token=${encodeURIComponent(accessToken ?? "")}`],
+    enabled: !!bookingId && !!accessToken,
   });
 
   useEffect(() => {
@@ -92,7 +93,8 @@ export default function Checkout() {
     if (booking) {
       // Create PaymentIntent as soon as the booking loads
       apiRequest("POST", "/api/create-payment-intent", { 
-        bookingId: booking.id 
+        bookingId: booking.id,
+        accessToken,
       })
         .then((res) => res.json())
         .then((data) => {
@@ -180,7 +182,7 @@ export default function Checkout() {
               <CardContent className="p-8">
                 {/* Make SURE to wrap the form in <Elements> which provides the stripe context. */}
                 <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <CheckoutForm booking={booking} />
+                  <CheckoutForm booking={booking} accessToken={accessToken!} />
                 </Elements>
                 
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
