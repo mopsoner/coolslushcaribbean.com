@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeAuth } from "./auth-middleware";
 import { getPublicAppUrl } from "./config";
 import { correlationIdMiddleware, errorHandler } from "./app-errors";
+import { prepareDatabase } from "../db/schema-health";
 
 // Fail before binding a port when required configuration is absent or invalid.
 getPublicAppUrl();
@@ -55,6 +56,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Repair the known access-token migration drift, then audit every mapped
+  // table/column before accepting traffic. This turns future drift into a
+  // precise startup error instead of a failing admin request.
+  await prepareDatabase();
   const server = await registerRoutes(app);
 
   app.use(errorHandler);
